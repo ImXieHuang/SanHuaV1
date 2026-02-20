@@ -1,0 +1,2309 @@
+Project file tree:
+================================================================================
+└── .
+    ├── Attachment [Permission denial: ...]
+    ├── GPT
+    │   ├── Data
+    │   │   ├── ContextAware
+    │   │   │   └── TransformerTrain.py
+    │   │   └── Text
+    │   │       ├── 训练文本1(三体).txt
+    │   │       └── 训练文本2(朝花夕拾).txt
+    │   └── Modle
+    │       ├── CCATransformer
+    │       │   ├── __pycache__
+    │       │   │   ├── CCA.cpython-313.pyc
+    │       │   │   ├── __init__.cpython-313.pyc
+    │       │   │   └── operations.cpython-313.pyc
+    │       │   ├── CCA.py
+    │       │   ├── __init__.py
+    │       │   └── operations.py
+    │       ├── Vector
+    │       │   ├── __pycache__
+    │       │   │   ├── __init__.cpython-313.pyc
+    │       │   │   ├── operations.cpython-313.pyc
+    │       │   │   └── vector.cpython-313.pyc
+    │       │   ├── __init__.py
+    │       │   ├── operations.py
+    │       │   └── vector.py
+    │       ├── compare
+    │       │   ├── __pycache__
+    │       │   │   ├── __init__.cpython-313.pyc
+    │       │   │   └── operations.cpython-313.pyc
+    │       │   ├── __init__.py
+    │       │   └── operations.py
+    │       ├── fraction
+    │       │   ├── __pycache__
+    │       │   │   ├── __init__.cpython-313.pyc
+    │       │   │   └── fraction.cpython-313.pyc
+    │       │   ├── __init__.py
+    │       │   └── fraction.py
+    │       ├── mathexpand
+    │       │   ├── __pycache__
+    │       │   │   ├── __init__.cpython-313.pyc
+    │       │   │   └── operations.cpython-313.pyc
+    │       │   ├── __init__.py
+    │       │   └── operations.py
+    │       └── text_input
+    │           ├── __pycache__
+    │           │   ├── __init__.cpython-313.pyc
+    │           │   └── processor.cpython-313.pyc
+    │           └── __init__.py
+    ├── Outputio
+    │   ├── fonts
+    │   │   └── JetBrainsMono-Bold.ttf
+    │   ├── tuidisplay
+    │   │   ├── __pycache__
+    │   │   │   ├── __init__.cpython-313.pyc
+    │   │   │   └── tuidisplay.cpython-313.pyc
+    │   │   ├── __init__.py
+    │   │   └── tuidisplay.py
+    │   └── tuimodel
+    │       └── model.py
+    ├── test
+    │   └── loading_string.py
+    ├── README.md
+    └── main.py
+
+================================================================================
+File content:
+================================================================================
+
+# main.py:
+"""
+import tkinter as tk
+from pathlib import Path
+from Outputio.tuidisplay import TUIDisplay, TopBar, TextBox, InputBox, Button, ColorPalette
+
+def main():
+    root = tk.Tk()
+    font_path = Path("Outputio/fonts/JetBrainsMono-Bold.ttf")
+    
+    if font_path.exists():
+        palette = ColorPalette()
+        
+        app = TUIDisplay(root, str(font_path), palette)
+        
+        def quit_app():
+            root.quit()
+        
+        def toggle_fullscreen():
+            root.attributes('-fullscreen', not root.attributes('-fullscreen'))
+        
+        app.bind_global_key("Escape", quit_app)
+        app.bind_global_key("F11", toggle_fullscreen)
+        
+        top_bar = TopBar("-SanHuaV1 TUI-", palette)
+        app.add_top_bar(top_bar)
+        
+        img1 = '''
+' ∧ _ ∧   +
+/ . _ . \\  
+≡ _   ∧ ≡ 
+` ∧ | / \\ /
+( _ w _ _ )
+'''
+
+        box = TextBox(img1, text_align="left", x=3, palette=palette)
+        app.add_text_box(box)
+
+        def update():
+            app.refresh()
+            root.after(1, update)
+            
+        root.after(1, update)
+        root.mainloop()
+    else:
+        print("字体文件未找到，请确保 'JetBrainsMono-Bold.ttf' 在 'fonts' 目录中")
+
+if __name__ == "__main__":
+    main()
+"""
+
+# GPT\Data\ContextAware\TransformerTrain.py:
+"""
+"""
+
+# GPT\Modle\CCATransformer\CCA.py:
+"""
+import sys
+import math
+from pathlib import Path
+from typing import Dict
+from dataclasses import dataclass, field
+
+udir = str(Path(__file__).parent.parent)
+sys.path.append(udir)
+
+from Vector.vector import Vector
+from Vector import dot
+from fraction import fraction
+from mathexpand import mul, div, add, sub
+
+@dataclass(frozen=True)
+class Const():
+    E = fraction(13580623, 4996032) # 10^-15
+    Pi = fraction(80143857, 25510582) # 10^-15
+    INF = float('inf')
+
+class CCATransformer():
+    def __init__(self, database: Dict[str, Dict[Vector, Vector]], temperature: fraction = fraction(1, 1)):
+        self.database = database
+        self.temperature = temperature
+        
+        self._validate_database()
+    
+    def _validate_database(self):
+        for token, query_dict in self.database.items():
+            if not isinstance(token, str):
+                raise TypeError("The type of the token must be string.")
+            if not isinstance(query_dict, dict):
+                raise TypeError("The type of the QueryDatabase must be dictionary.")
+            for query_vec, value_vec in query_dict.items():
+                if not isinstance(query_vec, Vector):
+                    raise TypeError("The type of the Query must be Vector.")
+                elif query_vec.dimension != 4:
+                    raise ValueError("The dimension of the Query must be 4.")
+                if not isinstance(value_vec, Vector):
+                    raise TypeError("The type of the Val must be Vector.")
+                elif value_vec.dimension != 4:
+                    raise ValueError("The dimension of the Val must be 4.")
+
+    def get_key_for_(self, token: str):
+        if token not in self.database:
+            raise KeyError(f"token '{token}' not found in database")
+        return sum([v for v in self.database[token].values()], Vector([0.0, 0.0, 0.0, 0.0]))
+    
+    def get_value_for_(self, token: str, big_Q: Vector):
+        if token not in self.database:
+            raise KeyError(f"token '{token}' not found in database")
+        return self.SoftQuery(token, big_Q, self.temperature)
+    
+    def get_query_for_(self, token: str):
+        if token not in self.database:
+            raise KeyError(f"token '{token}' not found in database")
+        return self.DeSoftQuery(token, self.get_key_for_(token), self.temperature)
+    
+    def query_best_token_for_(self, TokenVec: Vector, big_Q: Vector) -> str:
+        voronoi = {}
+        for token in self.database:
+            voronoi[self.get_value_for_(token, big_Q)] = token
+        
+        best_loss = -float('inf')
+        best_token = ""
+        for token in voronoi:
+            if dot(token, TokenVec) > best_loss:
+                best_loss = dot(token, TokenVec)
+                best_token = voronoi[token]
+        
+        return best_token
+    
+    def SoftInjection_to_(self, token: str, Query: Vector, Value: Vector, T: fraction = fraction(3, 2), const: fraction = Const.E):
+        if token not in self.database:
+            raise KeyError(f"token '{token}' not found in database")
+        
+        injection = self.database[token]
+        influence_graph = [0.0]*len(list(injection.keys()))
+        maxn = fraction(100, 1)
+        minn = fraction(-100, 1)
+        cnt = fraction(0, 1)
+
+        for i in injection:
+            dot_val = fraction(int(dot(i, Query) * 1000), 1000)
+            exponent = div(dot_val, T)
+            
+            exp_sub_max = sub(exponent, maxn)
+            e_pow = const ** (exp_sub_max.value)
+            denom1 = sub(fraction(1, 1), e_pow)
+            first_term = div(exp_sub_max, denom1)
+            exponent = add(first_term, maxn)
+            
+            exp_add_min = add(exponent, minn)
+            e_pow2 = const ** (-exp_add_min.value)
+            denom2 = sub(fraction(1, 1), e_pow2)
+            second_term = div(exp_add_min, denom2)
+            exponent = sub(second_term, minn)
+            
+            weight = const ** exponent.value
+            weight_vec = [weight for _ in range(4)]
+            influence_graph[i] = weight
+            cnt = add(cnt, weight)
+
+        influence_graph = [influence_graph[i] / cnt.value for i in range(len(influence_graph))]
+
+        delat_graph = [(Value - list(injection.values())[i]) * influence_graph[i] for i in range(len(list(injection.values())))]
+
+        injection = [influence_graph[i] + delat_graph[i] for i in range(len(influence_graph))]
+
+        self.database[token] = injection
+
+    def SoftQuery(self, token: str, Query: Vector, T: fraction = fraction(3, 2), const: fraction = Const.E) -> Vector:
+        if token not in self.database:
+            raise KeyError(f"token '{token}' not found in database")
+        
+        query_dict = self.database[token]
+        if not query_dict:
+            return Vector([0.0, 0.0, 0.0, 0.0])
+        
+        cnt_n = Vector([fraction(0, 1), fraction(0, 1), fraction(0, 1), fraction(0, 1)])
+        cnt_m = fraction(0, 1)
+        maxn = fraction(100, 1)
+        minn = fraction(-100, 1)
+
+        for i in query_dict:
+            dot_val = fraction(int(dot(i, Query) * 1000), 1000)
+            exponent = div(dot_val, T)
+            
+            exp_sub_max = sub(exponent, maxn)
+            e_pow = const ** (exp_sub_max.value)
+            denom1 = sub(fraction(1, 1), e_pow)
+            first_term = div(exp_sub_max, denom1)
+            exponent = add(first_term, maxn)
+            
+            exp_add_min = add(exponent, minn)
+            e_pow2 = const ** (-exp_add_min.value)
+            denom2 = sub(fraction(1, 1), e_pow2)
+            second_term = div(exp_add_min, denom2)
+            exponent = sub(second_term, minn)
+            
+            weight = const ** exponent.value
+            weight_vec = [weight for _ in range(4)]
+            weighted_val = mul(weight_vec, query_dict[i].components)
+            cnt_n = add(cnt_n, Vector(weighted_val))
+            cnt_m = add(cnt_m, weight)
+        
+        if cnt_m.value == 0:
+            return Vector([c.value for c in cnt_n.components])
+        
+        result = div(cnt_n.components, cnt_m)
+        return Vector([r.value for r in result])
+    
+    def DeSoftQuery(self, token: str, Value: Vector, T: fraction = fraction(3, 2), 
+                    const: fraction = Const.E, alpha: fraction = fraction(1, 100),
+                    epsilon: fraction = fraction(1, 1000), 
+                    max_iter: int = 1000, tol: float = 1e-6) -> Vector:
+        if token not in self.database:
+            raise KeyError(f"token '{token}' not found in database")
+        
+        query_dict = self.database[token]
+        if not query_dict:
+            return Vector([0.0, 0.0, 0.0, 0.0])
+        
+        tokens = list(query_dict.keys())
+        values = [query_dict[k] for k in tokens]
+        
+        best_similarity = -float('inf')
+        x = Vector([0.0, 0.0, 0.0, 0.0])
+        
+        for i, val in enumerate(values):
+            similarity = sum(a * b for a, b in zip(Value.components, val.components))
+            if similarity > best_similarity:
+                best_similarity = similarity
+                x = tokens[i]
+        
+        if all(abs(v) < 1e-6 for v in Value.components):
+            import random
+            x = Vector([random.uniform(-1, 1) for _ in range(4)])
+        
+        best_x = x
+        best_residual = float('inf')
+        learning_rate = alpha.value
+        
+        for iteration in range(max_iter):
+            softquery_val = self.SoftQuery(token, x, T, const)
+            
+            residual = Vector([b - a for a, b in zip(softquery_val.components, Value.components)])
+            residual_norm = math.sqrt(sum(r * r for r in residual.components))
+            
+            if residual_norm < best_residual:
+                best_residual = residual_norm
+                best_x = Vector(x.components.copy())
+            
+            if residual_norm < tol:
+                return best_x
+            
+            weights = []
+            total_weight = 0.0
+            
+            for token_vec in tokens:
+                dot_val = dot(token_vec, x)
+                exponent = dot_val / T.value
+                
+                exp_sub_max = exponent - 100
+                e_pow = const.value ** exp_sub_max
+                denom1 = 1 - e_pow
+                first_term = exp_sub_max / denom1 if denom1 != 0 else 0
+                exponent = first_term + 100
+                
+                exp_add_min = exponent + 100
+                e_pow2 = const.value ** (-exp_add_min)
+                denom2 = 1 - e_pow2
+                second_term = exp_add_min / denom2 if denom2 != 0 else 0
+                exponent = second_term - 100
+                
+                weight = const.value ** exponent
+                weights.append(weight)
+                total_weight += weight
+            
+            norm_factor = total_weight + epsilon.value
+            if norm_factor == 0:
+                norm_factor = 1.0
+            
+            step = [learning_rate * r / norm_factor for r in residual.components]
+            x = Vector([a + b for a, b in zip(x.components, step)])
+            
+            if iteration > 0 and residual_norm > prev_residual_norm:
+                learning_rate *= 0.9
+            
+            prev_residual_norm = residual_norm
+            
+            x_components = []
+            for comp in x.components:
+                if comp > 100:
+                    comp = 100
+                elif comp < -100:
+                    comp = -100
+                x_components.append(comp)
+            x = Vector(x_components)
+        
+        return best_x
+
+    def get_tokens(self):
+        return list(self.database.keys())
+    
+    def get_queries_for_token(self, token: str):
+        if token not in self.database:
+            raise KeyError(f"token '{token}' not found in database")
+        return list(self.database[token].keys())
+    
+    def get_values_for_token(self, token: str):
+        if token not in self.database:
+            raise KeyError(f"token '{token}' not found in database")
+        return list(self.database[token].values())
+    
+    def __repr__(self):
+        return f"ContextAwareTransformer(database_size={len(self.database)}, temperature={self.temperature})"
+    
+    def __str__(self):
+        summary = []
+        for token in self.database:
+            summary.append(f"{token}: {len(self.database[token])} queries")
+        return "\n".join(summary)
+    
+if __name__ == "__main__":
+    print(f"const e: {Const.E.value}")
+    print(f"const pi: {Const.Pi.value}\n")
+    
+    cat = CCATransformer(
+        {
+            "苹果": {
+                Vector([1,0,0,0]): Vector([1,1,1,1]),
+                Vector([0,0,1,0]): Vector([2,2,2,2])
+            },
+            "香蕉": {
+                Vector([0,1,0,0]): Vector([2,2,2,2])
+            }
+        },
+        temperature=Const.E
+    )
+
+    big_Q = cat.get_query_for_("苹果")
+    print(f"big_Q for '苹果': {big_Q} \n")
+
+    print(f"Keys for '苹果': {cat.get_key_for_('苹果')}")
+    print(f"Values for '苹果': {cat.get_value_for_('苹果', big_Q)}")
+    print(f"Query for '苹果': {cat.get_query_for_('苹果')}")
+    print(f"Keys for '香蕉': {cat.get_key_for_('香蕉')}")
+    print(f"Values for '香蕉': {cat.get_value_for_('香蕉', big_Q)}")
+    print(f"Query for '香蕉': {cat.get_query_for_('香蕉')}")
+
+    print(f"\nBest token for Vector([1.5,1.5,1.5,1.5]): {cat.query_best_token_for_(Vector([1.5,1.5,1.5,1.5]), big_Q)}")
+"""
+
+# GPT\Modle\CCATransformer\operations.py:
+"""
+try:
+    from . import CCA
+except:
+    import CCA
+import random
+from typing import Union
+import sys
+from pathlib import Path
+
+udir = str(Path(__file__).parent.parent)
+sys.path.append(udir)
+
+import Vector as vector
+from Vector.vector import Vector
+from fraction import fraction
+import mathexpand as mexp
+
+def NewCCATransformer(Texts: Union[list[str],str]) -> CCA.CCATransformer:
+    if not isinstance(Texts, list):
+        return {Texts: {Vector([0.0,0.0,0.0,0.0]): Vector([random.uniform(-1,1),random.uniform(-1,1),random.uniform(-1,1),random.uniform(-1,1)])}}
+    
+    database = {}
+    for i in Texts:
+        database[i] = {Vector([0.0,0.0,0.0,0.0]): Vector([random.uniform(-1,1),random.uniform(-1,1),random.uniform(-1,1),random.uniform(-1,1)])}
+    return CCA.CCATransformer(database, CCA.Const.E)
+
+def FusionCCATransformer(CAT1: CCA.CCATransformer, CAT2: CCA.CCATransformer) -> CCA.CCATransformer:
+    FusionDatabsase = {}
+    Keys = list(set(CAT1.get_tokens()) | set(CAT2.get_tokens()))
+    for i in Keys:
+        FusionDatabsase[i] = {}
+        if i in CAT1.get_tokens() and i in CAT2.get_tokens():
+            Query = list(set(CAT1.database[i]) | set(CAT2.database[i]))
+            for j in Query:
+                if j in CAT1.database[i] and j in CAT2.database[i]:
+                    FusionDatabsase[i][j] = mexp.div(mexp.add(CAT1.database[i][j], CAT2.database[i][j]), 2)
+                elif j in CAT1.database[i]:
+                    FusionDatabsase[i][j] = CAT1.database[i][j]
+                else:
+                    FusionDatabsase[i][j] = CAT2.database[i][j]
+        elif i in CAT1.get_tokens():
+            FusionDatabsase[i] = CAT1.database[i]
+        else:
+            FusionDatabsase[i] = CAT2.database[i]
+    return CCA.CCATransformer(FusionDatabsase, CAT1.temperature/2 + CAT2.temperature/2)
+
+def get_meaning_of_tokens_for_(CAT: CCA.CCATransformer, tokens: list[str]) -> list[Vector]:
+    influence_graph = [[0.0 for _ in range(len(tokens))] for _ in range(len(tokens))]
+    for i,j in zip(range(len(tokens)), range(len(tokens))):
+        influence_graph[i][j] = vector.dot(CAT.get_query_for_(tokens[i]), CAT.get_key_for_(tokens[j]))
+    
+    for i,j in zip(range(len(tokens)), range(len(tokens))):
+        if j >= i: influence_graph[i][j] = -float('inf')
+
+    for i in range(len(tokens)):
+        row = influence_graph[i]
+        max_val = max(row)
+        exp_row = [CCA.Const.E.value ** (val - max_val) for val in row]
+        sum_exp = sum(exp_row)
+        influence_graph[i] = [val / sum_exp for val in exp_row]
+    
+    bigQ_graph = [[Vector([0.0,0.0,0.0,0.0]) for _ in range(len(tokens))] for _ in range(len(tokens))]
+
+    for i in range(len(tokens)):
+        for j in range(i+1):
+            if i == 0:
+                bigQ_graph[i][j] = CAT.get_key_for_(tokens[i])
+            else:
+                vector_list = []
+                for k in range(j):
+                    components = []
+                    for l in range(4):
+                        influence_val = influence_graph[i][k]
+                        if isinstance(influence_val, fraction):
+                            influence_val = influence_val.value
+                        component_val = bigQ_graph[i][k].components[l]
+                        if isinstance(component_val, fraction):
+                            component_val = component_val.value
+                        components.append(component_val * influence_val)
+                    vector_list.append(Vector(components))
+                
+                if not vector_list:
+                    big_Q = Vector([0.0, 0.0, 0.0, 0.0])
+                else:
+                    big_Q = mexp.iterate(mexp.add, vector_list)
+                
+                if not isinstance(big_Q, Vector):
+                    if isinstance(big_Q, (int, float)):
+                        big_Q = Vector([0.0, 0.0, 0.0, 0.0])
+                    else:
+                        try:
+                            big_Q = Vector([float(big_Q)] * 4)
+                        except:
+                            big_Q = Vector([0.0, 0.0, 0.0, 0.0])
+                
+                bigQ_graph[i][j] = CAT.get_value_for_(tokens[j], big_Q)
+    
+    meaning_vectors = []
+    for i in range(len(tokens)):
+        vector_list = []
+        for j in range(len(tokens)):
+            influence_val = influence_graph[i][j]
+            if isinstance(influence_val, fraction):
+                influence_val = influence_val.value
+            
+            if isinstance(bigQ_graph[i][j], Vector):
+                vector_list.append(mexp.mul(bigQ_graph[i][j], influence_val))
+        
+        if not vector_list:
+            meaning_vector = Vector([0.0, 0.0, 0.0, 0.0])
+        else:
+            meaning_vector = mexp.iterate(mexp.add, vector_list)
+        
+        if not isinstance(meaning_vector, Vector):
+            if isinstance(meaning_vector, (int, float)):
+                meaning_vector = Vector([0.0, 0.0, 0.0, 0.0])
+            else:
+                try:
+                    meaning_vector = Vector([float(meaning_vector)] * 4)
+                except:
+                    meaning_vector = Vector([0.0, 0.0, 0.0, 0.0])
+        
+        meaning_vectors.append(meaning_vector)
+    
+    meaning_vectors[0] = CAT.get_key_for_(tokens[0])
+
+    return meaning_vectors
+
+def get_meaning_of_sentence_for_(CAT: CCA.CCATransformer, tokens: list[str]) -> Vector:
+    tokens_meaning = get_meaning_of_tokens_for_(CAT, tokens)
+
+    influence_graph = [[0.0 for _ in range(len(tokens))] for _ in range(len(tokens))]
+    for i,j in zip(range(len(tokens)), range(len(tokens))):
+        influence_graph[i][j] = vector.dot(CAT.get_query_for_(tokens[i]), CAT.get_key_for_(tokens[j]))
+
+    for i in range(len(tokens)):
+        row = influence_graph[i]
+        max_val = max(row)
+        exp_row = [CCA.Const.E ** (val - max_val) for val in row]
+        sum_exp = sum(exp_row)
+        influence_graph[i] = [val / sum_exp for val in exp_row]
+    
+    tokens_influence = [0.0 for _ in range(len(tokens))]
+    for i in range(len(influence_graph)):
+        tokens_influence[i] = sum([influence_graph[i][j] for j in range(len(influence_graph))])
+    
+    sentence_meaning = Vector([0.0, 0.0, 0.0, 0.0])
+
+    cnt_n = Vector([0.0, 0.0, 0.0, 0.0])
+    cnt_m = 0.0
+
+    for i in range(len(tokens)):
+        weight = tokens_influence[i]
+        weight_vec = [weight for _ in range(4)]
+        weighted_val = mexp.mul(weight_vec, tokens_meaning[i].components)
+        cnt_n = mexp.add(cnt_n, Vector(weighted_val))
+        cnt_m += weight
+    
+    result = mexp.div(cnt_n.components, cnt_m)
+    sentence_meaning = Vector([r.value for r in result])
+    return sentence_meaning
+
+def think_about_next_token_for_(CAT: CCA.CCATransformer, tokens: list[str], T: float = CCA.Const.E.value) -> str:
+    sentence_meaning = get_meaning_of_sentence_for_(CAT, tokens)
+    cnt_n = Vector([0.0, 0.0, 0.0, 0.0])
+    cnt_m = 0.0
+    for token in CAT.get_tokens():
+        dot_val = vector.dot(get_meaning_of_tokens_for_(CAT, tokens + [token])[-1], sentence_meaning)
+        exponent = dot_val / T
+        weight = CCA.Const.E.value ** exponent
+        cnt_n = Vector([i for i in mexp.add(cnt_n, mexp.mul(weight, CAT.get_key_for_(token))).components])
+        cnt_m += weight
+    
+    if cnt_m == 0:
+        next_token = Vector([0.0, 0.0, 0.0, 0.0])
+    else:
+        next_token = mexp.div(cnt_n, cnt_m)
+
+    next_token = next_token.components
+    for i in range(4):
+        random_val = random.uniform(-T, T)
+        next_token[i] += ((abs(random_val) ** CCA.Const.E.value) * random_val) / (abs(random_val) * (CCA.Const.E.value ** CCA.Const.E.value))
+
+    next_token = Vector(next_token)
+    
+    return CAT.query_best_token_for_(next_token, sentence_meaning)
+
+if __name__ == "__main__":
+    import random
+    CAT = NewCCATransformer(["苹果", "香蕉", "谷歌", "小米", "微软", "亚马逊", "包子", "饺子", "面条"])
+    
+    print("CCATransformer created with tokens:", CAT.get_tokens())
+    for i in CAT.get_tokens():
+        print(f"Token: {i}")
+        for j in CAT.database[i]:
+            print(f"  Query: {j}, Value: {CAT.database[i][j]}")
+
+    print(f"\n{'='*20} Testing meaning extraction {'='*20}\n")
+
+    example_token_list = []
+    for _ in range(random.binomialvariate(20, 0.5)):
+        example_token_list.append(random.choice(CAT.get_tokens()))
+    print(f"Example token list: {example_token_list}\n")
+    print("Meaning vectors for the example token list:")
+    meaning_vectors = get_meaning_of_tokens_for_(CAT, example_token_list)
+    for token, meaning_vector in zip(example_token_list, meaning_vectors):
+        print(f"Token: {token}, Meaning Vector: {meaning_vector}")
+    print("\nMeaning vector for the example sentence:")
+    sentence_meaning = get_meaning_of_sentence_for_(CAT, example_token_list)
+    print(sentence_meaning)
+    print("\nPredicted next token:")
+    next_token = think_about_next_token_for_(CAT, example_token_list)
+    print(next_token)
+
+    print(f"\n{'='*20} Testing generated {'='*20}\n")
+
+    start_tokens = [random.choice(CAT.get_tokens())] + [random.choice(CAT.get_tokens())] + [random.choice(CAT.get_tokens())]
+    print(f"Start token: {start_tokens}")
+
+    for i in range(10):
+        next_token = think_about_next_token_for_(CAT, start_tokens)
+        start_tokens.append(next_token)
+        print(f"No. {i+4} token: {next_token}")
+    print("Generated token sequence:")
+    print(start_tokens)
+"""
+
+# GPT\Modle\CCATransformer\__init__.py:
+"""
+from .CCA import Const, CCATransformer
+from .operations import NewCCATransformer, FusionCCATransformer
+
+__all__=[
+    'Const',
+    'CCATransformer',
+    'NewCCATransformer',
+    'FusionCCATransformer'
+]
+"""
+
+# GPT\Modle\compare\operations.py:
+"""
+def distance(a, b, visited=None, depth=0, max_depth=10):
+    if visited is None:
+        visited = set()
+    
+    if depth > max_depth:
+        return 1.0
+    
+    key = (id(a), id(b))
+    if key in visited:
+        return 0.0
+    visited.add(key)
+    
+    if a is b:
+        return 0.0
+    
+    if a is None or b is None:
+        return 1.0 if a is not b else 0.0
+    
+    if type(a) != type(b):
+        try:
+            fa, fb = float(a), float(b)
+            base = max(abs(fa), abs(fb), 1.0)
+            return min(abs(fa - fb) / base, 1.0)
+        except:
+            return 1.0
+    
+    if isinstance(a, (int, float, complex)):
+        if a == b:
+            return 0.0
+        fa, fb = float(a), float(b)
+        base = max(abs(fa), abs(fb), 1.0)
+        return min(abs(fa - fb) / base, 1.0)
+    
+    if isinstance(a, str):
+        if a == b:
+            return 0.0
+        len_a, len_b = len(a), len(b)
+        diff = 0
+        for i in range(min(len_a, len_b)):
+            if a[i] != b[i]:
+                diff += 1
+        diff += abs(len_a - len_b)
+        return min(diff / max(len_a, len_b, 1), 1.0)
+    
+    if isinstance(a, bool):
+        return 0.0 if a == b else 1.0
+    
+    if hasattr(a, '__str__') and hasattr(b, '__str__'):
+        try:
+            str_a, str_b = str(a), str(b)
+            if str_a != str_b:
+                return distance(str_a, str_b, visited, depth+1, max_depth)
+            elif str_a == str_b:
+                return 0.0
+        except:
+            pass
+    
+    if hasattr(a, '__list__') and hasattr(b, '__list__'):
+        try:
+            list_a, list_b = a.__list__(), b.__list__()
+            return distance(list_a, list_b, visited, depth+1, max_depth)
+        except:
+            pass
+    
+    if isinstance(a, (list, tuple, set)):
+        if not isinstance(b, (list, tuple, set)):
+            return 1.0
+        
+        len_a, len_b = len(a), len(b)
+        if len_a != len_b and not isinstance(a, set):
+            diff = abs(len_a - len_b)
+        else:
+            diff = 0
+            
+        if isinstance(a, set):
+            if isinstance(b, set):
+                union_len = len(a | b)
+                if union_len == 0:
+                    return 0.0
+                inter_len = len(a & b)
+                diff = 1.0 - (inter_len / union_len)
+            else:
+                return 1.0
+        else:
+            paired_a = list(a)
+            paired_b = list(b)
+            min_len = min(len_a, len_b)
+            
+            for i in range(min_len):
+                d = distance(paired_a[i], paired_b[i], visited, depth+1, max_depth)
+                diff += d
+            
+            if len_a != len_b:
+                diff += abs(len_a - len_b)
+            
+            total = max(len_a, len_b)
+            if total == 0:
+                return 0.0
+            diff = diff / total
+        
+        return min(diff, 1.0)
+    
+    if isinstance(a, dict):
+        if not isinstance(b, dict):
+            return 1.0
+        
+        keys_a, keys_b = set(a.keys()), set(b.keys())
+        all_keys = keys_a | keys_b
+        
+        if not all_keys:
+            return 0.0
+        
+        diff = 0
+        for key in all_keys:
+            if key in a and key in b:
+                d = distance(a[key], b[key], visited, depth+1, max_depth)
+                diff += d
+            else:
+                diff += 1
+        
+        return min(diff / len(all_keys), 1.0)
+    
+    try:
+        if hasattr(a, '__dict__') and hasattr(b, '__dict__'):
+            return distance(a.__dict__, b.__dict__, visited, depth+1, max_depth)
+    except:
+        pass
+    
+    try:
+        if hasattr(a, '__slots__') and hasattr(b, '__slots__'):
+            dict_a = {slot: getattr(a, slot) for slot in a.__slots__ if hasattr(a, slot)}
+            dict_b = {slot: getattr(b, slot) for slot in b.__slots__ if hasattr(b, slot)}
+            return distance(dict_a, dict_b, visited, depth+1, max_depth)
+    except:
+        pass
+    
+    try:
+        if hasattr(a, '__iter__') and hasattr(b, '__iter__'):
+            try:
+                items_a = list(a)
+                items_b = list(b)
+                return distance(items_a, items_b, visited, depth+1, max_depth)
+            except:
+                pass
+    except:
+        pass
+    
+    try:
+        return 0.0 if a == b else 1.0
+    except:
+        return 1.0
+"""
+
+# GPT\Modle\compare\__init__.py:
+"""
+from .operations import distance
+
+__all__ = [
+    'distance'
+]
+"""
+
+# GPT\Modle\fraction\fraction.py:
+"""
+class fraction:
+    def __init__(self, numerator: int, denominator: int):
+        self.numerator = numerator
+        self.denominator = denominator
+        self.value = self.numerator / self.denominator
+        
+        def verify():
+            if not isinstance(self.numerator, int):
+                raise TypeError("Numerator must be an integer.")
+            if not isinstance(self.denominator, int):
+                raise TypeError("Denominator must be an integer.")
+            if self.denominator == 0:
+                raise ValueError("Denominator cannot be zero.")
+        
+        verify()
+    
+    def __add__(self, other):
+        if isinstance(other, (int, float)):
+            other = fraction(int(other * 1000), 1000)
+        if not isinstance(other, fraction):
+            raise TypeError("Operand must be a fraction or number.")
+        new_numerator = self.numerator * other.denominator + other.numerator * self.denominator
+        new_denominator = self.denominator * other.denominator
+        return fraction(new_numerator, new_denominator)
+    
+    def __radd__(self, other):
+        return self.__add__(other)
+    
+    def __sub__(self, other):
+        if isinstance(other, (int, float)):
+            other = fraction(int(other * 1000), 1000)
+        if not isinstance(other, fraction):
+            raise TypeError("Operand must be a fraction or number.")
+        new_numerator = self.numerator * other.denominator - other.numerator * self.denominator
+        new_denominator = self.denominator * other.denominator
+        return fraction(new_numerator, new_denominator)
+    
+    def __rsub__(self, other):
+        if isinstance(other, (int, float)):
+            other = fraction(int(other * 1000), 1000)
+        return other - self
+    
+    def __mul__(self, other):
+        if isinstance(other, (int, float)):
+            other = fraction(int(other * 1000), 1000)
+        if not isinstance(other, fraction):
+            raise TypeError("Operand must be a fraction or number.")
+        new_numerator = self.numerator * other.numerator
+        new_denominator = self.denominator * other.denominator
+        return fraction(new_numerator, new_denominator)
+    
+    def __rmul__(self, other):
+        return self.__mul__(other)
+    
+    def __truediv__(self, other):
+        if isinstance(other, (int, float)):
+            other = fraction(int(other * 1000), 1000)
+        if not isinstance(other, fraction):
+            raise TypeError("Operand must be a fraction or number.")
+        new_numerator = self.numerator * other.denominator
+        new_denominator = self.denominator * other.numerator
+        return fraction(new_numerator, new_denominator)
+    
+    def __rtruediv__(self, other):
+        if isinstance(other, (int, float)):
+            other = fraction(int(other * 1000), 1000)
+        return other / self
+    
+    def __pow__(self, power):
+        if isinstance(power, (int, float)):
+            result = self.value ** power
+            return fraction(int(result * 1000), 1000)
+        raise TypeError("Power must be a number.")
+    
+    def __rpow__(self, base):
+        if isinstance(base, (int, float)):
+            result = base ** self.value
+            return fraction(int(result * 1000), 1000)
+        raise TypeError("Base must be a number.")
+    
+    def __lt__(self, other):
+        if isinstance(other, fraction):
+            return self.value < other.value
+        elif isinstance(other, (int, float)):
+            return self.value < other
+        return NotImplemented
+    
+    def __le__(self, other):
+        if isinstance(other, fraction):
+            return self.value <= other.value
+        elif isinstance(other, (int, float)):
+            return self.value <= other
+        return NotImplemented
+    
+    def __gt__(self, other):
+        if isinstance(other, fraction):
+            return self.value > other.value
+        elif isinstance(other, (int, float)):
+            return self.value > other
+        return NotImplemented
+    
+    def __ge__(self, other):
+        if isinstance(other, fraction):
+            return self.value >= other.value
+        elif isinstance(other, (int, float)):
+            return self.value >= other
+        return NotImplemented
+    
+    def __eq__(self, other):
+        if isinstance(other, fraction):
+            return self.numerator * other.denominator == other.numerator * self.denominator
+        elif isinstance(other, (int, float)):
+            return abs(self.value - other) < 1e-10
+        return NotImplemented
+    
+    def __neg__(self):
+        return fraction(-self.numerator, self.denominator)
+    
+    def __abs__(self):
+        return fraction(abs(self.numerator), abs(self.denominator))
+    
+    def riverse(self):
+        return fraction(self.denominator, self.numerator)
+    
+    def __str__(self):
+        return f"{self.numerator}/{self.denominator}"
+    
+    def __repr__(self):
+        return f"fraction({self.numerator}, {self.denominator})"
+"""
+
+# GPT\Modle\fraction\__init__.py:
+"""
+from .fraction import fraction
+
+__all__ = ['fraction']
+"""
+
+# GPT\Modle\mathexpand\operations.py:
+"""
+import threading
+from typing import Union, Any, List, Tuple
+import sys
+from pathlib import Path
+udir = str(Path(__file__).parent.parent)
+sys.path.append(udir)
+
+from Vector.vector import Vector
+from fraction import fraction
+
+def is_vector(obj: Any) -> bool:
+    return hasattr(obj, 'VECTORFLAG')
+
+def is_fraction(obj: Any) -> bool:
+    return isinstance(obj, fraction)
+
+def is_list_like(obj: Any) -> bool:
+    return isinstance(obj, (list, tuple))
+
+def contains_vectors(obj: Any) -> bool:
+    if is_vector(obj):
+        return True
+    if is_list_like(obj):
+        return any(contains_vectors(item) for item in obj)
+    return False
+
+def contains_fractions(obj: Any) -> bool:
+    if is_fraction(obj):
+        return True
+    if is_vector(obj):
+        return any(is_fraction(x) for x in obj.components)
+    if is_list_like(obj):
+        return any(contains_fractions(item) for item in obj)
+    return False
+
+def to_fraction(value: Any) -> Any:
+    if isinstance(value, (int, float)):
+        return fraction(int(value * 1000), 1000)
+    elif is_list_like(value):
+        return [to_fraction(item) for item in value]
+    elif is_vector(value):
+        components = []
+        for comp in value.components:
+            if is_fraction(comp):
+                components.append(comp)
+            else:
+                components.append(fraction(int(comp * 1000), 1000))
+        return Vector(components)
+    else:
+        return value
+
+def ensure_compatible(a: Any, b: Any) -> tuple:
+    a_has_vectors = contains_vectors(a)
+    b_has_vectors = contains_vectors(b)
+    a_has_fractions = contains_fractions(a)
+    b_has_fractions = contains_fractions(b)
+    
+    if a_has_fractions or b_has_fractions:
+        a = to_fraction(a)
+        b = to_fraction(b)
+    
+    if a_has_vectors and b_has_vectors:
+        if is_list_like(a) and is_list_like(b):
+            if len(a) != len(b):
+                max_len = max(len(a), len(b))
+                if a_has_fractions:
+                    a_list = list(a) + [fraction(1, 1)] * (max_len - len(a))
+                    b_list = list(b) + [fraction(1, 1)] * (max_len - len(b))
+                else:
+                    a_list = list(a) + [1.0] * (max_len - len(a))
+                    b_list = list(b) + [1.0] * (max_len - len(b))
+                return a_list, b_list
+            return a, b
+        elif is_vector(a) and is_vector(b):
+            if a.dimension != b.dimension:
+                max_dim = max(a.dimension, b.dimension)
+                if a_has_fractions:
+                    a_components = a.components + [fraction(1, 1)] * (max_dim - a.dimension)
+                    b_components = b.components + [fraction(1, 1)] * (max_dim - b.dimension)
+                else:
+                    a_components = a.components + [1.0] * (max_dim - a.dimension)
+                    b_components = b.components + [1.0] * (max_dim - b.dimension)
+                return Vector(a_components), Vector(b_components)
+            return a, b
+        elif is_vector(a) and is_list_like(b):
+            if a_has_fractions:
+                b_vec = Vector([fraction(x, 1) if isinstance(x, (int, float)) else x for x in list(b)])
+            else:
+                b_vec = Vector(list(b))
+            return ensure_compatible(a, b_vec)
+        elif is_list_like(a) and is_vector(b):
+            if b_has_fractions:
+                a_vec = Vector([fraction(x, 1) if isinstance(x, (int, float)) else x for x in list(a)])
+            else:
+                a_vec = Vector(list(a))
+            return ensure_compatible(a_vec, b)
+    
+    elif a_has_vectors and isinstance(b, (int, float, fraction)):
+        return a, b
+    elif isinstance(a, (int, float, fraction)) and b_has_vectors:
+        return a, b
+    
+    elif is_list_like(a) and is_list_like(b):
+        if len(a) != len(b):
+            max_len = max(len(a), len(b))
+            if a_has_fractions or b_has_fractions:
+                a_list = list(a) + [fraction(1, 1)] * (max_len - len(a))
+                b_list = list(b) + [fraction(1, 1)] * (max_len - len(b))
+            else:
+                a_list = list(a) + [1.0] * (max_len - len(a))
+                b_list = list(b) + [1.0] * (max_len - len(b))
+            return a_list, b_list
+        return a, b
+    
+    elif isinstance(a, (int, float, fraction)) and isinstance(b, (int, float, fraction)):
+        return a, b
+    
+    return a, b
+
+def process_nested_operation(func: callable, a: Any, b: Any) -> Any:
+    if is_list_like(a) and is_list_like(b):
+        if len(a) != len(b):
+            max_len = max(len(a), len(b))
+            if contains_fractions(a) or contains_fractions(b):
+                a_list = list(a) + [fraction(1, 1)] * (max_len - len(a))
+                b_list = list(b) + [fraction(1, 1)] * (max_len - len(b))
+            else:
+                a_list = list(a) + [1.0] * (max_len - len(a))
+                b_list = list(b) + [1.0] * (max_len - len(b))
+            return [process_nested_operation(func, x, y) for x, y in zip(a_list, b_list)]
+        return [process_nested_operation(func, x, y) for x, y in zip(a, b)]
+    
+    elif is_list_like(a) and not is_list_like(b):
+        return [process_nested_operation(func, x, b) for x in a]
+    
+    elif not is_list_like(a) and is_list_like(b):
+        return [process_nested_operation(func, a, x) for x in b]
+    
+    elif is_vector(a) and is_vector(b):
+        if a.dimension != b.dimension:
+            max_dim = max(a.dimension, b.dimension)
+            if contains_fractions(a) or contains_fractions(b):
+                a_components = a.components + [fraction(1, 1)] * (max_dim - a.dimension)
+                b_components = b.components + [fraction(1, 1)] * (max_dim - b.dimension)
+            else:
+                a_components = a.components + [1.0] * (max_dim - a.dimension)
+                b_components = b.components + [1.0] * (max_dim - b.dimension)
+            return Vector([func(x, y) for x, y in zip(a_components, b_components)])
+        return Vector([func(x, y) for x, y in zip(a.components, b.components)])
+    
+    elif is_vector(a) and isinstance(b, (int, float, fraction)):
+        return Vector([func(x, b) for x in a.components])
+    
+    elif isinstance(a, (int, float, fraction)) and is_vector(b):
+        return Vector([func(a, x) for x in b.components])
+    
+    elif isinstance(a, fraction) or isinstance(b, fraction):
+        if isinstance(a, (int, float)):
+            a = fraction(int(a * 1000), 1000)
+        if isinstance(b, (int, float)):
+            b = fraction(int(b * 1000), 1000)
+        return func(a, b)
+    
+    elif isinstance(a, (int, float)) and isinstance(b, (int, float)):
+        return func(a, b)
+    
+    else:
+        try:
+            return func(a, b)
+        except Exception:
+            raise TypeError(f"Unsupported operand types: {type(a)} and {type(b)}")
+
+def mul(a: Union[Vector, int, float, fraction, list], b: Union[Vector, int, float, fraction, list] = 1) -> Union[Vector, float, fraction, list]:
+    def multiply_func(x, y):
+        if isinstance(x, fraction) or isinstance(y, fraction):
+            if not isinstance(x, fraction):
+                x = fraction(int(x * 1000), 1000)
+            if not isinstance(y, fraction):
+                y = fraction(int(y * 1000), 1000)
+            return x * y
+        return x * y
+    
+    return process_nested_operation(multiply_func, a, b)
+
+def div(a: Union[Vector, int, float, fraction, list], b: Union[Vector, int, float, fraction, list] = 1, miny: float = 1e-10) -> Union[Vector, float, fraction, list]:
+    def divide_func(x, y):
+        abs_y = abs(y.value if isinstance(y, fraction) else y)
+        if abs_y <= miny:
+            y = fraction(int(miny * 1000), 1000) if isinstance(x, fraction) else miny
+        
+        if isinstance(x, fraction) or isinstance(y, fraction):
+            if not isinstance(x, fraction):
+                x = fraction(int(x * 1000), 1000)
+            if not isinstance(y, fraction):
+                y = fraction(int(y * 1000), 1000)
+            return x / y
+        return x / y
+    
+    return process_nested_operation(divide_func, a, b)
+
+def add(a: Union[Vector, int, float, fraction, list], b: Union[Vector, int, float, fraction, list] = 0) -> Union[Vector, float, fraction, list]:
+    def add_func(x, y):
+        if isinstance(x, fraction) or isinstance(y, fraction):
+            if not isinstance(x, fraction):
+                x = fraction(int(x * 1000), 1000)
+            if not isinstance(y, fraction):
+                y = fraction(int(y * 1000), 1000)
+            return x + y
+        return x + y
+    
+    return process_nested_operation(add_func, a, b)
+
+def sub(a: Union[Vector, int, float, fraction, list], b: Union[Vector, int, float, fraction, list] = 0) -> Union[Vector, float, fraction, list]:
+    def subtract_func(x, y):
+        if isinstance(x, fraction) or isinstance(y, fraction):
+            if not isinstance(x, fraction):
+                x = fraction(int(x * 1000), 1000)
+            if not isinstance(y, fraction):
+                y = fraction(int(y * 1000), 1000)
+            return x - y
+        return x - y
+    
+    return process_nested_operation(subtract_func, a, b)
+
+def iterate(func: callable, items: list) -> Any:
+    if len(items) == 0:
+        return fraction(0, 1) if contains_fractions(items) else 0.0
+    elif len(items) == 1:
+        return items[0]
+    elif len(items) == 2:
+        return func(items[0], items[1])
+    else:
+        return func(items[0], iterate(func, items[1:]))
+    
+class ThreadManager:
+    def __init__(self):
+        self._threads = []
+        self._results = {}
+        self._lock = threading.Lock()
+        self._condition = threading.Condition()
+
+    def push(self, function, val):
+        def target(func, args, tid):
+            try:
+                result = func(*args)
+            except Exception as e:
+                result = None
+            with self._lock:
+                self._results[tid] = result
+            with self._condition:
+                self._condition.notify_all()
+
+        thread = threading.Thread(target=target, args=(function, val, id(threading.current_thread())))
+        with self._lock:
+            self._threads.append(thread)
+        thread.start()
+        return thread
+
+    def waite(self, *threads):
+        results = []
+        for t in threads:
+            if not isinstance(t, list):
+                t = [t]
+            with self._lock:
+                results.append(self._results.get(id(t), None))
+        return [i for i in results]
+
+if __name__ == '__main__':
+    from fraction import fraction
+    
+    print(is_vector(Vector([1,2,3])))
+    print(is_vector(6))
+
+    print("Nested list with vectors and fractions:")
+    vec_list1 = [Vector([fraction(1, 1), fraction(2, 1)]), Vector([3, 4])]
+    vec_list2 = [Vector([2, 3]), Vector([fraction(4, 1), fraction(5, 1)])]
+    print(mul(vec_list1, vec_list2))
+    print(add(vec_list1, fraction(1, 1)))
+    print(mul(vec_list1, 2))
+    
+    print("Mixed nested structures with fractions:")
+    mixed1 = [Vector([1, fraction(2, 1)]), [Vector([3, 4]), Vector([5, 6])]]
+    mixed2 = [2, [fraction(3, 1), 4]]
+    print(mul(mixed1, mixed2))
+    
+    print("Deep nesting with fractions:")
+    deep1 = [[Vector([1, 2]), Vector([fraction(3, 1), 4])], [Vector([5, 6])]]
+    deep2 = [[2, fraction(3, 1)], [4]]
+    print(add(deep1, deep2))
+    
+    print("Pure fraction operations:")
+    print(add(fraction(1, 2), fraction(1, 3)))
+    print(mul(fraction(2, 3), 1.5))
+    print(div(fraction(3, 4), 0.25))
+"""
+
+# GPT\Modle\mathexpand\__init__.py:
+"""
+r"""
+Initialization module for mathematical expansion operations.
+This module imports and exposes the main mathematical expansion functions.
+"""
+
+from .operations import (
+    mul,
+    div,
+    add,
+    sub,
+    iterate,
+    is_vector,
+    ThreadManager
+)
+
+__all__ = [
+    'mul',
+    'div',
+    'add',
+    'sub',
+    'iterate',
+    'is_vector',
+    'ThreadManager'
+]
+"""
+
+# GPT\Modle\text_input\__init__.py:
+"""
+from .processor import TextProcessor
+
+__all__ = ['TextProcessor']
+"""
+
+# GPT\Modle\Vector\operations.py:
+"""
+from .vector import Vector
+from fraction import fraction
+from typing import Union
+
+def _validate_vectors(v1: Vector, v2: Vector):
+    if v1.dimension != v2.dimension:
+        raise ValueError("Vectors must have the same dimension")
+
+def add(v1: Vector, v2: Vector) -> Vector:
+    _validate_vectors(v1, v2)
+    return Vector([x+y for x,y in zip(v1.components, v2.components)])
+
+def sub(v1: Vector, v2: Vector) -> Vector:
+    _validate_vectors(v1, v2)
+    return Vector([x-y for x,y in zip(v1.components, v2.components)])
+
+def mul(v1: Vector, v2: Vector) -> Vector:
+    _validate_vectors(v1, v2)
+    return Vector([x*y for x,y in zip(v1.components, v2.components)])
+
+def div(v1: Vector, v2: Vector) -> Vector:
+    _validate_vectors(v1, v2)
+    if any(y == 0 for y in v2.components):
+        raise ValueError("Cannot divide by zero in vector components")
+    return Vector([x/y for x,y in zip(v1.components, v2.components)])
+
+def dot(v1: Vector, v2: Vector) -> Union[float, fraction]:
+    _validate_vectors(v1, v2)
+    result = sum(x*y for x,y in zip(v1.components, v2.components))
+    if all(isinstance(x, fraction) for x in v1.components) and all(isinstance(x, fraction) for x in v2.components):
+        return fraction(int(result * 1000), 1000)
+    return result
+
+def cross(v1: Vector, v2: Vector) -> Vector:
+    if v1.dimension != 3 or v2.dimension != 3:
+        raise ValueError("Cross product is only defined for 3-dimensional vectors")
+    
+    a = v1.components
+    b = v2.components
+    
+    cross_x = a[1]*b[2] - a[2]*b[1]
+    cross_y = a[2]*b[0] - a[0]*b[2]
+    cross_z = a[0]*b[1] - a[1]*b[0]
+    
+    return Vector([cross_x, cross_y, cross_z])
+
+def abs_vector(v: Vector):
+    abs_list = []
+    for i in v.components:
+        if isinstance(i, fraction):
+            abs_list.append(fraction(abs(i.numerator), abs(i.denominator)))
+        else:
+            abs_list.append(abs(i))
+    return Vector(abs_list)
+
+def compare(v1: Vector, v2: Vector) -> Union[float, fraction]:
+    diff_vector = sub(v1, v2)
+    abs_diff = abs_vector(diff_vector)
+    
+    if all(isinstance(x, fraction) for x in abs_diff.components):
+        result = fraction(1, 1)
+        for comp in abs_diff.components:
+            result = result * comp
+        return result
+    else:
+        result = 1.0
+        for comp in abs_diff.components:
+            result *= comp
+        return result
+"""
+
+# GPT\Modle\Vector\vector.py:
+"""
+import math
+from typing import List, Union
+from fraction import fraction
+
+class Vector:
+    def __init__(self, components: List[Union[int, float, fraction]]):
+        self.components = []
+        for x in components:
+            if isinstance(x, fraction):
+                self.components.append(x)
+            else:
+                self.components.append(float(x))
+        self.dimension = len(components)
+        
+    def __repr__(self):
+        return f"Vector({self.components})"
+    
+    def __str__(self):
+        return str(self.components)
+    
+    def to_list(self) -> list:
+        return self.components.copy()
+    
+    def magnitude(self) -> float:
+        sum_sq = 0.0
+        for x in self.components:
+            if isinstance(x, fraction):
+                sum_sq += x.value ** 2
+            else:
+                sum_sq += x ** 2
+        return math.sqrt(sum_sq)
+    
+    def normalize(self) -> 'Vector':
+        mag = self.magnitude()
+        if mag == 0:
+            raise ValueError("Cannot normalize a zero vector")
+        
+        normalized_components = []
+        for x in self.components:
+            if isinstance(x, fraction):
+                normalized_components.append(fraction(int(x.value / mag * 1000), 1000))
+            else:
+                normalized_components.append(x / mag)
+        return Vector(normalized_components)
+    
+    def __add__(self, other: 'Vector') -> 'Vector':
+        if self.dimension != other.dimension:
+            raise ValueError("Vectors must have the same dimension")
+        
+        result_components = []
+        for a, b in zip(self.components, other.components):
+            if isinstance(a, fraction) or isinstance(b, fraction):
+                if not isinstance(a, fraction):
+                    a = fraction(int(a * 1000), 1000)
+                if not isinstance(b, fraction):
+                    b = fraction(int(b * 1000), 1000)
+                result_components.append(a + b)
+            else:
+                result_components.append(a + b)
+        return Vector(result_components)
+    
+    def __sub__(self, other: 'Vector') -> 'Vector':
+        if self.dimension != other.dimension:
+            raise ValueError("Vectors must have the same dimension")
+        
+        result_components = []
+        for a, b in zip(self.components, other.components):
+            if isinstance(a, fraction) or isinstance(b, fraction):
+                if not isinstance(a, fraction):
+                    a = fraction(int(a * 1000), 1000)
+                if not isinstance(b, fraction):
+                    b = fraction(int(b * 1000), 1000)
+                result_components.append(a - b)
+            else:
+                result_components.append(a - b)
+        return Vector(result_components)
+    
+    def __mul__(self, other: Union[float, 'Vector', fraction]) -> Union[float, int, 'Vector', fraction]:
+        if isinstance(other, (int, float, fraction)):
+            result_components = []
+            for x in self.components:
+                if isinstance(x, fraction) or isinstance(other, fraction):
+                    if not isinstance(x, fraction):
+                        x = fraction(int(x * 1000), 1000)
+                    if not isinstance(other, fraction):
+                        other_frac = fraction(int(other * 1000), 1000)
+                    else:
+                        other_frac = other
+                    result_components.append(x * other_frac)
+                else:
+                    result_components.append(x * other)
+            return Vector(result_components)
+        elif isinstance(other, Vector):
+            if self.dimension != other.dimension:
+                raise ValueError("Vectors must have the same dimension")
+            
+            result = 0.0
+            for a, b in zip(self.components, other.components):
+                if isinstance(a, fraction) or isinstance(b, fraction):
+                    if not isinstance(a, fraction):
+                        a = fraction(int(a * 1000), 1000)
+                    if not isinstance(b, fraction):
+                        b = fraction(int(b * 1000), 1000)
+                    result += a.value * b.value
+                else:
+                    result += a * b
+            
+            if any(isinstance(x, fraction) for x in self.components) or any(isinstance(x, fraction) for x in other.components):
+                return fraction(int(result * 1000), 1000)
+            return result
+        else:
+            raise TypeError(f"Unsupported type for multiplication: {type(other)}")
+    
+    def __rmul__(self, scalar: float) -> 'Vector':
+        return self.__mul__(scalar)
+    
+    def __truediv__(self, scalar: Union[float, fraction]) -> 'Vector':
+        if isinstance(scalar, (int, float, fraction)):
+            if scalar == 0 or (isinstance(scalar, fraction) and scalar.value == 0):
+                raise ValueError("Cannot divide by zero")
+            
+            result_components = []
+            for x in self.components:
+                if isinstance(x, fraction) or isinstance(scalar, fraction):
+                    if not isinstance(x, fraction):
+                        x = fraction(int(x * 1000), 1000)
+                    if not isinstance(scalar, fraction):
+                        scalar_frac = fraction(int(scalar * 1000), 1000)
+                    else:
+                        scalar_frac = scalar
+                    result_components.append(x / scalar_frac)
+                else:
+                    result_components.append(x / scalar)
+            return Vector(result_components)
+        else:
+            raise TypeError(f"Unsupported type for division: {type(scalar)}")
+    
+    def VECTORFLAG(): pass
+"""
+
+# GPT\Modle\Vector\__init__.py:
+"""
+r"""
+Initialization module for vector operations.
+This module imports and exposes the main vector classes and functions.
+"""
+
+from .vector import Vector
+from .operations import (
+    add,
+    sub,
+    mul,
+    div,
+    dot,
+    cross,
+    abs_vector,
+    compare
+)
+
+__all__ = [
+    'Vector',
+    'add',
+    'sub',
+    'mul',
+    'div',
+    'dot',
+    'cross',
+    'abs_vector',
+    'compare'
+]
+"""
+
+# Outputio\tuidisplay\tuidisplay.py:
+"""
+import tkinter as tk
+
+class ColorPalette:
+    def __init__(self):
+        self.colors = [
+            "#000000", "#FFFFFF", "#811AFF", "#3BFFAD", "#0000FF", "#65CCFF", "#7298FF", "#00FFFF",
+            "#111111", "#222222", "#333333", "#444444", "#555555", "#666666", "#777777", "#888888",
+            "#1E90FF", "#87CEEB", "#4682B4", "#5F9EA0", "#2E8B57", "#3CB371", "#20B2AA", "#48D1CC",
+            "#1E90FF", "#87CEEB", "#4682B4", "#5F9EA0", "#2E8B57", "#3CB371", "#20B2AA", "#48D1CC",
+            "#1E90FF", "#87CEEB", "#4682B4", "#5F9EA0", "#2E8B57", "#3CB371", "#20B2AA", "#48D1CC"
+        ]
+        
+        self.default_map = {
+            "background": 0,
+            "text": 1,
+            "border": 1,
+            "highlight": 5,
+            "button_bg": 12,
+            "button_text": 0,
+            "button_active": 17,
+            "input_bg": 10,
+            "input_text": 1,
+            "input_cursor": 5,
+            "topbar_bg": 0,
+            "topbar_text": 1
+        }
+    
+    def get_color(self, color_name):
+        if color_name in self.default_map:
+            return self.colors[self.default_map[color_name]]
+        return self.colors[0]
+    
+    def get_color_by_index(self, index):
+        if 0 <= index < len(self.colors):
+            return self.colors[index]
+        return self.colors[0]
+    
+    def set_color_mapping(self, mapping):
+        self.default_map.update(mapping)
+
+class InputBox:
+    def __init__(self, text_string="", width=20, height=1, x=0, y=0, 
+                 screen_align="center", screen_valign="middle",
+                 on_submit=None, variable_name="", palette=None):
+        self.width = width
+        self.height = height
+        self.x = x
+        self.y = y
+        self.screen_align = screen_align
+        self.screen_valign = screen_valign
+        self.text_string = text_string
+        self.on_submit = on_submit
+        self.variable_name = variable_name
+        self.cursor_pos = len(text_string)
+        self.active = False
+        self.palette = palette or ColorPalette()
+        self.dirty = True
+        
+        self.key_actions = {}
+        self.set_default_keys()
+        
+        self.update_display_data()
+    
+    def set_default_keys(self):
+        self.key_actions = {
+            "Return": [self._submit_action],
+            "Escape": [self._cancel_action],
+            "Tab": [self._next_action],
+            "BackSpace": [self._backspace_action],
+            "Left": [self._move_left_action],
+            "Right": [self._move_right_action],
+            "Home": [self._home_action],
+            "End": [self._end_action],
+            "Delete": [self._delete_action]
+        }
+    
+    def bind_key(self, key, action_name, action_func=None, append=False):
+        action_to_bind = None
+        if action_func:
+            action_to_bind = action_func
+        elif action_name == "submit":
+            action_to_bind = self._submit_action
+        elif action_name == "cancel":
+            action_to_bind = self._cancel_action
+        elif action_name == "next":
+            action_to_bind = self._next_action
+        elif action_name == "backspace":
+            action_to_bind = self._backspace_action
+        elif action_name == "left":
+            action_to_bind = self._move_left_action
+        elif action_name == "right":
+            action_to_bind = self._move_right_action
+        elif action_name == "home":
+            action_to_bind = self._home_action
+        elif action_name == "end":
+            action_to_bind = self._end_action
+        elif action_name == "delete":
+            action_to_bind = self._delete_action
+        
+        if action_to_bind:
+            if key not in self.key_actions:
+                self.key_actions[key] = []
+            
+            if append:
+                self.key_actions[key].append(action_to_bind)
+            else:
+                if len(self.key_actions[key]) > 0:
+                    self.key_actions[key].append(action_to_bind)
+                else:
+                    self.key_actions[key] = [action_to_bind]
+    
+    def unbind_key(self, key):
+        if key in self.key_actions:
+            del self.key_actions[key]
+    
+    def _submit_action(self):
+        if self.on_submit:
+            self.on_submit(self.text_string, self.variable_name)
+        return "submit"
+    
+    def _cancel_action(self):
+        self.active = False
+        self.dirty = True
+        return True
+    
+    def _next_action(self):
+        return "next"
+    
+    def _backspace_action(self):
+        if self.cursor_pos > 0:
+            self.text_string = self.text_string[:self.cursor_pos-1] + self.text_string[self.cursor_pos:]
+            self.cursor_pos -= 1
+            self.dirty = True
+            return True
+        return False
+    
+    def _move_left_action(self):
+        self.cursor_pos = max(0, self.cursor_pos - 1)
+        self.dirty = True
+        return True
+    
+    def _move_right_action(self):
+        self.cursor_pos = min(len(self.text_string), self.cursor_pos + 1)
+        self.dirty = True
+        return True
+    
+    def _home_action(self):
+        self.cursor_pos = 0
+        self.dirty = True
+        return True
+    
+    def _end_action(self):
+        self.cursor_pos = len(self.text_string)
+        self.dirty = True
+        return True
+    
+    def _delete_action(self):
+        if self.cursor_pos < len(self.text_string):
+            self.text_string = self.text_string[:self.cursor_pos] + self.text_string[self.cursor_pos+1:]
+            self.dirty = True
+            return True
+        return False
+    
+    def set_text(self, text_string):
+        self.text_string = text_string
+        self.cursor_pos = len(text_string)
+        self.dirty = True
+    
+    def update_display_data(self):
+        display_text = self.text_string.ljust(self.width)[:self.width]
+        
+        self.text_data = []
+        row = []
+        for i, char in enumerate(display_text):
+            is_cursor = self.active and i == self.cursor_pos
+            row.append({
+                "char": "|" if is_cursor else char,
+                "visible": True,
+                "color": self.palette.get_color("input_cursor") if is_cursor else self.palette.get_color("input_text"),
+                "bg_color": self.palette.get_color("input_bg")
+            })
+        
+        self.text_data = [row]
+        self.dirty = False
+    
+    def set_position(self, x, y):
+        self.x = x
+        self.y = y
+        
+    def handle_input(self, char, keysym=None):
+        if not self.active:
+            return False
+        
+        result = False
+        if keysym and keysym in self.key_actions:
+            for action_func in self.key_actions[keysym]:
+                action_result = action_func()
+                if action_result:
+                    result = action_result
+        
+        if keysym and len(keysym) == 1 and keysym in self.key_actions:
+            for action_func in self.key_actions[keysym]:
+                action_result = action_func()
+                if action_result:
+                    result = action_result
+        
+        if len(char) == 1 and ord(char) >= 32:
+            self.text_string = self.text_string[:self.cursor_pos] + char + self.text_string[self.cursor_pos:]
+            self.cursor_pos += 1
+            self.dirty = True
+            result = True
+            
+        return result
+    
+    def activate(self):
+        self.active = True
+        self.dirty = True
+    
+    def deactivate(self):
+        self.active = False
+        self.dirty = True
+
+class Button:
+    def __init__(self, text="Button", width=10, height=1, x=0, y=0,
+                 screen_align="center", screen_valign="middle",
+                 on_click=None, command=None, palette=None):
+        self.width = width
+        self.height = height
+        self.x = x
+        self.y = y
+        self.screen_align = screen_align
+        self.screen_valign = screen_valign
+        self.text = text
+        self.on_click = on_click
+        self.command = command
+        self.pressed = False
+        self.palette = palette or ColorPalette()
+        self.dirty = True
+        
+        self.key_actions = {}
+        self.set_default_keys()
+        
+        self.update_display_data()
+    
+    def set_default_keys(self):
+        self.key_actions = {
+            "Return": [self._click_action],
+            "space": [self._activate_action]
+        }
+    
+    def bind_key(self, key, action_name, action_func=None, append=False):
+        if action_func:
+            action_to_bind = action_func
+        elif action_name == "click":
+            action_to_bind = self._click_action
+        elif action_name == "activate":
+            action_to_bind = self._activate_action
+        else:
+            return
+        
+        if key not in self.key_actions:
+            self.key_actions[key] = []
+        
+        if append:
+            self.key_actions[key].append(action_to_bind)
+        else:
+            if len(self.key_actions[key]) > 0:
+                self.key_actions[key].append(action_to_bind)
+            else:
+                self.key_actions[key] = [action_to_bind]
+    
+    def unbind_key(self, key):
+        if key in self.key_actions:
+            del self.key_actions[key]
+    
+    def _click_action(self):
+        self.handle_click()
+        return True
+    
+    def _activate_action(self):
+        self.pressed = True
+        self.dirty = True
+        return True
+    
+    def update_display_data(self):
+        display_text = self.text.center(self.width)[:self.width]
+        
+        self.text_data = []
+        row = []
+        for char in display_text:
+            row.append({
+                "char": char,
+                "visible": True,
+                "color": self.palette.get_color("button_text"),
+                "bg_color": self.palette.get_color("button_active") if self.pressed else self.palette.get_color("button_bg")
+            })
+        self.text_data = [row]
+        self.dirty = False
+    
+    def set_position(self, x, y):
+        self.x = x
+        self.y = y
+    
+    def handle_keypress(self, keysym):
+        if keysym in self.key_actions:
+            for action_func in self.key_actions[keysym]:
+                action_func()
+            return True
+        return False
+    
+    def handle_click(self):
+        self.pressed = True
+        self.dirty = True
+        
+        if self.on_click:
+            self.on_click(self.text)
+        if self.command:
+            self.command()
+    
+    def handle_release(self):
+        self.pressed = False
+        self.dirty = True
+
+class TextBox:
+    def __init__(self, text_string=None, mode="single", text_align="center", text_valign="middle",
+                 screen_align="center", screen_valign="middle", width=20, height=5, x=0, y=0, palette=None):
+        self.mode = mode
+        self.text_align = text_align
+        self.text_valign = text_valign
+        self.screen_align = screen_align
+        self.screen_valign = screen_valign
+        self.width = width
+        self.height = height
+        self.x = x
+        self.y = y
+        self.palette = palette or ColorPalette()
+        
+        if text_string is not None:
+            self.set_text(text_string)
+        else:
+            self.text_data = []
+    
+    def set_text(self, text_string):
+        lines = text_string.strip().split('\n')
+        self.text_data = []
+        
+        for line in lines:
+            row = []
+            line = line.strip()
+            for char in line:
+                row.append({
+                    "char": char,
+                    "visible": True,
+                    "color": self.palette.get_color("text"),
+                    "bg_color": self.palette.get_color("background")
+                })
+            self.text_data.append(row)
+        
+    def set_position(self, x, y):
+        self.x = x
+        self.y = y
+        
+    def set_size(self, width, height):
+        self.width = width
+        self.height = height
+        
+    def set_mode(self, mode):
+        self.mode = mode
+        
+    def set_align(self, text_align, text_valign, screen_align, screen_valign):
+        self.text_align = text_align
+        self.text_valign = text_valign
+        self.screen_align = screen_align
+        self.screen_valign = screen_valign
+
+class TopBar:
+    def __init__(self, text_string, palette=None):
+        self.text_string = text_string
+        self.palette = palette or ColorPalette()
+        self.set_text()
+    
+    def set_text(self):
+        top_line = []
+        for _ in range(80):
+            top_line.append({
+                "char": "=",
+                "visible": True,
+                "color": self.palette.get_color("topbar_text"),
+                "bg_color": self.palette.get_color("topbar_bg")
+            })
+        
+        title_line = []
+        exit_text = "<ESC-Exit>"
+        
+        title_start = 0
+        
+        for i in range(80):
+            if i >= title_start and i < title_start + len(self.text_string):
+                char = self.text_string[i - title_start]
+                title_line.append({
+                    "char": char,
+                    "visible": True,
+                    "color": self.palette.get_color("topbar_text"),
+                    "bg_color": self.palette.get_color("topbar_bg")
+                })
+            elif i >= 80 - len(exit_text):
+                char = exit_text[i - (80 - len(exit_text))]
+                title_line.append({
+                    "char": char,
+                    "visible": True,
+                    "color": self.palette.get_color("highlight"),
+                    "bg_color": self.palette.get_color("topbar_bg")
+                })
+            else:
+                title_line.append({
+                    "char": " ",
+                    "visible": True,
+                    "color": self.palette.get_color("topbar_text"),
+                    "bg_color": self.palette.get_color("topbar_bg")
+                })
+            
+        bottom_line = []
+        for _ in range(80):
+            bottom_line.append({
+                "char": "=",
+                "visible": True,
+                "color": self.palette.get_color("topbar_text"),
+                "bg_color": self.palette.get_color("topbar_bg")
+            })
+            
+        self.text_data = [top_line, title_line, bottom_line]
+
+class TUIDisplay:
+    def __init__(self, root, font_path: str, palette=None):
+        self.root = root
+        self.font_path = font_path
+        self.palette = palette or ColorPalette()
+        self.screen_width = 80
+        self.screen_height = 24
+        self.text_boxes = []
+        self.input_boxes = []
+        self.buttons = []
+        self.top_bars = []
+        self.active_input_box = None
+        self.variables = {}
+        self.global_key_actions = {}
+        
+        self.setup_display()
+        self.init_screen_content()
+        self.draw_screen()
+
+    def setup_display(self):
+        self.root.title("TUI Display")
+        self.root.attributes('-fullscreen', True)
+        screen_width = self.root.winfo_screenwidth()
+        screen_height = self.root.winfo_screenheight()
+        self.cell_width = screen_width // self.screen_width
+        self.cell_height = screen_height // self.screen_height
+        self.canvas = tk.Canvas(self.root, bg=self.palette.get_color("background"), highlightthickness=0)
+        self.canvas.pack(fill=tk.BOTH, expand=True)
+        self.root.bind('<Key>', self.handle_keypress)
+        self.root.bind('<Button-1>', self.handle_click)
+
+    def bind_global_key(self, key, action_func, append=False):
+        if key not in self.global_key_actions:
+            self.global_key_actions[key] = []
+        
+        if append:
+            self.global_key_actions[key].append(action_func)
+        else:
+            if len(self.global_key_actions[key]) > 0:
+                self.global_key_actions[key].append(action_func)
+            else:
+                self.global_key_actions[key] = [action_func]
+    
+    def unbind_global_key(self, key):
+        if key in self.global_key_actions:
+            del self.global_key_actions[key]
+
+    def handle_keypress(self, event):
+        keysym = event.keysym
+        
+        needs_redraw = False
+        
+        if keysym in self.global_key_actions:
+            for action_func in self.global_key_actions[keysym]:
+                action_func()
+        
+        for input_box in self.input_boxes:
+            if input_box.active:
+                result = input_box.handle_input(event.char, keysym)
+                if result == "next":
+                    self.cycle_input_boxes()
+                    needs_redraw = True
+                elif result:
+                    needs_redraw = True
+                break
+        
+        for button in self.buttons:
+            if button.handle_keypress(keysym):
+                needs_redraw = True
+                self.root.after(100, button.handle_release)
+
+        if needs_redraw:
+            self.fast_redraw()
+
+    def handle_click(self, event):
+        x = event.x // self.cell_width
+        y = event.y // self.cell_height
+        
+        needs_redraw = False
+        
+        for button in self.buttons:
+            button_rect = self.get_component_rect(button)
+            if (button_rect[0] <= x < button_rect[2] and 
+                button_rect[1] <= y < button_rect[3]):
+                button.handle_click()
+                needs_redraw = True
+                self.root.after(100, button.handle_release)
+                break
+        
+        for input_box in self.input_boxes:
+            input_rect = self.get_component_rect(input_box)
+            if (input_rect[0] <= x < input_rect[2] and 
+                input_rect[1] <= y < input_rect[3]):
+                if self.active_input_box:
+                    self.active_input_box.deactivate()
+                    needs_redraw = True
+                input_box.activate()
+                self.active_input_box = input_box
+                needs_redraw = True
+                break
+
+        if needs_redraw:
+            self.fast_redraw()
+
+    def get_component_rect(self, component):
+        screen_x = component.x
+        screen_y = component.y
+        
+        if component.screen_align == "center":
+            screen_x = (self.screen_width - component.width) // 2 + component.x
+        elif component.screen_align == "right":
+            screen_x = self.screen_width - component.width - component.x
+            
+        if component.screen_valign == "middle":
+            screen_y = (self.screen_height - component.height) // 2 + component.y
+        elif component.screen_valign == "bottom":
+            screen_y = self.screen_height - component.height - component.y
+        
+        return (screen_x, screen_y, screen_x + component.width, screen_y + component.height)
+
+    def cycle_input_boxes(self):
+        if not self.input_boxes:
+            return
+            
+        if self.active_input_box:
+            current_index = self.input_boxes.index(self.active_input_box)
+            next_index = (current_index + 1) % len(self.input_boxes)
+        else:
+            next_index = 0
+            
+        if self.active_input_box:
+            self.active_input_box.deactivate()
+            
+        self.active_input_box = self.input_boxes[next_index]
+        self.active_input_box.activate()
+        self.fast_redraw()
+
+    def init_screen_content(self):
+        pass
+
+    def add_text_box(self, text_box):
+        self.text_boxes.append(text_box)
+
+    def add_input_box(self, input_box):
+        self.input_boxes.append(input_box)
+
+    def add_button(self, button):
+        self.buttons.append(button)
+
+    def add_top_bar(self, top_bar):
+        self.top_bars.append(top_bar)
+
+    def set_variable(self, name, value):
+        self.variables[name] = value
+
+    def get_variable(self, name):
+        return self.variables.get(name)
+
+    def draw_component(self, component, screen_x, screen_y):
+        if hasattr(component, 'update_display_data') and component.dirty:
+            component.update_display_data()
+
+        for row_idx, row in enumerate(component.text_data):
+            if row_idx >= component.height:
+                break
+                
+            for col_idx, cell_data in enumerate(row):
+                if col_idx >= component.width:
+                    break
+                    
+                actual_x = screen_x + col_idx
+                actual_y = screen_y + row_idx
+                
+                if (0 <= actual_x < self.screen_width and 
+                    0 <= actual_y < self.screen_height):
+                    self.draw_cell(actual_x, actual_y, cell_data)
+
+    def draw_cell(self, x, y, cell_data):
+        if not cell_data["visible"]:
+            return
+            
+        x1 = x * self.cell_width
+        y1 = y * self.cell_height
+        x2 = x1 + self.cell_width
+        y2 = y1 + self.cell_height
+        
+        self.canvas.create_rectangle(x1, y1, x2, y2, 
+                                   fill=cell_data["bg_color"], 
+                                   outline=cell_data["bg_color"])
+        self.canvas.create_text(x1 + self.cell_width//2, 
+                              y1 + self.cell_height//2,
+                              text=cell_data["char"],
+                              fill=cell_data["color"],
+                              font=("JetBrains Mono", self.cell_height//2, "bold"))
+
+    def fast_redraw(self):
+        self.canvas.delete("all")
+        
+        for top_bar in self.top_bars:
+            for row_idx, row in enumerate(top_bar.text_data):
+                for col_idx, cell_data in enumerate(row):
+                    if col_idx < self.screen_width and row_idx < 3:
+                        self.draw_cell(col_idx, row_idx, cell_data)
+        
+        for text_box in self.text_boxes:
+            screen_x = text_box.x
+            screen_y = text_box.y
+            
+            if text_box.screen_align == "center":
+                screen_x = (self.screen_width - text_box.width) // 2 + text_box.x
+            elif text_box.screen_align == "right":
+                screen_x = self.screen_width - text_box.width - text_box.x
+                
+            if text_box.screen_valign == "middle":
+                screen_y = (self.screen_height - text_box.height) // 2 + text_box.y
+            elif text_box.screen_valign == "bottom":
+                screen_y = self.screen_height - text_box.height - text_box.y
+            
+            for row_idx, row in enumerate(text_box.text_data):
+                if row_idx >= text_box.height:
+                    break
+                    
+                line_text = "".join([cell["char"] for cell in row if cell["visible"]])
+                actual_text_width = len(line_text)
+                
+                if text_box.mode == "wrap" and actual_text_width > text_box.width:
+                    line_text = line_text[:text_box.width]
+                    actual_text_width = text_box.width
+                
+                text_x = 0
+                if text_box.text_align == "center":
+                    text_x = (text_box.width - actual_text_width) // 2
+                elif text_box.text_align == "right":
+                    text_x = text_box.width - actual_text_width
+                
+                text_y = row_idx
+                if text_box.text_valign == "middle":
+                    text_y = (text_box.height - len(text_box.text_data)) // 2 + row_idx
+                elif text_box.text_valign == "bottom":
+                    text_y = text_box.height - len(text_box.text_data) + row_idx
+                
+                for col_idx, char in enumerate(line_text):
+                    if col_idx >= text_box.width:
+                        break
+                        
+                    actual_x = screen_x + text_x + col_idx
+                    actual_y = screen_y + text_y
+                    
+                    if (0 <= actual_x < self.screen_width and 
+                        0 <= actual_y < self.screen_height and actual_y >= 3):
+                        cell_data = row[col_idx] if col_idx < len(row) else row[0]
+                        self.draw_cell(actual_x, actual_y, {
+                            "char": char,
+                            "visible": True,
+                            "color": cell_data["color"],
+                            "bg_color": cell_data["bg_color"]
+                        })
+
+        for input_box in self.input_boxes:
+            screen_x = input_box.x
+            screen_y = input_box.y
+            
+            if input_box.screen_align == "center":
+                screen_x = (self.screen_width - input_box.width) // 2 + input_box.x
+            elif input_box.screen_align == "right":
+                screen_x = self.screen_width - input_box.width - input_box.x
+                
+            if input_box.screen_valign == "middle":
+                screen_y = (self.screen_height - input_box.height) // 2 + input_box.y
+            elif input_box.screen_valign == "bottom":
+                screen_y = self.screen_height - input_box.height - input_box.y
+            
+            self.draw_component(input_box, screen_x, screen_y)
+
+        for button in self.buttons:
+            screen_x = button.x
+            screen_y = button.y
+            
+            if button.screen_align == "center":
+                screen_x = (self.screen_width - button.width) // 2 + button.x
+            elif button.screen_align == "right":
+                screen_x = self.screen_width - button.width - button.x
+                
+            if button.screen_valign == "middle":
+                screen_y = (self.screen_height - button.height) // 2 + button.y
+            elif button.screen_valign == "bottom":
+                screen_y = self.screen_height - button.height - button.y
+            
+            self.draw_component(button, screen_x, screen_y)
+
+    def draw_screen(self):
+        self.fast_redraw()
+
+    def refresh(self):
+        self.fast_redraw()
+"""
+
+# Outputio\tuidisplay\__init__.py:
+"""
+from .tuidisplay import TUIDisplay, TopBar, TextBox, InputBox, Button, ColorPalette
+
+__all__ = ["TUIDisplay", "TopBar", "TextBox", "InputBox", "Button", "ColorPalette"]
+"""
+
+# Outputio\tuimodel\model.py:
+"""
+from pathlib import Path
+import sys
+
+udir = str(Path(__file__).parent.parent)
+sys.path.append(udir)
+
+import tuidisplay as tui
+
+"""
+
+# test\loading_string.py:
+"""
+import time
+
+loading = ["⠋", "⠙", "⠸", "⢰", "⣠", "⣄", "⡆", "⠇"]
+i=0
+while True:
+    i = (i+1)%8
+    print(f"\rLoading... {loading[i]}", end="")
+    time.sleep(0.1)
+"""
