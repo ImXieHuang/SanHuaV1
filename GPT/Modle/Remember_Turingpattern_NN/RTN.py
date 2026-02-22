@@ -1,6 +1,5 @@
 import sys
 from pathlib import Path
-from types import LambdaType
 
 udir = str(Path(__file__).parent.parent)
 sys.path.append(udir)
@@ -14,7 +13,7 @@ def sigmoid(x):
 class RTN:
     __slots__ = ('neurons', 'weights', 'tg', 'sr_graph', 'tg_graph')
 
-    def __init__(self, neurons: list[list[LambdaType]], weights: dict[tuple[int] | dict[tuple[int] | float]], tg: list[list[list[float]]], sr_graph: list[list[list[float]]] ,tg_graph: list[list[float]]):
+    def __init__(self, neurons: list[list[callable]], weights: dict[tuple[int] | dict[tuple[int] | float]], tg: list[list[list[float]]], sr_graph: list[list[list[float]]] ,tg_graph: list[list[float]]):
         self.neurons = neurons
         self.weights = weights
         self.tg = [[j + [0.0] for j in i] for i in tg]
@@ -41,7 +40,10 @@ class RTN:
                 cnt = 0
                 for k in [i-l for l in range(i)]:
                     for l in range(len(self.neurons[i-k])):
-                        cnt = add(cnt, mul(answer[i-k][l], self.weights[(i-k, l)][(i, j)]))
+                        try:
+                            cnt = add(cnt, mul(answer[i-k][l], self.weights[(i-k, l)][(i, j)]))
+                        except:
+                            pass
                 answer[i][j] = add(self.neurons[i][j]((cnt, self)), self.tg_dynamics(None, (i, j, len(self.tg[i][j])-1)))
         return answer
     
