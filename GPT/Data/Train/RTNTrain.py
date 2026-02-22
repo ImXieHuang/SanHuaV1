@@ -39,6 +39,12 @@ class RTN_Trainer:
             rtn.weights[i][j] = sub(rtn.weights[i][j], mul(div(g[i][j], len(inputs)), r))
         def loss(x, y):
             return sum([(i-j)**2 for i,j in zip(y, x)])
+        def regularization():
+            cnt = 0.0
+            for i in list(rtn.weights.values()):
+                for j in list(i.values()):
+                    cnt += j**2
+            return cnt
         
         generation = 0
         
@@ -46,7 +52,7 @@ class RTN_Trainer:
             generation += 1
 
             for i,j in zip(inputs, outputs):
-                g = t.traverse_weight_for_(lambda a,b,c: t.gradient(a, b, i, lambda x: loss(j, x), rtn), rtn)
+                g = t.traverse_weight_for_(lambda a,b,c: t.gradient(a, b, i, lambda x: loss(j, x)+regularization(), rtn), rtn)
                 t.traverse_weight_for_(iteration, rtn)
             
             error = 0.0
