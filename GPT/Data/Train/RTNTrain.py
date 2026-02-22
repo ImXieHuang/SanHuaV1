@@ -34,7 +34,7 @@ class RTN_Trainer:
                 ret[i][k] = function(i, k, l)
         return ret
     
-    def static_trainer(self, inputs: list[list], outputs: list[list], rtn: RTN, r = 0.1, target = 1.0):
+    def static_trainer(self, inputs: list[list], outputs: list[list], rtn: RTN, r = 0.1, target = 1.0, __lambda__ = 0.25):
         def iteration(i,j,k):
             rtn.weights[i][j] = sub(rtn.weights[i][j], mul(div(g[i][j], len(inputs)), r))
         def loss(x, y):
@@ -52,7 +52,7 @@ class RTN_Trainer:
             generation += 1
 
             for i,j in zip(inputs, outputs):
-                g = t.traverse_weight_for_(lambda a,b,c: t.gradient(a, b, i, lambda x: loss(j, x)+regularization(), rtn), rtn)
+                g = t.traverse_weight_for_(lambda a,b,c: t.gradient(a, b, i, lambda x: loss(j, x)+__lambda__*regularization(), rtn), rtn)
                 t.traverse_weight_for_(iteration, rtn)
             
             error = 0.0
