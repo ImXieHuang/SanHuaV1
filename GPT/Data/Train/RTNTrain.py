@@ -34,7 +34,7 @@ class RTN_Trainer:
                 ret[i][k] = function(i, k, l)
         return ret
     
-    def static_trainer(self, inputs: list[list], outputs: list[list], rtn: RTN, r = 1.0):
+    def static_trainer(self, inputs: list[list], outputs: list[list], rtn: RTN, r = 0.1, target = 1.0):
         def iteration(i,j,k):
             rtn.weights[i][j] = sub(rtn.weights[i][j], mul(div(g[i][j], len(inputs)), r))
         def loss(x, y):
@@ -56,7 +56,7 @@ class RTN_Trainer:
                 error = add(error, loss(j, ans))
 
             print(f"{generation} generation: {error = }")
-            if error <= 1e-5:
+            if error <= target:
                 break
         
         return error
@@ -65,7 +65,7 @@ if __name__ == "__main__":
     t = RTN_Trainer()
     rtn = RTN(neurons_generator('any', 0), weights_brush(), tg_brush(), sr_graph_brush(), tg_graph_brush())
 
-    t.static_trainer([[i,0,0] for i in range(10)], [[0,0,1] for i in range(10)], rtn, 1.0)
+    t.static_trainer([[i,0,0] for i in range(10)], [[0,0,1] for i in range(10)], rtn, 0.1, 1.0)
 
     print("Training is end")
     

@@ -1,5 +1,6 @@
 import sys
 from pathlib import Path
+from math import tanh
 try:
     from .RTN import RTN, sigmoid
 except:
@@ -15,8 +16,9 @@ from mathexpand import add, sub, mul, div
 def neurons_generator(model:str, parameter, width:int = 3, height: int = 3):
     preset = {
         "any": [[lambda x: sigmoid(x[0] + parameter) * (x[0] + parameter)]],
+        "tanh": [[lambda x: tanh(x[0] + parameter) * (x[0] + parameter)]],
         "cnn": [[lambda x: conv(x[0], parameter)],[lambda x: pool(x[0])]],
-        "vector": [[lambda x: Vector([sigmoid(i) for i in x[0].components])]],
+        "vector": [[lambda x: Vector([sigmoid(i) for i in x[0].components])]]
     }
 
     return [i*height for i in preset[model]] * width
