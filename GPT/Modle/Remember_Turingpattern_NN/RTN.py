@@ -8,7 +8,10 @@ from mathexpand import mul, add, div, iterate
 
 def sigmoid(x):
     e = 13580623/4996032
-    return div(1, add(1, e**mul(x,-1)))
+    try:
+        return div(1, add(1, e**mul(x,-1)))
+    except:
+        return abs(x)/x
 
 class RTN:
     __slots__ = ('neurons', 'weights', 'tg', 'sr_graph', 'tg_graph')

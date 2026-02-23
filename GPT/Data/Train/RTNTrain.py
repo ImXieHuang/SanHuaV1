@@ -1,5 +1,6 @@
 import sys
 from pathlib import Path
+from typing import Callable
 
 udir = str(Path(__file__).parent.parent.parent)
 sys.path.append(udir)
@@ -11,7 +12,7 @@ class RTN_Trainer:
     def __init__(self):
         self.dx = 1e-5
 
-    def gradient(self, start: tuple, end: tuple, inputs: list, loss: callable, rtn: RTN):
+    def loss_gradient(self, start: tuple, end: tuple, inputs: list, loss: callable, rtn: RTN):
         original_weights = rtn.weights[start][end]
     
         rtn.weights[start][end] = sub(rtn.weights[start][end], self.dx)
@@ -34,46 +35,41 @@ class RTN_Trainer:
                 ret[i][k] = function(i, k, l)
         return ret
     
-    def static_trainer(self, inputs: list[list], outputs: list[list], rtn: RTN, r = 0.1, target = 1.0, __lambda__ = 0.25):
-        def iteration(i,j,k):
-            rtn.weights[i][j] = sub(rtn.weights[i][j], mul(div(g[i][j], len(inputs)), r))
-        def loss(x, y):
-            return sum([(i-j)**2 for i,j in zip(y, x)])
-        def regularization():
-            cnt = 0.0
-            for i in list(rtn.weights.values()):
-                for j in list(i.values()):
-                    cnt += j**2
-            return cnt
-        
-        generation = 0
-        
-        while True:
-            generation += 1
+    def static_trainer(self, inputs: list[list], outputs: list[list], lossfunction: callable, lambdafunction: callable, r: float, rtn: RTN):
+        def gradfunction(start, end, weight):
+            return self.loss_gradient(start, end, ip, lambda x: lossfunction(x, op) + L, rtn)
+        def iteration(start, end, weight):
+            rtn.weights[start][end] = sub(rtn.weights[start][end], mul(r, g[start][end]))
 
-            for i,j in zip(inputs, outputs):
-                g = t.traverse_weight_for_(lambda a,b,c: t.gradient(a, b, i, lambda x: loss(j, x)+__lambda__*regularization(), rtn), rtn)
-                t.traverse_weight_for_(iteration, rtn)
-            
-            error = 0.0
-
-            for i,j in zip(inputs, outputs):
-                ans = rtn.nn_dynamics(i)[-1]
-                error = add(error, loss(j, ans))
-
-            print(f"{generation} generation: {error = }")
-            if error <= target:
-                break
-        
-        return error
+        L = 0.0
+        for i in list(rtn.weights.values()):
+            for j in list(i.values()):
+                L = add(L, lambdafunction(j))
+    
+        for ip,op in zip(inputs, outputs):
+            g = t.traverse_weight_for_(gradfunction, rtn)
+            t.traverse_weight_for_(iteration, rtn)
 
 if __name__ == "__main__":
     t = RTN_Trainer()
-    rtn = RTN(neurons_generator('any', 0), weights_brush(), tg_brush(), sr_graph_brush(), tg_graph_brush())
+    rtn = RTN(neurons_generator('any', 0),
+              weights_brush(), 
+              tg_brush(), 
+              sr_graph_brush(), 
+              tg_graph_brush()
+              )
+    def loss(x, op):
+        cnt = 0.0
+        for i,j in zip(x,op):
+            cnt += sub(i, j) ** 2
+        return cnt
+    def lambda_(weight):
+        return weight ** 2
 
-    t.static_trainer([[i,0,0] for i in range(10)], [[0,0,1] for i in range(10)], rtn, 0.1, 1.0)
+    for i in range(10):
+        t.static_trainer([[i,0,0] for i in range(4)], [[0,0,i] for i in range(4)], loss, lambda_, 0.1, rtn)
 
     print("Training is end")
     
     for i in range(10):
-        print(rtn.forward([i, 0, 0]))
+        print(rtn.nn_dynamics([i, 0, 0])[-1])
