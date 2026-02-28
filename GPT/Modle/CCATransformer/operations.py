@@ -341,17 +341,22 @@ def get_complate_for_(CAT: CCA.CCATransformer, tokens: list[str]):
 
 if __name__ == "__main__":
     import random
-    CAT = NewCCATransformer(["苹果", "香蕉", "谷歌", "小米", "微软", "亚马逊", "包子", "饺子", "面条"])
+    CAT = CCA.CCATransformer({"好吃":{Vector([1.0,1.0,0.0,0.0]): Vector([0.0, 0.0, 1.0, 1.0])},
+                             "饺子":{Vector([0.0, 0.0, 1.0, 1.0]): Vector([1.0,1.0,0.0,0.0])},
+                             "包子":{Vector([0.0, 0.5, 0.7, 1.0]): Vector([1.0,1.0,0.0,0.0])}},
+                            )
 
     start_tokens = [random.choice(CAT.get_tokens())] + [random.choice(CAT.get_tokens())] + [random.choice(CAT.get_tokens())]
     print(f"Start token: {start_tokens}")
 
     i = 0
+    C = 10.0
 
-    while get_complate_for_(CAT, start_tokens) < 0.2:
+    while get_complate_for_(CAT, start_tokens) < C:
         next_token = think_about_next_token_for_(CAT, start_tokens)
         start_tokens.append(next_token)
         print(f"No. {i+4} token: {next_token}", f"complate: {get_complate_for_(CAT, start_tokens)}")
         i += 1
+        C /= 2
     print("Generated token sequence:")
     print(start_tokens)
