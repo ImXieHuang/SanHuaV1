@@ -123,7 +123,7 @@ class CCATransformer():
             dot_val = fraction(int(dot(i, Query) * 1000), 1000)
             exponent = div(dot_val, T)
             
-            weight = const ** exponent.value
+            weight = const.value ** exponent.value
             weight_vec = [weight for _ in range(4)]
             weighted_val = mul(weight_vec, query_dict[i].components)
             cnt_n = add(cnt_n, Vector(weighted_val))
@@ -135,10 +135,7 @@ class CCATransformer():
         result = div(cnt_n.components, cnt_m)
         return Vector([r.value for r in result])
     
-    def DeSoftQuery(self, token: str, Value: Vector, T: fraction = fraction(3, 2), 
-                    const: fraction = Const.E, alpha: fraction = fraction(1, 100),
-                    epsilon: fraction = fraction(1, 1000), 
-                    max_iter: int = 1000, tol: float = 1e-6) -> Vector:
+    def DeSoftQuery(self, token: str, Val: Vector, T: fraction = fraction(3, 2), const: fraction = Const.E) -> Vector:
         if token not in self.database:
             raise KeyError(f"token '{token}' not found in database")
         
@@ -146,72 +143,24 @@ class CCATransformer():
         if not query_dict:
             return Vector([0.0, 0.0, 0.0, 0.0])
         
-        tokens = list(query_dict.keys())
-        values = [query_dict[k] for k in tokens]
+        cnt_n = Vector([fraction(0, 1), fraction(0, 1), fraction(0, 1), fraction(0, 1)])
+        cnt_m = fraction(0, 1)
+
+        for i in query_dict:
+            dot_val = dot(mul(sub(Val, query_dict[i]), sub(Val, query_dict[i])), Vector([1.0, 1.0, 1.0, 1.0]))
+            exponent = div(dot_val, T)
+            
+            weight = const.value ** exponent
+            weight_vec = [weight for _ in range(4)]
+            weighted_val = mul(weight_vec, i.components)
+            cnt_n = add(cnt_n, Vector(weighted_val))
+            cnt_m = add(cnt_m, weight)
         
-        best_similarity = -float('inf')
-        x = Vector([0.0, 0.0, 0.0, 0.0])
+        if cnt_m.value == 0:
+            return Vector([c.value for c in cnt_n.components])
         
-        for i, val in enumerate(values):
-            similarity = sum(a * b for a, b in zip(Value.components, val.components))
-            if similarity > best_similarity:
-                best_similarity = similarity
-                x = tokens[i]
-        
-        if all(abs(v) < 1e-6 for v in Value.components):
-            import random
-            x = Vector([random.uniform(-1, 1) for _ in range(4)])
-        
-        best_x = x
-        best_residual = float('inf')
-        learning_rate = alpha.value
-        
-        for iteration in range(max_iter):
-            softquery_val = self.SoftQuery(token, x, T, const)
-            
-            residual = Vector([b - a for a, b in zip(softquery_val.components, Value.components)])
-            residual_norm = math.sqrt(sum(r * r for r in residual.components))
-            
-            if residual_norm < best_residual:
-                best_residual = residual_norm
-                best_x = Vector(x.components.copy())
-            
-            if residual_norm < tol:
-                return best_x
-            
-            weights = []
-            total_weight = 0.0
-            
-            for token_vec in tokens:
-                dot_val = dot(token_vec, x)
-                exponent = dot_val / T.value
-                
-                weight = const.value ** exponent
-                weights.append(weight)
-                total_weight += weight
-            
-            norm_factor = total_weight + epsilon.value
-            if norm_factor == 0:
-                norm_factor = 1.0
-            
-            step = [learning_rate * r / norm_factor for r in residual.components]
-            x = Vector([a + b for a, b in zip(x.components, step)])
-            
-            if iteration > 0 and residual_norm > prev_residual_norm:
-                learning_rate *= 0.9
-            
-            prev_residual_norm = residual_norm
-            
-            x_components = []
-            for comp in x.components:
-                if comp > 100:
-                    comp = 100
-                elif comp < -100:
-                    comp = -100
-                x_components.append(comp)
-            x = Vector(x_components)
-        
-        return best_x
+        result = div(cnt_n.components, cnt_m)
+        return Vector([r.value for r in result])
 
     def get_tokens(self):
         return list(self.database.keys())

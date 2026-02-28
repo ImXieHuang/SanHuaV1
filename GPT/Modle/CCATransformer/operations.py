@@ -348,7 +348,7 @@ if __name__ == "__main__":
 
     i = 0
 
-    while get_complate_for_(CAT, start_tokens) < 0.5:
+    while get_complate_for_(CAT, start_tokens) < 0.2:
         next_token = think_about_next_token_for_(CAT, start_tokens)
         start_tokens.append(next_token)
         print(f"No. {i+4} token: {next_token}", f"complate: {get_complate_for_(CAT, start_tokens)}")
