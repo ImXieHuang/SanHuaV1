@@ -32,11 +32,11 @@ class CCATransformer():
             if not isinstance(query_dict, dict):
                 raise TypeError("The type of the QueryDatabase must be dictionary.")
             for query_vec, value_vec in query_dict.items():
-                if not isinstance(query_vec, Vector):
+                if not hasattr(query_vec, "VECTORFLAG"):
                     raise TypeError("The type of the Query must be Vector.")
                 elif query_vec.dimension != 4:
                     raise ValueError("The dimension of the Query must be 4.")
-                if not isinstance(value_vec, Vector):
+                if not hasattr(value_vec, "VECTORFLAG"):
                     raise TypeError("The type of the Val must be Vector.")
                 elif value_vec.dimension != 4:
                     raise ValueError("The dimension of the Val must be 4.")

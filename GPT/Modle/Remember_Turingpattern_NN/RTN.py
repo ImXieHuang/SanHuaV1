@@ -16,7 +16,7 @@ def sigmoid(x):
 class RTN:
     __slots__ = ('neurons', 'weights', 'tg', 'sr_graph', 'tg_graph')
 
-    def __init__(self, neurons: list[list[callable]], weights: dict[tuple[int] | dict[tuple[int] | float]], tg: list[list[list[float]]], sr_graph: list[list[list[float]]] ,tg_graph: list[list[float]]):
+    def __init__(self, neurons: list[list[callable]], weights: list[dict[tuple[int] | dict[tuple[int] | float]], list[list]], tg: list[list[list[float]]], sr_graph: list[list[list[float]]] ,tg_graph: list[list[float]]):
         self.neurons = neurons
         self.weights = weights
         self.tg = [[j + [0.0] for j in i] for i in tg]
@@ -37,25 +37,25 @@ class RTN:
         inputs = [inputs[i] if i < len(inputs) else 0.0 for i in range(len(self.neurons[0]))]
         answer = [[0.0 for _ in self.neurons[i]] for i in range(len(self.neurons))]
 
-        answer[0] = [add(self.neurons[0][i]((inputs[i], self)), self.tg_dynamics(None, (0, i, len(self.tg[0][i])-1))) for i in range(len(inputs))]
+        answer[0] = [add(self.neurons[0][i](inputs[i], self.weights[1][0][i], self), self.tg_dynamics(None, (0, i, len(self.tg[0][i])-1))) for i in range(len(inputs))]
         for i in range(1, len(self.neurons)):
             for j in range(len(self.neurons[i])):
                 cnt = 0
                 for k in [i-l for l in range(i)]:
                     for l in range(len(self.neurons[i-k])):
                         try:
-                            cnt = add(cnt, mul(answer[i-k][l], self.weights[(i-k, l)][(i, j)]))
+                            cnt = add(cnt, mul(answer[i-k][l], self.weights[0][(i-k, l)][(i, j)]))
                         except:
                             pass
-                answer[i][j] = add(self.neurons[i][j]((cnt, self)), self.tg_dynamics(None, (i, j, len(self.tg[i][j])-1)))
+                answer[i][j] = add(self.neurons[i][j](cnt, self.weights[1][i][j], self), self.tg_dynamics(None, (i, j, len(self.tg[i][j])-1)))
         return answer
     
     def tg_dynamics(self, start: tuple | None, end: tuple):
         dv = 0.0
         if start is None:
             starts = []
-            for i in self.weights:
-                if end[:2] in self.weights[i]: starts.append(i)
+            for i in self.weights[0]:
+                if end[:2] in self.weights[0][i]: starts.append(i)
             starts += [end[:2]]
             for i in starts:
                 for j in range(len(self.tg[i[0]][i[1]])):
@@ -68,21 +68,21 @@ class RTN:
     def sr_dynamics(self, index: tuple):
         starts = []
         ret = 0.0
-        for i in self.weights:
-            if index in self.weights[i]: starts.append(i)
+        for i in self.weights[0]:
+            if index in self.weights[0][i]: starts.append(i)
         for i in starts:
             nsr = 0.0
             for j in range(len(self.tg[i[0]][i[1]])-1):
                 nsr = add(nsr, mul(self.tg[i[0]][i[1]][j], self.sr_graph[i[0]][i[1]][j]))
-            ret = add(ret, mul(nsr, self.weights[i][index]))
+            ret = add(ret, mul(nsr, self.weights[0][i][index]))
         return add(1, mul(-1, sigmoid(ret)))
     
     def tg_updata(self) -> list[list[list]]:
         return [[[self.tg_dynamics(None, (i, j, k)) for k in range(len(self.tg[i][j]))] for j in range(len(self.tg[i]))] for i in range(len(self.tg))]
 
 if __name__ == "__main__":
-    rtn = RTN([[lambda x: x[0], lambda x: x[0], lambda x: x[0]], [lambda x: x[0], lambda x: x[0],lambda x: x[0]]], 
-              {(0,0):{(1,0): 0.5, (1,1): 1.2, (1,2): -1.0}, (0,1):{(1,0): 0.0, (1,1): 1.8, (1,2): -0.2}, (0,2):{(1,0): 1.0, (1,1): 0.5, (1,2): -1.2}},
+    rtn = RTN([[lambda x, parameter, nn: x, lambda x, parameter, nn: x, lambda x, parameter, nn: x], [lambda x, parameter, nn: x, lambda x, parameter, nn: x,lambda x, parameter, nn: x]], 
+              [{(0,0):{(1,0): 0.5, (1,1): 1.2, (1,2): -1.0}, (0,1):{(1,0): 0.0, (1,1): 1.8, (1,2): -0.2}, (0,2):{(1,0): 1.0, (1,1): 0.5, (1,2): -1.2}}, [[1.0, 1.0, 1.0], [1.0, 1.0, 1.0]]],
               [[[0.0 for _ in range(4)], [0.0 for _ in range(4)], [0.0 for _ in range(4)]], [[0.0 for _ in range(4)], [0.0 for _ in range(4)], [0.0 for _ in range(4)]]],
               [[[1.0] + [0.0 for _ in range(3)], [0.0] + [0.0 for _ in range(3)], [0.0] + [0.0 for _ in range(3)]], [[0.0] + [0.0 for _ in range(3)], [0.0] + [0.0 for _ in range(3)], [0.0] + [0.0 for _ in range(3)]]],
               [[1.0, -1.0, 1.0, -1.0, 1.0], [1.0, -0.5, 1.0, -0.5, 1.0], [1.0, -1.0, 1.0, -1.0, 0.0], [1.0, -0.5, 1.0, -0.5, 0.0], [1.0, 0.0, 1.0, 0.0, 0.0]]
