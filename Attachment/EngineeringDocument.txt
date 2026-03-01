@@ -1,14 +1,221 @@
 Project file tree:
 ================================================================================
 └── .
+    ├── .git
+    │   ├── hooks
+    │   │   ├── applypatch-msg.sample
+    │   │   ├── commit-msg.sample
+    │   │   ├── fsmonitor-watchman.sample
+    │   │   ├── post-update.sample
+    │   │   ├── pre-applypatch.sample
+    │   │   ├── pre-commit.sample
+    │   │   ├── pre-merge-commit.sample
+    │   │   ├── pre-push.sample
+    │   │   ├── pre-rebase.sample
+    │   │   ├── pre-receive.sample
+    │   │   ├── prepare-commit-msg.sample
+    │   │   ├── push-to-checkout.sample
+    │   │   ├── sendemail-validate.sample
+    │   │   └── update.sample
+    │   ├── info
+    │   │   └── exclude
+    │   ├── logs
+    │   │   ├── refs
+    │   │   │   ├── heads
+    │   │   │   │   └── main
+    │   │   │   └── remotes
+    │   │   │       └── origin
+    │   │   │           ├── HEAD
+    │   │   │           └── main
+    │   │   └── HEAD
+    │   ├── objects
+    │   │   ├── 04
+    │   │   │   └── 113aeced58240fcafe74c2c71f4fecdb2b662e
+    │   │   ├── 05
+    │   │   │   └── a820a67c08ad52493af90dfff23a9606a3e2ab
+    │   │   ├── 0c
+    │   │   │   └── 43646a5ad09354d8f3bd208e517a6395d9726c
+    │   │   ├── 0e
+    │   │   │   └── a762f9535a826b2076fa27f579c7f7f744c9ef
+    │   │   ├── 10
+    │   │   │   └── d50f25308bf1ee6f534739fd2cb9e8867eb24e
+    │   │   ├── 12
+    │   │   │   ├── 60afff79d8dee28c056266bfee7bb30a6c8e32
+    │   │   │   └── cb1e2e986d80b570ba53dbae800102f21bd934
+    │   │   ├── 13
+    │   │   │   └── eabd168913d773ddd543268977695be26f8741
+    │   │   ├── 14
+    │   │   │   └── 564a73d041920540e94d2f94a642c876020be6
+    │   │   ├── 1a
+    │   │   │   └── 7bf2ee170cbde613327e7b058b48e3bb8427b8
+    │   │   ├── 1b
+    │   │   │   └── 22b53bf978ef012ed90023a6402493ca903180
+    │   │   ├── 1c
+    │   │   │   └── 897d4b158c8432ffb4f82cfd57d2ced1f0a434
+    │   │   ├── 1f
+    │   │   │   └── e9e655eca730548eed95318169a6d4bf14aee1
+    │   │   ├── 20
+    │   │   │   └── 47b054a6c400c4874dbb1164fb44cec7cf6fbe
+    │   │   ├── 21
+    │   │   │   └── 71112008a536872edbfe442764f92de4d34054
+    │   │   ├── 26
+    │   │   │   └── c718f1a2c623b37707f2311283ac5a226dfeff
+    │   │   ├── 2c
+    │   │   │   └── 142e2831e85ff9ae28acce5d780e48b9393cfa
+    │   │   ├── 33
+    │   │   │   └── 21549e9efb4b2b20d373685e3c129c23a8ea6e
+    │   │   ├── 36
+    │   │   │   ├── 12443cc7611aaa3355d62f43ee6f6dc6209614
+    │   │   │   └── 90687994aa84974d8f5b25e0f5694dca9dda7e
+    │   │   ├── 38
+    │   │   │   └── ca2bbce892ea9e4a281753b73dfac3c02c432d
+    │   │   ├── 39
+    │   │   │   ├── 303be067f832f9c5d40aec89a64a27e075f354
+    │   │   │   └── c9b303997ecd9fc0a4f7d72885cf93ec440e63
+    │   │   ├── 3a
+    │   │   │   └── 288fd85acf1e53d5bc8b3fa814936e1da91fbb
+    │   │   ├── 3e
+    │   │   │   └── f5d98a1f0c9c57f8f2cb43737107ad30597930
+    │   │   ├── 40
+    │   │   │   └── f6b82082a71ab8485db5c142c2aeb0bfa2b4a8
+    │   │   ├── 42
+    │   │   │   └── ae1ea58e969f85176d741e1cc67854a9ef32e1
+    │   │   ├── 45
+    │   │   │   └── a34de0c84739c1e71fdea684f2b36a29440a6d
+    │   │   ├── 47
+    │   │   │   └── ddaf424a46d2c5d763342cbaf9fac9f6c82229
+    │   │   ├── 4b
+    │   │   │   └── 83506f49c7c54610015fcb502ab629f09f426f
+    │   │   ├── 4e
+    │   │   │   └── cd9c1191148b9a47b784785a2772e08341c6f0
+    │   │   ├── 52
+    │   │   │   └── a4979ce62b9c4460b4408d922a0d5050378adf
+    │   │   ├── 57
+    │   │   │   └── c0d9eafe1be5da41326d27a81f0e749fb48ec7
+    │   │   ├── 59
+    │   │   │   └── 4d796951c042ded9957660a10b553da6fbebad
+    │   │   ├── 5f
+    │   │   │   └── 0639cfe728dc36567445252ec8c779550400f9
+    │   │   ├── 60
+    │   │   │   └── 4cccc1221582ec55632e679acb2091ecd49ddb
+    │   │   ├── 62
+    │   │   │   └── dd13ddcfbcc72be0ebe513032cd479aa837e42
+    │   │   ├── 65
+    │   │   │   └── c4e2bdaa20cf0f21af33460a1b95aeaaa14f98
+    │   │   ├── 6c
+    │   │   │   └── 9a9e978e8b6d512441572f7d797131629e3dc3
+    │   │   ├── 6e
+    │   │   │   └── 824342aeea4c07f3d1ca4160819ab2c55a626f
+    │   │   ├── 6f
+    │   │   │   └── 11e5a76d79d32122b0e28b2f12157edc3f394e
+    │   │   ├── 72
+    │   │   │   └── d250478b76e49779c8debff15978ff49a08071
+    │   │   ├── 76
+    │   │   │   └── 22589df12a3fb2d5dda2db6cd5d907934111c2
+    │   │   ├── 77
+    │   │   │   └── 6bacdb249a4e8ed5e6a2d7e23657b831fe13c3
+    │   │   ├── 7d
+    │   │   │   └── b3ab580611c71697170046104fa7c79cc5a28c
+    │   │   ├── 81
+    │   │   │   └── 925c5d9f8a8982eb86ebf7d383f6ce83dfc81c
+    │   │   ├── 82
+    │   │   │   └── a887b1016f68cc8e50bd1812640329eaf2361e
+    │   │   ├── 87
+    │   │   │   └── 2579927ab61817c3241675b58ddcbefe907f11
+    │   │   ├── 8b
+    │   │   │   └── d96dcb8be1d70769aadc77d2581a1504d60631
+    │   │   ├── 8e
+    │   │   │   └── 8c333d0970049fb00fbcf032af816e870bed3c
+    │   │   ├── 90
+    │   │   │   └── 1ee76b17724d5d033399df59c742c25bd360e9
+    │   │   ├── 94
+    │   │   │   └── 80c63dc30d040226cc9f7cd8d9b9edc5d21faa
+    │   │   ├── 96
+    │   │   │   ├── 19aa9f00b93909200df4c8a401f00364f0f4db
+    │   │   │   └── e15a82310a3c7d1f4e0fcc3259a98def44ca3a
+    │   │   ├── 98
+    │   │   │   └── 5e0cc86d0bcaea38b4dd4bc88d6558e411e065
+    │   │   ├── 99
+    │   │   │   └── 3850e6703ccb2c293873f0abc821736bfa3d7a
+    │   │   ├── 9e
+    │   │   │   └── d5d4d78a186a1a559d19b6a8b798b7e7a69875
+    │   │   ├── a5
+    │   │   │   └── a6c7a3a626d7272f3ff0dd8828603938314065
+    │   │   ├── b2
+    │   │   │   └── 7654ec14436bc8c7d15b0ada6ae0a9bdb0cb5f
+    │   │   ├── b7
+    │   │   │   └── 20195c1a8f63dae3b226319051170619c176c3
+    │   │   ├── ba
+    │   │   │   └── e4109d263f66346d9868f21233741ac7991c85
+    │   │   ├── bc
+    │   │   │   └── d006f1f1360962a63eda5d4e71e9f2cd430490
+    │   │   ├── c1
+    │   │   │   └── 0d91cb480b7d144f35d03c614972e10817b6e4
+    │   │   ├── c3
+    │   │   │   └── 6b2596fef6b68ec1b7247c0005c331cab2f14b
+    │   │   ├── c8
+    │   │   │   └── aa00c8591afd4566e5f51477c8105bb1c740bc
+    │   │   ├── d3
+    │   │   │   └── 8f788b5fcb015ff5ed83e9773eaccfa78e8e67
+    │   │   ├── d5
+    │   │   │   └── c91e184d2bb308028c8edbd2c3535be256ebfd
+    │   │   ├── d6
+    │   │   │   └── 3c36c334b613d2e46d998c06318e3bfe8a542f
+    │   │   ├── d7
+    │   │   │   └── 8f62f35b0df2fd6c2b84a38cda0eb787947109
+    │   │   ├── d8
+    │   │   │   └── 33b7a61121452be468de2e4c8621a6c9cced84
+    │   │   ├── e3
+    │   │   │   └── 0f97252f0a9e4306f7d8b0179befbc1a43faa2
+    │   │   ├── eb
+    │   │   │   ├── 8d2060d9d065b8fbe1cf65ce0bb1a67c317be9
+    │   │   │   └── e92534e699fead0b34c8475e6f8ab9f1f11267
+    │   │   ├── ee
+    │   │   │   └── 9975226a6edc4cb79de9bc6c91966f88147a03
+    │   │   ├── f4
+    │   │   │   └── d4180e6ce5ad3a6b7aa6cb1f15d70b71f226c1
+    │   │   ├── f9
+    │   │   │   └── 9f94bf38dd6a12b2d65ef1cc6043d973b2492c
+    │   │   ├── fa
+    │   │   │   └── f18bf122546807c982f2dc99b1db4467744bcc
+    │   │   ├── fd
+    │   │   │   └── 03a3f10b871ce1ada5858b35ac9b73694ad7dc
+    │   │   ├── ff
+    │   │   │   └── dc4ca98b73a10c0f3e8e402eeae6fdc8c5a8c8
+    │   │   ├── info
+    │   │   └── pack
+    │   │       ├── pack-519e069124731fe100eb83e84acd97a06bd3443f.idx
+    │   │       ├── pack-519e069124731fe100eb83e84acd97a06bd3443f.pack
+    │   │       └── pack-519e069124731fe100eb83e84acd97a06bd3443f.rev
+    │   ├── refs
+    │   │   ├── heads
+    │   │   │   └── main
+    │   │   ├── remotes
+    │   │   │   └── origin
+    │   │   │       ├── HEAD
+    │   │   │       └── main
+    │   │   └── tags
+    │   ├── COMMIT_EDITMSG
+    │   ├── FETCH_HEAD
+    │   ├── HEAD
+    │   ├── ORIG_HEAD
+    │   ├── config
+    │   ├── description
+    │   ├── index
+    │   └── packed-refs
     ├── Attachment [Permission denial: ...]
     ├── GPT
     │   ├── Data
-    │   │   ├── ContextAware
-    │   │   │   └── TransformerTrain.py
-    │   │   └── Text
-    │   │       ├── 训练文本1(三体).txt
-    │   │       └── 训练文本2(朝花夕拾).txt
+    │   │   ├── Text
+    │   │   │   ├── 训练文本1(三体).txt
+    │   │   │   └── 训练文本2(朝花夕拾).txt
+    │   │   ├── Train
+    │   │   │   └── RTNTrain.py
+    │   │   └── splitToken
+    │   │       ├── models
+    │   │       │   ├── model.json
+    │   │       │   └── model.pkl
+    │   │       └── splitToken.py
     │   └── Modle
     │       ├── CCATransformer
     │       │   ├── __pycache__
@@ -16,6 +223,14 @@ Project file tree:
     │       │   │   ├── __init__.cpython-313.pyc
     │       │   │   └── operations.cpython-313.pyc
     │       │   ├── CCA.py
+    │       │   ├── __init__.py
+    │       │   └── operations.py
+    │       ├── Remember_Turingpattern_NN
+    │       │   ├── __pycache__
+    │       │   │   ├── RTN.cpython-313.pyc
+    │       │   │   ├── __init__.cpython-313.pyc
+    │       │   │   └── operations.cpython-313.pyc
+    │       │   ├── RTN.py
     │       │   ├── __init__.py
     │       │   └── operations.py
     │       ├── Vector
@@ -32,26 +247,31 @@ Project file tree:
     │       │   │   └── operations.cpython-313.pyc
     │       │   ├── __init__.py
     │       │   └── operations.py
+    │       ├── convolutional
+    │       │   ├── __pycache__
+    │       │   │   ├── __init__.cpython-313.pyc
+    │       │   │   └── conv.cpython-313.pyc
+    │       │   ├── __init__.py
+    │       │   └── conv.py
     │       ├── fraction
     │       │   ├── __pycache__
     │       │   │   ├── __init__.cpython-313.pyc
     │       │   │   └── fraction.cpython-313.pyc
     │       │   ├── __init__.py
     │       │   └── fraction.py
-    │       ├── mathexpand
-    │       │   ├── __pycache__
-    │       │   │   ├── __init__.cpython-313.pyc
-    │       │   │   └── operations.cpython-313.pyc
-    │       │   ├── __init__.py
-    │       │   └── operations.py
-    │       └── text_input
+    │       └── mathexpand
     │           ├── __pycache__
     │           │   ├── __init__.cpython-313.pyc
-    │           │   └── processor.cpython-313.pyc
-    │           └── __init__.py
+    │           │   └── operations.cpython-313.pyc
+    │           ├── __init__.py
+    │           └── operations.py
     ├── Outputio
     │   ├── fonts
-    │   │   └── JetBrainsMono-Bold.ttf
+    │   │   ├── JetBrainsMono-Bold.ttf
+    │   │   └── OFL.md
+    │   ├── parrot
+    │   │   ├── __init__.py
+    │   │   └── parrot.py
     │   ├── tuidisplay
     │   │   ├── __pycache__
     │   │   │   ├── __init__.cpython-313.pyc
@@ -61,6 +281,7 @@ Project file tree:
     │   └── tuimodel
     │       └── model.py
     ├── test
+    │   ├── ccatest.py
     │   └── loading_string.py
     ├── README.md
     └── main.py
@@ -120,8 +341,527 @@ if __name__ == "__main__":
     main()
 """
 
-# GPT\Data\ContextAware\TransformerTrain.py:
+# GPT\Data\splitToken\splitToken.py:
 """
+from pathlib import Path
+import math
+import glob
+import json
+import pickle
+from collections import defaultdict
+from datetime import datetime
+
+class ChineseTokenizer:
+    def __init__(self, max_token_len=6, min_freq_factor=50):
+        self.max_token_len = max_token_len
+        self.min_freq_factor = min_freq_factor
+        self.tokens = set()
+        self.ngram_freq = {}
+        self.model_info = {}
+        
+    def get_models_dir(self):
+        current_dir = Path(__file__).parent
+        models_dir = current_dir / "models"
+        models_dir.mkdir(exist_ok=True)
+        return models_dir
+    
+    def load_texts(self, folder_path):
+        txt_files = glob.glob(str(folder_path / "*.txt"))
+        texts = []
+        
+        for file_path in txt_files:
+            try:
+                with open(file_path, 'r', encoding='utf-8') as f:
+                    content = f.read().strip()
+                    if content:
+                        texts.append(content)
+                        print(f"Loaded: {Path(file_path).name} ({len(content)} chars)")
+            except Exception as e:
+                print(f"Error loading file {file_path}: {e}")
+        
+        return ''.join(texts)
+    
+    def count_ngrams(self, text):
+        ngram_freq = defaultdict(int)
+        total_chars = len(text)
+        
+        print("Counting n-grams...")
+        
+        for n in range(1, self.max_token_len + 1):
+            count = 0
+            for i in range(total_chars - n + 1):
+                substr = text[i:i+n]
+                if substr.strip() and len(substr) == n:
+                    ngram_freq[substr] += 1
+                    count += 1
+            print(f"  {n}-grams: {count}")
+        
+        return dict(ngram_freq), total_chars
+    
+    def calculate_cohesion(self, ngram, ngram_freq, total_chars):
+        if len(ngram) < 2:
+            return 0
+        
+        word_freq = ngram_freq.get(ngram, 0)
+        if word_freq == 0:
+            return 0
+        
+        max_ratio = 0
+        for i in range(1, len(ngram)):
+            left = ngram[:i]
+            right = ngram[i:]
+            
+            left_freq = ngram_freq.get(left, 0)
+            right_freq = ngram_freq.get(right, 0)
+            
+            if left_freq > 0 and right_freq > 0:
+                expected_freq = (left_freq * right_freq) / total_chars
+                if expected_freq > 0:
+                    ratio = word_freq / expected_freq
+                    max_ratio = max(max_ratio, ratio)
+        
+        return max_ratio
+    
+    def calculate_boundary_entropy(self, ngram, text):
+        if len(ngram) < 2:
+            return 0, 0
+        
+        left_chars = defaultdict(int)
+        right_chars = defaultdict(int)
+        pattern_len = len(ngram)
+        text_len = len(text)
+        
+        for i in range(text_len - pattern_len + 1):
+            if text[i:i+pattern_len] == ngram:
+                if i > 0:
+                    left_chars[text[i-1]] += 1
+                if i + pattern_len < text_len:
+                    right_chars[text[i+pattern_len]] += 1
+        
+        def calculate_entropy(char_dict):
+            total = sum(char_dict.values())
+            if total == 0:
+                return 0
+            entropy = 0
+            for count in char_dict.values():
+                prob = count / total
+                entropy -= prob * math.log(prob)
+            return entropy
+        
+        left_entropy = calculate_entropy(left_chars)
+        right_entropy = calculate_entropy(right_chars)
+        
+        return left_entropy, right_entropy
+    
+    def extract_tokens(self, ngram_freq, total_chars, text):
+        tokens = set()
+        
+        min_freq = max(3, total_chars // (self.min_freq_factor * 100))
+        print(f"Minimum frequency threshold: {min_freq}")
+        
+        candidate_scores = {}
+        
+        print("Evaluating n-grams...")
+        evaluated = 0
+        
+        for ngram, freq in ngram_freq.items():
+            if len(ngram) == 1:
+                tokens.add(ngram)
+                continue
+                
+            if freq < min_freq:
+                continue
+                
+            evaluated += 1
+            if evaluated % 10000 == 0:
+                print(f"  Evaluated {evaluated} n-grams...")
+            
+            cohesion = self.calculate_cohesion(ngram, ngram_freq, total_chars)
+            if cohesion < 20:
+                continue
+            
+            left_entropy, right_entropy = self.calculate_boundary_entropy(ngram, text)
+            min_entropy = min(left_entropy, right_entropy)
+            
+            if min_entropy < 1.0:
+                continue
+            
+            score = cohesion * min_entropy * math.log(freq + 1)
+            candidate_scores[ngram] = score
+        
+        print(f"Found {len(candidate_scores)} candidates")
+        
+        sorted_candidates = sorted(candidate_scores.items(), key=lambda x: x[1], reverse=True)
+        
+        print("Selecting tokens...")
+        selected_count = 0
+        
+        for ngram, score in sorted_candidates:
+            if len(ngram) > 1:
+                is_substring = False
+                for token in tokens:
+                    if ngram in token and ngram != token:
+                        is_substring = True
+                        break
+                
+                if not is_substring:
+                    tokens.add(ngram)
+                    selected_count += 1
+                    
+                    if selected_count % 100 == 0:
+                        print(f"  Selected {selected_count} tokens...")
+        
+        print(f"Selected {len(tokens)} tokens total")
+        return tokens
+    
+    def save_model(self, model_name=None):
+        models_dir = self.get_models_dir()
+        
+        if model_name is None:
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            model_name = f"chinese_tokenizer_{timestamp}"
+        
+        model_path = models_dir / f"{model_name}.pkl"
+        
+        model_data = {
+            'tokens': list(self.tokens),
+            'ngram_freq': self.ngram_freq,
+            'max_token_len': self.max_token_len,
+            'min_freq_factor': self.min_freq_factor,
+            'model_info': self.model_info
+        }
+        
+        with open(model_path, 'wb') as f:
+            pickle.dump(model_data, f)
+        
+        json_path = models_dir / f"{model_name}_info.json"
+        json_data = {
+            'model_name': model_name,
+            'created_at': datetime.now().isoformat(),
+            'num_tokens': len(self.tokens),
+            'max_token_len': self.max_token_len,
+            'min_freq_factor': self.min_freq_factor,
+            'model_info': self.model_info
+        }
+        
+        with open(json_path, 'w', encoding='utf-8') as f:
+            json.dump(json_data, f, ensure_ascii=False, indent=2)
+        
+        print(f"Model saved to: {model_path}")
+        return model_name
+    
+    def load_model(self, model_name):
+        models_dir = self.get_models_dir()
+        model_path = models_dir / f"{model_name}.pkl"
+        
+        if not model_path.exists():
+            available_models = [f.stem for f in models_dir.glob("*.pkl")]
+            raise FileNotFoundError(f"Model '{model_name}' not found. Available: {available_models}")
+        
+        with open(model_path, 'rb') as f:
+            model_data = pickle.load(f)
+        
+        self.tokens = set(model_data['tokens'])
+        self.ngram_freq = model_data['ngram_freq']
+        self.max_token_len = model_data['max_token_len']
+        self.min_freq_factor = model_data['min_freq_factor']
+        self.model_info = model_data.get('model_info', {})
+        
+        print(f"Model '{model_name}' loaded")
+        print(f"Vocabulary: {len(self.tokens)} tokens")
+        return True
+    
+    def list_models(self):
+        models_dir = self.get_models_dir()
+        models = []
+        
+        for pkl_file in models_dir.glob("*.pkl"):
+            json_file = models_dir / f"{pkl_file.stem}_info.json"
+            if json_file.exists():
+                with open(json_file, 'r', encoding='utf-8') as f:
+                    info = json.load(f)
+                models.append(info)
+        
+        return models
+    
+    def train(self, folder_path, save_model=True, model_name=None):
+        print("Training Chinese tokenizer...")
+        text = self.load_texts(folder_path)
+        
+        if not text:
+            print("Error: No text data")
+            return set()
+        
+        print(f"Total text: {len(text)} characters")
+        
+        self.ngram_freq, total_chars = self.count_ngrams(text)
+        print(f"Unique n-grams: {len(self.ngram_freq)}")
+        
+        self.tokens = self.extract_tokens(self.ngram_freq, total_chars, text)
+        print(f"Final tokens: {len(self.tokens)}")
+        
+        self.model_info = {
+            'training_date': datetime.now().isoformat(),
+            'text_length': total_chars,
+            'unique_ngrams': len(self.ngram_freq),
+            'num_tokens': len(self.tokens)
+        }
+        
+        if save_model:
+            saved_name = self.save_model(model_name)
+            self.model_info['saved_as'] = saved_name
+        
+        return self.tokens
+    
+    def tokenize(self, text, method='max_match'):
+        if not self.tokens:
+            raise ValueError("Please train or load model")
+        
+        if method == 'max_match':
+            return self._max_match_tokenize(text)
+        elif method == 'forward':
+            return self._forward_max_match(text)
+        else:
+            return self._simple_tokenize(text)
+    
+    def _max_match_tokenize(self, text):
+        tokens = []
+        i = 0
+        text_len = len(text)
+        
+        while i < text_len:
+            matched = False
+            for length in range(min(self.max_token_len, text_len - i), 0, -1):
+                word = text[i:i+length]
+                if word in self.tokens:
+                    tokens.append(word)
+                    i += length
+                    matched = True
+                    break
+            
+            if not matched:
+                tokens.append(text[i])
+                i += 1
+        
+        return tokens
+    
+    def _forward_max_match(self, text):
+        tokens = []
+        i = 0
+        text_len = len(text)
+        
+        while i < text_len:
+            max_word = text[i]
+            max_len = 1
+            
+            for length in range(2, min(self.max_token_len, text_len - i) + 1):
+                word = text[i:i+length]
+                if word in self.tokens:
+                    max_word = word
+                    max_len = length
+            
+            tokens.append(max_word)
+            i += max_len
+        
+        return tokens
+    
+    def _simple_tokenize(self, text):
+        tokens = []
+        i = 0
+        text_len = len(text)
+        
+        while i < text_len:
+            found = False
+            for length in range(min(self.max_token_len, text_len - i), 0, -1):
+                word = text[i:i+length]
+                if word in self.tokens:
+                    tokens.append(word)
+                    i += length
+                    found = True
+                    break
+            
+            if not found:
+                tokens.append(text[i])
+                i += 1
+        
+        return tokens
+
+
+if __name__ == "__main__":
+    """tokenizer = ChineseTokenizer(max_token_len=6, min_freq_factor=50)
+    
+    filespath = Path(__file__).parent.parent / "Text"
+    
+    if filespath.exists() and any(filespath.glob("*.txt")):
+        tokens = tokenizer.train(filespath, save_model=True)
+        
+        print("\nTop 100 tokens by frequency:")
+        sorted_tokens = sorted(
+            [(t, tokenizer.ngram_freq.get(t, 0)) for t in tokens if len(t) > 1],
+            key=lambda x: x[1],
+            reverse=True
+        )
+        
+        for i, (token, freq) in enumerate(sorted_tokens[:100]):
+            print(f"{i+1:3d}. '{token}' (freq: {freq})")
+        
+        print(f"\nTotal tokens: {len(tokens)}")
+        print(f"Single chars: {len([t for t in tokens if len(t) == 1])}")
+        print(f"Multi-chars: {len([t for t in tokens if len(t) > 1])}")
+        
+        test_texts = [
+            "这是测试文本",
+            "三体世界",
+            "黑暗森林",
+            "物理学不存在了",
+            "叶文洁看着红岸基地"
+        ]
+        
+        for test_text in test_texts:
+            segmented = tokenizer.tokenize(test_text, method='max_match')
+            print(f"\nTest: '{test_text}'")
+            print(f"  Result: {segmented}")
+    else:
+        print(f"Text directory not found: {filespath}")
+        print("Loading existing models...")
+        
+        models = tokenizer.list_models()
+        if models:
+            print("Available models:")
+            for model in models:
+                print(f"  - {model['model_name']} ({model['num_tokens']} tokens)")
+            
+            latest_model = sorted(models, key=lambda x: x['created_at'], reverse=True)[0]
+            tokenizer.load_model(latest_model['model_name'])
+            
+            test_texts = [
+                "这是测试文本",
+                "三体世界",
+                "黑暗森林"
+            ]
+            
+            for test_text in test_texts:
+                segmented = tokenizer.tokenize(test_text)
+                print(f"\nTest: '{test_text}' -> {segmented}")
+        else:
+            print("No models found")"""
+    
+    text = """从去年起，仿佛听得有人说我是仇猫的。那根据自然是在我的那一篇《兔和猫》；这是自画招供，当然无话可说，——但倒也毫不介意。一到今年，我可很有点担心了。我是常不免于弄弄笔墨的，写了下来，印了出去，对于有些人似乎总是搔着癢处的时候少，碰着痛处的时候多。万一不谨，甚而至于得罪了名人或名教授，或者更甚而至于得罪了“负有指导青年责任的前辈”之流，可就危险已极。为什么呢？因为这些大脚色是“不好惹”的。怎地“不好惹”呢？就是怕要浑身发热之后，做一封信登在报纸上，广告道：“看哪！狗不是仇猫的么？鲁迅先生却自己承认是仇猫的，而他还说要打‘落水狗’！”①这“逻辑”的奥义，即在用我的话，来证明我倒是狗，于是而凡有言说，全都根本推翻，即使我说二二得四，三三见九，也没有一字不错。这些既然都错，则绅士口头的二二得七，三三见千等等，自然就不错了。
+我于是就间或留心着查考它们成仇的“动机”。
+"""
+
+    model = ChineseTokenizer()
+    model.load_model(str("model"))
+    ret = model.tokenize(text)
+    print(ret)
+"""
+
+# GPT\Data\Train\RTNTrain.py:
+"""
+import sys
+from pathlib import Path
+from typing import Callable
+from random import uniform
+
+udir = str(Path(__file__).parent.parent.parent)
+sys.path.append(udir)
+
+from Modle.Remember_Turingpattern_NN import RTN, neurons_generator, weights_brush, tg_brush, sr_graph_brush, tg_graph_brush
+from Modle.mathexpand import add, sub, mul, div
+
+class RTN_Trainer:
+    def __init__(self):
+        self.dx = 1e-5
+
+    def weight_loss_gradient(self, start: tuple, end: tuple, inputs: list, loss: callable, rtn: RTN):
+        original_weights = rtn.weights[0][start][end]
+    
+        rtn.weights[0][start][end] = sub(rtn.weights[0][start][end], self.dx)
+        sub_loss = loss(rtn.nn_dynamics(inputs)[-1])
+        rtn.weights[0][start][end] = original_weights
+
+        rtn.weights[0][start][end] = add(rtn.weights[0][start][end], self.dx)
+        add_loss = loss(rtn.nn_dynamics(inputs)[-1])
+        rtn.weights[0][start][end] = original_weights
+
+        d_loss = div(sub(add_loss, sub_loss), 2)
+
+        return div(d_loss, self.dx)
+    
+    def parameter_loss_gradient(self, index: tuple, inputs: list, loss: callable, rtn: RTN):
+        original_weights = rtn.weights[1][index[0]][index[1]]
+    
+        rtn.weights[1][index[0]][index[1]] = sub(rtn.weights[1][index[0]][index[1]], self.dx)
+        sub_loss = loss(rtn.nn_dynamics(inputs)[-1])
+        rtn.weights[1][index[0]][index[1]] = original_weights
+
+        rtn.weights[1][index[0]][index[1]] = add(rtn.weights[1][index[0]][index[1]], self.dx)
+        add_loss = loss(rtn.nn_dynamics(inputs)[-1])
+        rtn.weights[1][index[0]][index[1]] = original_weights
+
+        d_loss = div(sub(add_loss, sub_loss), 2)
+
+        return div(d_loss, self.dx)
+    
+    def traverse_weight_for_(self, function: callable, rtn: RTN):
+        ret = {}
+        for i,j in zip(list(rtn.weights[0].keys()), list(rtn.weights[0].values())):
+            ret[i] = {}
+            for k,l in zip(list(j.keys()), list(j.values())):
+                ret[i][k] = function(i, k, l)
+        return ret
+    
+    def static_trainer(self, inputs: list[list], outputs: list[list], lossfunction: callable, lambdafunction: callable, r: float, maxdw: float, dorpout: float, rtn: RTN):
+        L = 0.0
+        for i in list(rtn.weights[0].values()):
+            for j in list(i.values()):
+                L = add(L, lambdafunction(j))
+        for i in rtn.weights[1]:
+            for j in i:
+                L = add(L, lambdafunction(j))
+        
+        def Wgradfunction(start, end, weight):
+            return div(self.weight_loss_gradient(start, end, ip, lambda x: lossfunction(x, op) + L, rtn), abs(weight))
+        def Pgradfunction(index, _, weight):
+            return div(self.parameter_loss_gradient(index, ip, lambda x: lossfunction(x, op) + L, rtn), abs(rtn.weights[1][index[0]][index[1]]))
+        def Witeration(start, end, weight):
+            if uniform(0.0,1.0) < dorpout: return
+            rtn.weights[0][start][end] = sub(rtn.weights[0][start][end], min(max(-maxdw, mul(r, wg[start][end])), maxdw))
+        def Piteration(index, _, weight):
+            if uniform(0.0,1.0) < dorpout: return
+            rtn.weights[1][index[0]][index[1]] = sub(rtn.weights[1][index[0]][index[1]], min(max(-maxdw, mul(r, pg[index][_])), maxdw))
+    
+        for ip,op in zip(inputs, outputs):
+            wg = self.traverse_weight_for_(Wgradfunction, rtn)
+            pg = self.traverse_weight_for_(Pgradfunction, rtn)
+            self.traverse_weight_for_(Witeration, rtn)
+            self.traverse_weight_for_(Piteration, rtn)
+
+if __name__ == "__main__":
+    t = RTN_Trainer()
+    rtn = RTN(neurons_generator('any'),
+              weights_brush(), 
+              tg_brush(), 
+              sr_graph_brush(), 
+              tg_graph_brush()
+              )
+    def loss(x, op):
+        loss = 0.0
+        for o, t in zip(x, op):
+            diff = sub(o, t)
+            loss = add(loss, mul(diff, diff))
+        return loss
+    def lambda_(weight):
+        return mul(0.05, mul(weight, weight))
+
+    for i in range(10):
+        t.static_trainer([[2*i,0,0] for i in range(4)]+[[0,i,0] for i in range(4)]+[[0,0,i] for i in range(4)], [[0,0,2*i] for i in range(4)]+[[0,0,0] for _ in range(8)], loss, lambda_, 0.05, 1.0, 0.2, rtn)
+        print(rtn.nn_dynamics([1.0, 0, 0])[-1])
+
+    print("Training is end")
+    
+    for i in range(10):
+        print(rtn.nn_dynamics([i, 0, 0])[-1])
 """
 
 # GPT\Modle\CCATransformer\CCA.py:
@@ -130,7 +870,7 @@ import sys
 import math
 from pathlib import Path
 from typing import Dict
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 udir = str(Path(__file__).parent.parent)
 sys.path.append(udir)
@@ -160,11 +900,11 @@ class CCATransformer():
             if not isinstance(query_dict, dict):
                 raise TypeError("The type of the QueryDatabase must be dictionary.")
             for query_vec, value_vec in query_dict.items():
-                if not isinstance(query_vec, Vector):
+                if not hasattr(query_vec, "VECTORFLAG"):
                     raise TypeError("The type of the Query must be Vector.")
                 elif query_vec.dimension != 4:
                     raise ValueError("The dimension of the Query must be 4.")
-                if not isinstance(value_vec, Vector):
+                if not hasattr(value_vec, "VECTORFLAG"):
                     raise TypeError("The type of the Val must be Vector.")
                 elif value_vec.dimension != 4:
                     raise ValueError("The dimension of the Val must be 4.")
@@ -225,7 +965,6 @@ class CCATransformer():
             exponent = sub(second_term, minn)
             
             weight = const ** exponent.value
-            weight_vec = [weight for _ in range(4)]
             influence_graph[i] = weight
             cnt = add(cnt, weight)
 
@@ -247,26 +986,12 @@ class CCATransformer():
         
         cnt_n = Vector([fraction(0, 1), fraction(0, 1), fraction(0, 1), fraction(0, 1)])
         cnt_m = fraction(0, 1)
-        maxn = fraction(100, 1)
-        minn = fraction(-100, 1)
 
         for i in query_dict:
             dot_val = fraction(int(dot(i, Query) * 1000), 1000)
             exponent = div(dot_val, T)
             
-            exp_sub_max = sub(exponent, maxn)
-            e_pow = const ** (exp_sub_max.value)
-            denom1 = sub(fraction(1, 1), e_pow)
-            first_term = div(exp_sub_max, denom1)
-            exponent = add(first_term, maxn)
-            
-            exp_add_min = add(exponent, minn)
-            e_pow2 = const ** (-exp_add_min.value)
-            denom2 = sub(fraction(1, 1), e_pow2)
-            second_term = div(exp_add_min, denom2)
-            exponent = sub(second_term, minn)
-            
-            weight = const ** exponent.value
+            weight = const.value ** exponent.value
             weight_vec = [weight for _ in range(4)]
             weighted_val = mul(weight_vec, query_dict[i].components)
             cnt_n = add(cnt_n, Vector(weighted_val))
@@ -278,10 +1003,7 @@ class CCATransformer():
         result = div(cnt_n.components, cnt_m)
         return Vector([r.value for r in result])
     
-    def DeSoftQuery(self, token: str, Value: Vector, T: fraction = fraction(3, 2), 
-                    const: fraction = Const.E, alpha: fraction = fraction(1, 100),
-                    epsilon: fraction = fraction(1, 1000), 
-                    max_iter: int = 1000, tol: float = 1e-6) -> Vector:
+    def DeSoftQuery(self, token: str, Val: Vector, T: fraction = fraction(3, 2), const: fraction = Const.E) -> Vector:
         if token not in self.database:
             raise KeyError(f"token '{token}' not found in database")
         
@@ -289,84 +1011,24 @@ class CCATransformer():
         if not query_dict:
             return Vector([0.0, 0.0, 0.0, 0.0])
         
-        tokens = list(query_dict.keys())
-        values = [query_dict[k] for k in tokens]
+        cnt_n = Vector([fraction(0, 1), fraction(0, 1), fraction(0, 1), fraction(0, 1)])
+        cnt_m = fraction(0, 1)
+
+        for i in query_dict:
+            dot_val = dot(mul(sub(Val, query_dict[i]), sub(Val, query_dict[i])), Vector([1.0, 1.0, 1.0, 1.0]))
+            exponent = div(dot_val, T)
+            
+            weight = const.value ** exponent
+            weight_vec = [weight for _ in range(4)]
+            weighted_val = mul(weight_vec, i.components)
+            cnt_n = add(cnt_n, Vector(weighted_val))
+            cnt_m = add(cnt_m, weight)
         
-        best_similarity = -float('inf')
-        x = Vector([0.0, 0.0, 0.0, 0.0])
+        if cnt_m.value == 0:
+            return Vector([c.value for c in cnt_n.components])
         
-        for i, val in enumerate(values):
-            similarity = sum(a * b for a, b in zip(Value.components, val.components))
-            if similarity > best_similarity:
-                best_similarity = similarity
-                x = tokens[i]
-        
-        if all(abs(v) < 1e-6 for v in Value.components):
-            import random
-            x = Vector([random.uniform(-1, 1) for _ in range(4)])
-        
-        best_x = x
-        best_residual = float('inf')
-        learning_rate = alpha.value
-        
-        for iteration in range(max_iter):
-            softquery_val = self.SoftQuery(token, x, T, const)
-            
-            residual = Vector([b - a for a, b in zip(softquery_val.components, Value.components)])
-            residual_norm = math.sqrt(sum(r * r for r in residual.components))
-            
-            if residual_norm < best_residual:
-                best_residual = residual_norm
-                best_x = Vector(x.components.copy())
-            
-            if residual_norm < tol:
-                return best_x
-            
-            weights = []
-            total_weight = 0.0
-            
-            for token_vec in tokens:
-                dot_val = dot(token_vec, x)
-                exponent = dot_val / T.value
-                
-                exp_sub_max = exponent - 100
-                e_pow = const.value ** exp_sub_max
-                denom1 = 1 - e_pow
-                first_term = exp_sub_max / denom1 if denom1 != 0 else 0
-                exponent = first_term + 100
-                
-                exp_add_min = exponent + 100
-                e_pow2 = const.value ** (-exp_add_min)
-                denom2 = 1 - e_pow2
-                second_term = exp_add_min / denom2 if denom2 != 0 else 0
-                exponent = second_term - 100
-                
-                weight = const.value ** exponent
-                weights.append(weight)
-                total_weight += weight
-            
-            norm_factor = total_weight + epsilon.value
-            if norm_factor == 0:
-                norm_factor = 1.0
-            
-            step = [learning_rate * r / norm_factor for r in residual.components]
-            x = Vector([a + b for a, b in zip(x.components, step)])
-            
-            if iteration > 0 and residual_norm > prev_residual_norm:
-                learning_rate *= 0.9
-            
-            prev_residual_norm = residual_norm
-            
-            x_components = []
-            for comp in x.components:
-                if comp > 100:
-                    comp = 100
-                elif comp < -100:
-                    comp = -100
-                x_components.append(comp)
-            x = Vector(x_components)
-        
-        return best_x
+        result = div(cnt_n.components, cnt_m)
+        return Vector([r.value for r in result])
 
     def get_tokens(self):
         return list(self.database.keys())
@@ -550,8 +1212,132 @@ def get_meaning_of_tokens_for_(CAT: CCA.CCATransformer, tokens: list[str]) -> li
 
     return meaning_vectors
 
+def get_meaning_of_tokens_at_(CAT: CCA.CCATransformer, AtQ: Vector, tokens: list[str], T: fraction = fraction(3, 2), const: fraction = CCA.Const.E) -> list[Vector]:
+    influence_graph = [[0.0 for _ in range(len(tokens))] for _ in range(len(tokens))]
+    for i,j in zip(range(len(tokens)), range(len(tokens))):
+        influence_graph[i][j] = vector.dot(CAT.get_query_for_(tokens[i]), CAT.get_key_for_(tokens[j]))
+    
+    for i,j in zip(range(len(tokens)), range(len(tokens))):
+        if j >= i: influence_graph[i][j] = -float('inf')
+
+    for i in range(len(tokens)):
+        row = influence_graph[i]
+        max_val = max(row)
+        exp_row = [CCA.Const.E.value ** (val - max_val) for val in row]
+        sum_exp = sum(exp_row)
+        influence_graph[i] = [val / sum_exp for val in exp_row]
+    
+    bigQ_graph = [[Vector([0.0,0.0,0.0,0.0]) for _ in range(len(tokens))] for _ in range(len(tokens))]
+
+    for i in range(len(tokens)):
+        cnt_n = [0.0 for _ in range(i+1)]
+        cnt_m = 0.0
+        for j in range(i+1):
+            if i == 0:
+                bigQ_graph[i][j] = CAT.get_key_for_(tokens[i])
+            else:
+                vector_list = []
+                for k in range(j):
+                    components = []
+                    for l in range(4):
+                        influence_val = influence_graph[i][k]
+                        if isinstance(influence_val, fraction):
+                            influence_val = influence_val.value
+                        component_val = bigQ_graph[i][k].components[l]
+                        if isinstance(component_val, fraction):
+                            component_val = component_val.value
+                        components.append(component_val * influence_val)
+                    vector_list.append(Vector(components))
+                
+                if not vector_list:
+                    big_Q = Vector([0.0, 0.0, 0.0, 0.0])
+                else:
+                    big_Q = mexp.iterate(mexp.add, vector_list)
+                
+                if not isinstance(big_Q, Vector):
+                    if isinstance(big_Q, (int, float)):
+                        big_Q = Vector([0.0, 0.0, 0.0, 0.0])
+                    else:
+                        try:
+                            big_Q = Vector([float(big_Q)] * 4)
+                        except:
+                            big_Q = Vector([0.0, 0.0, 0.0, 0.0])
+                
+                bigQ_graph[i][j] = CAT.get_value_for_(tokens[j], big_Q)
+
+                cnt_n[j] = const ** mexp.div(vector.dot(big_Q, AtQ), T.value).value
+                cnt_m = mexp.add(cnt_m, cnt_n[j])
+            
+            for j in range(i+1):
+                bigQ_graph[i][j] = mexp.div(mexp.mul(bigQ_graph[i][j], cnt_n[j]), cnt_m).value
+    
+    meaning_vectors = []
+    for i in range(len(tokens)):
+        vector_list = []
+        for j in range(len(tokens)):
+            influence_val = influence_graph[i][j]
+            if isinstance(influence_val, fraction):
+                influence_val = influence_val.value
+            
+            if isinstance(bigQ_graph[i][j], Vector):
+                vector_list.append(mexp.mul(bigQ_graph[i][j], influence_val))
+        
+        if not vector_list:
+            meaning_vector = Vector([0.0, 0.0, 0.0, 0.0])
+        else:
+            meaning_vector = mexp.iterate(mexp.add, vector_list)
+        
+        if not isinstance(meaning_vector, Vector):
+            if isinstance(meaning_vector, (int, float)):
+                meaning_vector = Vector([0.0, 0.0, 0.0, 0.0])
+            else:
+                try:
+                    meaning_vector = Vector([float(meaning_vector)] * 4)
+                except:
+                    meaning_vector = Vector([0.0, 0.0, 0.0, 0.0])
+        
+        meaning_vectors.append(meaning_vector)
+    
+    meaning_vectors[0] = CAT.get_key_for_(tokens[0])
+
+    return meaning_vectors
+
 def get_meaning_of_sentence_for_(CAT: CCA.CCATransformer, tokens: list[str]) -> Vector:
     tokens_meaning = get_meaning_of_tokens_for_(CAT, tokens)
+
+    influence_graph = [[0.0 for _ in range(len(tokens))] for _ in range(len(tokens))]
+    for i,j in zip(range(len(tokens)), range(len(tokens))):
+        influence_graph[i][j] = vector.dot(CAT.get_query_for_(tokens[i]), CAT.get_key_for_(tokens[j]))
+
+    for i in range(len(tokens)):
+        row = influence_graph[i]
+        max_val = max(row)
+        exp_row = [CCA.Const.E ** (val - max_val) for val in row]
+        sum_exp = sum(exp_row)
+        influence_graph[i] = [val / sum_exp for val in exp_row]
+    
+    tokens_influence = [0.0 for _ in range(len(tokens))]
+    for i in range(len(influence_graph)):
+        tokens_influence[i] = sum([influence_graph[i][j] for j in range(len(influence_graph))])
+    
+    sentence_meaning = Vector([0.0, 0.0, 0.0, 0.0])
+
+    cnt_n = Vector([0.0, 0.0, 0.0, 0.0])
+    cnt_m = 0.0
+
+    for i in range(len(tokens)):
+        weight = tokens_influence[i]
+        weight_vec = [weight for _ in range(4)]
+        weighted_val = mexp.mul(weight_vec, tokens_meaning[i].components)
+        cnt_n = mexp.add(cnt_n, Vector(weighted_val))
+        cnt_m += weight
+    
+    result = mexp.div(cnt_n.components, cnt_m)
+    sentence_meaning = Vector([r.value for r in result])
+    return sentence_meaning
+
+def get_meaning_of_sentence_at_(CAT: CCA.CCATransformer, AtQ: Vector, tokens: list[str]) -> Vector:
+    tokens_meaning = get_meaning_of_tokens_at_(CAT, AtQ, tokens)
 
     influence_graph = [[0.0 for _ in range(len(tokens))] for _ in range(len(tokens))]
     for i,j in zip(range(len(tokens)), range(len(tokens))):
@@ -609,42 +1395,55 @@ def think_about_next_token_for_(CAT: CCA.CCATransformer, tokens: list[str], T: f
     
     return CAT.query_best_token_for_(next_token, sentence_meaning)
 
+def think_about_next_token_at_(CAT: CCA.CCATransformer, tokens: list[str], AtQ: Vector, T: float = CCA.Const.E.value) -> str:
+    sentence_meaning = get_meaning_of_sentence_at_(CAT, AtQ, tokens)
+    cnt_n = Vector([0.0, 0.0, 0.0, 0.0])
+    cnt_m = 0.0
+    for token in CAT.get_tokens():
+        dot_val = vector.dot(get_meaning_of_tokens_at_(CAT, AtQ, tokens + [token])[-1], sentence_meaning)
+        exponent = dot_val / T
+        weight = CCA.Const.E.value ** exponent
+        cnt_n = Vector([i for i in mexp.add(cnt_n, mexp.mul(weight, CAT.get_key_for_(token))).components])
+        cnt_m += weight
+    
+    if cnt_m == 0:
+        next_token = Vector([0.0, 0.0, 0.0, 0.0])
+    else:
+        next_token = mexp.div(cnt_n, cnt_m)
+
+    next_token = next_token.components
+    for i in range(4):
+        random_val = random.uniform(-T, T)
+        next_token[i] += ((abs(random_val) ** CCA.Const.E.value) * random_val) / (abs(random_val) * (CCA.Const.E.value ** CCA.Const.E.value))
+
+    next_token = Vector(next_token)
+    
+    return CAT.query_best_token_for_(next_token, sentence_meaning)
+
+def get_complate_for_(CAT: CCA.CCATransformer, tokens: list[str]):
+    sentence_meaning = get_meaning_of_sentence_for_(CAT, tokens[1:-1])
+    token_meaning = get_meaning_of_tokens_for_(CAT, tokens)[-1]
+    return vector.dot(sentence_meaning, token_meaning)
+
 if __name__ == "__main__":
     import random
-    CAT = NewCCATransformer(["苹果", "香蕉", "谷歌", "小米", "微软", "亚马逊", "包子", "饺子", "面条"])
-    
-    print("CCATransformer created with tokens:", CAT.get_tokens())
-    for i in CAT.get_tokens():
-        print(f"Token: {i}")
-        for j in CAT.database[i]:
-            print(f"  Query: {j}, Value: {CAT.database[i][j]}")
-
-    print(f"\n{'='*20} Testing meaning extraction {'='*20}\n")
-
-    example_token_list = []
-    for _ in range(random.binomialvariate(20, 0.5)):
-        example_token_list.append(random.choice(CAT.get_tokens()))
-    print(f"Example token list: {example_token_list}\n")
-    print("Meaning vectors for the example token list:")
-    meaning_vectors = get_meaning_of_tokens_for_(CAT, example_token_list)
-    for token, meaning_vector in zip(example_token_list, meaning_vectors):
-        print(f"Token: {token}, Meaning Vector: {meaning_vector}")
-    print("\nMeaning vector for the example sentence:")
-    sentence_meaning = get_meaning_of_sentence_for_(CAT, example_token_list)
-    print(sentence_meaning)
-    print("\nPredicted next token:")
-    next_token = think_about_next_token_for_(CAT, example_token_list)
-    print(next_token)
-
-    print(f"\n{'='*20} Testing generated {'='*20}\n")
+    CAT = CCA.CCATransformer({"好吃":{Vector([1.0,1.0,0.0,0.0]): Vector([0.0, 0.0, 1.0, 1.0])},
+                             "饺子":{Vector([0.0, 0.0, 1.0, 1.0]): Vector([1.0,1.0,0.0,0.0])},
+                             "包子":{Vector([0.0, 0.5, 0.7, 1.0]): Vector([1.0,1.0,0.0,0.0])}},
+                            )
 
     start_tokens = [random.choice(CAT.get_tokens())] + [random.choice(CAT.get_tokens())] + [random.choice(CAT.get_tokens())]
     print(f"Start token: {start_tokens}")
 
-    for i in range(10):
+    i = 0
+    C = 10.0
+
+    while get_complate_for_(CAT, start_tokens) < C:
         next_token = think_about_next_token_for_(CAT, start_tokens)
         start_tokens.append(next_token)
-        print(f"No. {i+4} token: {next_token}")
+        print(f"No. {i+4} token: {next_token}", f"complate: {get_complate_for_(CAT, start_tokens)}")
+        i += 1
+        C /= 2
     print("Generated token sequence:")
     print(start_tokens)
 """
@@ -652,13 +1451,28 @@ if __name__ == "__main__":
 # GPT\Modle\CCATransformer\__init__.py:
 """
 from .CCA import Const, CCATransformer
-from .operations import NewCCATransformer, FusionCCATransformer
+from .operations import (
+    NewCCATransformer,
+    FusionCCATransformer,
+    get_meaning_of_tokens_for_,
+    get_meaning_of_tokens_at_,
+    get_meaning_of_sentence_for_,
+    get_meaning_of_sentence_at_,
+    think_about_next_token_for_,
+    think_about_next_token_at_
+)
 
 __all__=[
     'Const',
     'CCATransformer',
     'NewCCATransformer',
-    'FusionCCATransformer'
+    'FusionCCATransformer',
+    'get_meaning_of_tokens_for_',
+    'get_meaning_of_tokens_at_',
+    'get_meaning_of_sentence_for_',
+    'get_meaning_of_sentence_at_',
+    'think_about_next_token_for_',
+    'think_about_next_token_at_'
 ]
 """
 
@@ -824,6 +1638,36 @@ from .operations import distance
 __all__ = [
     'distance'
 ]
+"""
+
+# GPT\Modle\convolutional\conv.py:
+"""
+class kernel:
+    def __init__(self, weights: list, size: int):
+        self.weights = weights
+        self.size = size
+
+        i = len(weights)
+        dim = 0
+        while i > 1:
+            i /= size 
+            dim += 1
+
+def conv(x: list):
+    pass
+
+def pool(x: list):
+    pass
+
+if __name__ == "__main__":
+    kernel([1,1,1,1,1,1,1], 3)
+"""
+
+# GPT\Modle\convolutional\__init__.py:
+"""
+from .conv import conv, pool, kernel
+
+__all__ = ["conv", "pool", "kernel"]
 """
 
 # GPT\Modle\fraction\fraction.py:
@@ -1292,11 +2136,170 @@ __all__ = [
 ]
 """
 
-# GPT\Modle\text_input\__init__.py:
+# GPT\Modle\Remember_Turingpattern_NN\operations.py:
 """
-from .processor import TextProcessor
+import sys
+from pathlib import Path
+from math import tanh
+try:
+    from .RTN import RTN, sigmoid
+except:
+    from RTN import RTN, sigmoid
 
-__all__ = ['TextProcessor']
+udir = str(Path(__file__).parent.parent)
+sys.path.append(udir)
+
+from convolutional import conv, pool
+from Vector import Vector
+from mathexpand import add, sub, mul, div
+
+def neurons_generator(model:str, width:int = 3, height: int = 3):
+    preset = {
+        "any": [[lambda x, parameter, nn: sigmoid(x + parameter) * (x + parameter)]],
+        "cnn": [[lambda x, parameter, nn: conv(x, parameter)],[lambda x, parameter, nn: pool(x)]],
+        "vector": [[lambda x, parameter, nn: Vector([sigmoid(i) for i in x.components])]]
+    }
+
+    return [i*height for i in preset[model]] * width
+
+def weights_brush(res:int = 0, width:int = 3, height: int = 3):
+    if res < 0: raise(ValueError(res))
+    if res == 0:
+        weights = {}
+        for i_l in range(width-1):
+            for i_n in range(height):
+                weights[(i_l, i_n)] = {}
+                for j_n in range(height):
+                    weights[(i_l, i_n)][(i_l+1, j_n)] = 0.1
+    else:
+        weights = {}
+        for i_l in range(width-1):
+            for i_n in range(height):
+                weights[(i_l, i_n)] = {}
+                for j_n in range(height):
+                    weights[(i_l, i_n)][(i_l+1, j_n)] = 0.1
+                if i_l % res == res-1 and i_l + res < width:
+                    for res_n in range(height):
+                        weights[(i_l, i_n)][(i_l+res, res_n)] = 1.0
+    return [weights, [[0.1]*width]*height]
+
+def tg_brush(width:int = 3, height: int = 3, tg_types: int = 4):
+    return [[[0.0 for _ in range(tg_types)] for _ in range(width)] for _ in range(height)]
+
+def sr_graph_brush(width:int = 3, height: int = 3, tg_types: int = 4):
+    return [[[0.0 for _ in range(tg_types)] for _ in range(width)] for _ in range(height)]
+
+def tg_graph_brush(tg_types: int = 4):
+    return [[0.0 for _ in range(tg_types + 1)] for _ in range(tg_types + 1)]
+
+if __name__ == "__main__":
+    rtn = RTN(neurons_generator("any"), weights_brush(), tg_brush(), sr_graph_brush(), tg_graph_brush())
+    rtn.forward([1.0,1.0,1.0])
+"""
+
+# GPT\Modle\Remember_Turingpattern_NN\RTN.py:
+"""
+import sys
+from pathlib import Path
+
+udir = str(Path(__file__).parent.parent)
+sys.path.append(udir)
+
+from mathexpand import mul, add, div, iterate
+
+def sigmoid(x):
+    e = 13580623/4996032
+    try:
+        return div(1, add(1, e**mul(x,-1)))
+    except:
+        return abs(x)/x
+
+class RTN:
+    __slots__ = ('neurons', 'weights', 'tg', 'sr_graph', 'tg_graph')
+
+    def __init__(self, neurons: list[list[callable]], weights: list[dict[tuple[int] | dict[tuple[int] | float]], list[list]], tg: list[list[list[float]]], sr_graph: list[list[list[float]]] ,tg_graph: list[list[float]]):
+        self.neurons = neurons
+        self.weights = weights
+        self.tg = [[j + [0.0] for j in i] for i in tg]
+        self.sr_graph = sr_graph
+        self.tg_graph = tg_graph
+
+    def forward(self, inputs):
+        nn_ans = self.nn_dynamics(inputs)
+
+        self.tg = [[self.tg[i][j][0:-1] + [nn_ans[i][j]] for j in range(len(self.tg[i]))] for i in range(len(self.tg))]
+        tg_ans = self.tg_updata()
+        self.tg = [[[add(self.tg[i][j][k], tg_ans[i][j][k]) for k in range(len(self.tg[i][j]))] for j in range(len(self.tg[i]))] for i in range(len(self.tg))]
+
+        return nn_ans[-1]
+
+    def nn_dynamics(self, inputs) -> list[list]:
+        if len(inputs) > len(self.neurons[0]): raise(ValueError(inputs))
+        inputs = [inputs[i] if i < len(inputs) else 0.0 for i in range(len(self.neurons[0]))]
+        answer = [[0.0 for _ in self.neurons[i]] for i in range(len(self.neurons))]
+
+        answer[0] = [add(self.neurons[0][i](inputs[i], self.weights[1][0][i], self), self.tg_dynamics(None, (0, i, len(self.tg[0][i])-1))) for i in range(len(inputs))]
+        for i in range(1, len(self.neurons)):
+            for j in range(len(self.neurons[i])):
+                cnt = 0
+                for k in [i-l for l in range(i)]:
+                    for l in range(len(self.neurons[i-k])):
+                        try:
+                            cnt = add(cnt, mul(answer[i-k][l], self.weights[0][(i-k, l)][(i, j)]))
+                        except:
+                            pass
+                answer[i][j] = add(self.neurons[i][j](cnt, self.weights[1][i][j], self), self.tg_dynamics(None, (i, j, len(self.tg[i][j])-1)))
+        return answer
+    
+    def tg_dynamics(self, start: tuple | None, end: tuple):
+        dv = 0.0
+        if start is None:
+            starts = []
+            for i in self.weights[0]:
+                if end[:2] in self.weights[0][i]: starts.append(i)
+            starts += [end[:2]]
+            for i in starts:
+                for j in range(len(self.tg[i[0]][i[1]])):
+                    dv = add(dv, self.tg_dynamics((i[0], i[1], j), end))
+        else:
+            dv = mul(self.tg_graph[start[2]][end[2]], self.tg[start[0]][start[1]][start[2]])
+
+        return mul(dv, self.sr_dynamics((end[0], end[1])))
+    
+    def sr_dynamics(self, index: tuple):
+        starts = []
+        ret = 0.0
+        for i in self.weights[0]:
+            if index in self.weights[0][i]: starts.append(i)
+        for i in starts:
+            nsr = 0.0
+            for j in range(len(self.tg[i[0]][i[1]])-1):
+                nsr = add(nsr, mul(self.tg[i[0]][i[1]][j], self.sr_graph[i[0]][i[1]][j]))
+            ret = add(ret, mul(nsr, self.weights[0][i][index]))
+        return add(1, mul(-1, sigmoid(ret)))
+    
+    def tg_updata(self) -> list[list[list]]:
+        return [[[self.tg_dynamics(None, (i, j, k)) for k in range(len(self.tg[i][j]))] for j in range(len(self.tg[i]))] for i in range(len(self.tg))]
+
+if __name__ == "__main__":
+    rtn = RTN([[lambda x, parameter, nn: x, lambda x, parameter, nn: x, lambda x, parameter, nn: x], [lambda x, parameter, nn: x, lambda x, parameter, nn: x,lambda x, parameter, nn: x]], 
+              [{(0,0):{(1,0): 0.5, (1,1): 1.2, (1,2): -1.0}, (0,1):{(1,0): 0.0, (1,1): 1.8, (1,2): -0.2}, (0,2):{(1,0): 1.0, (1,1): 0.5, (1,2): -1.2}}, [[1.0, 1.0, 1.0], [1.0, 1.0, 1.0]]],
+              [[[0.0 for _ in range(4)], [0.0 for _ in range(4)], [0.0 for _ in range(4)]], [[0.0 for _ in range(4)], [0.0 for _ in range(4)], [0.0 for _ in range(4)]]],
+              [[[1.0] + [0.0 for _ in range(3)], [0.0] + [0.0 for _ in range(3)], [0.0] + [0.0 for _ in range(3)]], [[0.0] + [0.0 for _ in range(3)], [0.0] + [0.0 for _ in range(3)], [0.0] + [0.0 for _ in range(3)]]],
+              [[1.0, -1.0, 1.0, -1.0, 1.0], [1.0, -0.5, 1.0, -0.5, 1.0], [1.0, -1.0, 1.0, -1.0, 0.0], [1.0, -0.5, 1.0, -0.5, 0.0], [1.0, 0.0, 1.0, 0.0, 0.0]]
+              )
+    for i in range(100):
+        ans = rtn.forward([1.0,-1.0,1])
+        rtn.tg = [[[sigmoid(k) for k in j] for j in i] for i in rtn.tg]
+        print(ans)
+"""
+
+# GPT\Modle\Remember_Turingpattern_NN\__init__.py:
+"""
+from .RTN import RTN, sigmoid
+from .operations import neurons_generator, weights_brush, tg_brush, sr_graph_brush, tg_graph_brush
+
+__all__ = ['RTN', 'sigmoid', 'neurons_generator', 'weights_brush', 'tg_brush', 'sr_graph_brush', 'tg_graph_brush']
 """
 
 # GPT\Modle\Vector\operations.py:
@@ -1544,6 +2547,389 @@ __all__ = [
     'abs_vector',
     'compare'
 ]
+"""
+
+# Outputio\parrot\parrot.py:
+"""
+import random
+import winsound
+import tempfile
+import wave
+import struct
+import math
+import os
+
+class synthesizer:
+    def __init__(self):
+        pass
+    
+    def play_func(self, func, duration):
+        with tempfile.NamedTemporaryFile(suffix='.wav', delete=False) as tmp:
+            filename = tmp.name
+        
+        try:
+            sample_rate = 8000
+            with wave.open(filename, 'w') as wav:
+                wav.setnchannels(1)
+                wav.setsampwidth(2)
+                wav.setframerate(sample_rate)
+                
+                for i in range(int(duration * sample_rate)):
+                    print(f"\rLoading {["—", "/", "|", "\\"][int(i/1000)%4]} {int(i / duration / sample_rate * 100)+1}%", end="      ")
+                    t = i / sample_rate
+                    value = func(t)
+                    value = math.tanh(value)
+                    sample = int(value * 32767)
+                    wav.writeframes(struct.pack('<h', sample))
+            
+            winsound.PlaySound(filename, winsound.SND_FILENAME)
+            
+        finally:
+            if os.path.exists(filename):
+                os.unlink(filename)
+
+    def sin_fft(self, fft: dict[float, float], x, index: int = 0, reg = []):
+        if x == 0 or (index * 2 + 1 < len(reg) and reg[index * 2] != list(fft.keys())):
+            frequencies = list(fft.keys())
+            amplitudes = list(fft.values())
+            angular_freqs = [2 * math.pi * f for f in frequencies]
+            
+            while len(reg) <= index * 2 + 1:
+                reg.append(0.0)
+            
+            reg[index * 2] = angular_freqs
+            reg[index * 2 + 1] = amplitudes
+        
+        if index * 2 + 1 < len(reg) and reg[index * 2] != 0.0:
+            freqs = reg[index * 2]
+            amps = reg[index * 2 + 1]
+            
+            result = 0.0
+            for i in range(len(freqs)):
+                result += math.sin(freqs[i] * x) * amps[i]
+            return result
+        
+        return 0.0
+    
+    def bool_fft(self, fft: dict[float, float], x, index: int = 0, reg = []):
+        if x == 0 or (index * 2 + 1 < len(reg) and reg[index * 2] != list(fft.keys())):
+            frequencies = list(fft.keys())
+            amplitudes = list(fft.values())
+            angular_freqs = [2 * math.pi * f for f in frequencies]
+            
+            while len(reg) <= index * 2 + 1:
+                reg.append(0.0)
+            
+            reg[index * 2] = angular_freqs
+            reg[index * 2 + 1] = amplitudes
+        
+        if index * 2 + 1 < len(reg) and reg[index * 2] != 0.0:
+            freqs = reg[index * 2]
+            amps = reg[index * 2 + 1]
+            
+            result = 0.0
+            for i in range(len(freqs)):
+                sign = 1.0 if math.sin(freqs[i] * x) >= 0 else -1.0
+                result += sign * amps[i]
+            return result
+        
+        return 0.0
+    
+    def triangle_fft(self, fft: dict[float, float], x, index: int = 0, reg = []):
+        if x == 0 or (index * 2 + 1 < len(reg) and reg[index * 2] != list(fft.keys())):
+            frequencies = list(fft.keys())
+            amplitudes = list(fft.values())
+            angular_freqs = [2 * math.pi * f for f in frequencies]
+            
+            while len(reg) <= index * 2 + 1:
+                reg.append(0.0)
+            
+            reg[index * 2] = angular_freqs
+            reg[index * 2 + 1] = amplitudes
+        
+        if index * 2 + 1 < len(reg) and reg[index * 2] != 0.0:
+            freqs = reg[index * 2]
+            amps = reg[index * 2 + 1]
+            
+            result = 0.0
+            for i in range(len(freqs)):
+                result += (2 / math.pi) * math.asin(math.sin(freqs[i] * x)) * amps[i]
+            return result
+        
+        return 0.0
+    
+    def random_fft(self, fft: dict[float, float], x, index: int = 0, reg = []):
+        if x == 0 or (index * 2 + 1 < len(reg) and reg[index * 2] != list(fft.keys())):
+            frequencies = list(fft.keys())
+            amplitudes = list(fft.values())
+            angular_freqs = [2 * math.pi * f for f in frequencies]
+            
+            while len(reg) <= index * 2 + 1:
+                reg.append(0.0)
+            
+            reg[index * 2] = angular_freqs
+            reg[index * 2 + 1] = amplitudes
+        
+        if index * 2 + 1 < len(reg) and reg[index * 2] != 0.0:
+            def f(t, a):
+                ret = 0.0
+                deep = 5
+                for i in range(1, deep+1):
+                    random.seed(int(t * 1000) + i * int(a * 100))
+                    amp = 1.0 / (i ** 1.5)
+                    phase = random.uniform(0, 2 * math.pi)
+                    ret += random.uniform(0, amp) * math.sin(a*t+phase)
+                return ret / deep
+            
+            freqs = reg[index * 2]
+            amps = reg[index * 2 + 1]
+            
+            result = 0.0
+            for i in range(len(freqs)):
+                result += f(x, freqs[i]) * amps[i]
+            return result
+        
+        return 0.0
+
+    def mixed(self, ffts: list, weights: list, x):
+        total_n = 0.0
+        total_weight = 0.0
+        
+        for i, (fft, weight) in enumerate(zip(ffts, weights)):
+            contribution = self.sin_fft(fft, x, i)
+            total_n += weight * contribution
+            total_weight += weight
+        
+        if total_weight == 0:
+            return 0.0
+        return total_n / total_weight
+
+    
+    def envelope_adsr(self, t, duration, attack=0.1, decay=0.1, sustain=0.7, release=0.2):
+        if t < attack:
+            return t / attack
+        elif t < attack + decay:
+            return 1.0 - (1.0 - sustain) * ((t - attack) / decay)
+        elif t < duration - release:
+            return sustain
+        else:
+            release_start = duration - release
+            if t >= release_start:
+                return sustain * (1.0 - (t - release_start) / release)
+        return 0.0
+
+    def envelope_linear(self, t, duration, start=0.0, end=1.0):
+        return start + (end - start) * (t / duration)
+
+    def envelope_exp(self, t, duration, start=1.0, end=0.0, decay=3.0):
+        return start * math.exp(-decay * t / duration)
+
+    def envelope_gate(self, t, duration, start=0.1, end=0.9):
+        if start <= t <= end:
+            return 1.0
+        return 0.0
+
+    def envelope_tremolo(self, t, freq=5.0, depth=0.5):
+        return 1.0 - depth * 0.5 + depth * 0.5 * math.sin(2 * math.pi * freq * t)
+
+    def envelope_multistage(self, t, points):
+        if t <= points[0][0]:
+            return points[0][1]
+        
+        for i in range(len(points) - 1):
+            t1, v1 = points[i]
+            t2, v2 = points[i + 1]
+            if t1 <= t <= t2:
+                ratio = (t - t1) / (t2 - t1)
+                return v1 + (v2 - v1) * ratio
+        
+        return points[-1][1]
+
+    
+    def with_envelope(self, sound_func, envelope_func, *envelope_args):
+        def wrapped(t):
+            sound = sound_func(t)
+            env = envelope_func(t, *envelope_args)
+            return sound * env
+        return wrapped
+
+    def func_filter(self, x, fres):
+        sigmoid = lambda x: 1 / (1 + math.e ** -x)
+        return sigmoid(x - fres) * (1 - sigmoid(x - fres)) * 4 * x
+
+    def time_weight(self, nowtime, totaltime):
+        return max(0, (totaltime - nowtime) / totaltime)
+    
+    def random_weight(self, probability):
+        return min(1, max(0, random.uniform(0.5-probability, 0.5+probability)))
+
+    def exp_weight(self, nowtime, totaltime, decay=2.0):
+        return math.exp(-decay * nowtime / totaltime)
+
+    def sin_weight(self, nowtime, totaltime):
+        return abs(math.sin(math.pi * nowtime / totaltime))
+    
+class parrot:
+    def __init__(self, length: float = 20, n_segments: int = 20, nasal_length_ratio: float = 0.5):
+        self.n = n_segments
+        self.total_length = length / 100
+        self.dx = self.total_length / n_segments
+        self.areas = [2.0] * n_segments
+        self.c = 340
+        self.nasal_length_ratio = nasal_length_ratio
+        self.nasal_length = self.total_length * nasal_length_ratio
+        self.nasal_area = 1.0
+        self.nasal_coupling = 0.3
+        self.voiced = 1.0
+        self.s = synthesizer()
+        self.key = {}
+        self.obstruction_threshold = 0.0
+        self.noise_threshold = 0.25
+        
+    def check_obstructions(self):
+        min_area = min(self.areas)
+        min_index = self.areas.index(min_area)
+        if min_area < self.obstruction_threshold:
+            return min_index
+        return None
+    
+    def is_obstruction_before_velum(self, obstruction_pos):
+        velum_position = int(self.n * 0.66)
+        return obstruction_pos < velum_position
+    
+    def gate(self, alpha, fft: dict[float, float], index: int = 0):
+        return lambda t: max(min(1, alpha)*self.s.triangle_fft(fft, t, index*2), (1-min(1, alpha))*self.s.random_fft(fft, t, index*2+1))
+
+    def tube(self, len):
+        depth = 5
+        resonances = {}
+        for i in range(1, depth + 1):
+            freq = (2 * i - 1) * self.c / (len * 4)
+            amplitude = 1 / i
+            resonances[freq] = amplitude
+        return resonances
+    
+    def speak(self):
+        fft_dict = {}
+        obstruction_pos = self.check_obstructions()
+        avg_area = sum(self.areas) / len(self.areas)
+        
+        noise_intensity = 0.0
+        for area in self.areas:
+            if area < self.noise_threshold:
+                noise_intensity += (self.noise_threshold - area) / self.noise_threshold
+        noise_intensity = min(1.0, noise_intensity / len(self.areas) * 2)
+        
+        if obstruction_pos is not None:
+            if self.nasal_area >= 0.0 and self.is_obstruction_before_velum(obstruction_pos):
+                nasal_resonances = self.tube(self.nasal_length)
+                for freq, amp in nasal_resonances.items():
+                    fft_dict[freq] = amp * self.nasal_coupling * obstruction_pos / 4
+                if noise_intensity > 0:
+                    for _ in range(3):
+                        noise_freq = random.uniform(2000, 5000)
+                        fft_dict[noise_freq] = noise_intensity * 0.2 * obstruction_pos / 4
+            else:
+                if noise_intensity > 0.5:
+                    for _ in range(2):
+                        noise_freq = random.uniform(1000, 3000)
+                        fft_dict[noise_freq] = noise_intensity * 0.1
+        else:
+            base_freq = 340 / (2 * self.total_length) * random.uniform(0.5, 1.5)
+            tube_resonances = self.tube(self.total_length)
+            
+            for freq, amp in tube_resonances.items():
+                adjusted_amp = amp * (avg_area / 2.0)
+                fft_dict[freq] = adjusted_amp
+            
+            if self.nasal_area >= 0.0:
+                nasal_resonances = self.tube(self.nasal_length)
+                for freq, amp in nasal_resonances.items():
+                    if freq in fft_dict:
+                        fft_dict[freq] += amp * self.nasal_coupling * 0.5
+                    else:
+                        fft_dict[freq] = amp * self.nasal_coupling * 0.5
+            
+            for harmonic in range(1, 6):
+                freq = base_freq * harmonic
+                if freq > 8000:
+                    break
+                amplitude = 1.0 / (harmonic ** 1.5)
+                segment_variation = 1.0
+                for i, area in enumerate(self.areas):
+                    if 100 * (i + 1) < freq < 200 * (i + 2):
+                        segment_variation *= (area / 2.0)
+                amplitude *= segment_variation
+                for existing_freq in fft_dict:
+                    if abs(freq - existing_freq) < 50:
+                        amplitude += fft_dict[existing_freq] * 0.3
+                        break
+                if freq in fft_dict:
+                    fft_dict[freq] = max(fft_dict[freq], amplitude)
+                else:
+                    fft_dict[freq] = amplitude
+            
+            if noise_intensity > 0:
+                for _ in range(int(5 * noise_intensity)):
+                    noise_freq = random.uniform(2000, 6000)
+                    noise_amp = random.uniform(0.05, 0.15) * (avg_area / 3.0) * noise_intensity
+                    fft_dict[noise_freq] = noise_amp
+        
+        return (self.voiced, fft_dict)
+    
+    def add_key(self, name, val):
+        self.key[name] = val
+        return self
+    
+    def get_key(self, key):
+        self.areas = list(key)[0]
+        self.nasal_area = list(key)[1]
+        self.voiced = list(key)[2]
+        return self
+
+    def get_key_for_(self, name):
+        self.get_key(self.key[name])
+        return self
+    
+    def syllable(self, vowel, consonant, t, duration):
+        v = list(self.key[vowel])
+        c = list(self.key[consonant])
+
+        ratio = t/duration
+
+        return morph_key([ratio*i + (1 - ratio)*j for i,j in zip(v[0], c[0])], ratio*v[1] + (1-ratio)*c[1], ratio*v[2] + (1-ratio)*c[2])
+    
+class morph_key:
+    def __init__(self, areas, nasal, voiced):
+        self.areas = areas
+        self.nasal = nasal
+        self.voiced = voiced
+    
+    def __list__(self):
+        return [self.areas, self.nasal, self.voiced]
+    
+    def __iter__(self):
+        return iter([self.areas, self.nasal, self.voiced])
+
+if __name__ == "__main__":
+    p = parrot(12, 4)
+
+    T = 4
+
+    
+    p.add_key("b", morph_key([1.0,1.0,0.5,0.0], 0.0, 1.0))
+    p.add_key("a", morph_key([1.0,1.0,1.5,0.75], 0.0, 1.0))
+
+    f = lambda t: p.gate(*p.get_key(p.syllable("b","a", t%2, 2)).speak())(t) * p.s.envelope_adsr(t%2, 2)
+
+    p.s.play_func(f, T)
+"""
+
+# Outputio\parrot\__init__.py:
+"""
+from .parrot import synthesizer, parrot, morph_key
+
+__all__ = ["synthesizer", "parrot", "morph_key"]
 """
 
 # Outputio\tuidisplay\tuidisplay.py:
@@ -2294,6 +3680,32 @@ sys.path.append(udir)
 
 import tuidisplay as tui
 
+"""
+
+# test\ccatest.py:
+"""
+import sys
+from pathlib import Path
+
+udir = str(Path(__file__).parent.parent)
+sys.path.append(udir)
+
+from GPT.Modle.Remember_Turingpattern_NN import RTN, neurons_generator, weights_brush, tg_brush, sr_graph_brush, tg_graph_brush
+from GPT.Modle.CCATransformer import CCATransformer, Const
+from GPT.Modle.Vector import Vector
+
+cat = CCATransformer(
+        {
+            "苹果": {
+                Vector([1,0,0,0]): Vector([1,1,1,1]),
+                Vector([0,0,1,0]): Vector([2,2,2,2])
+            },
+            "香蕉": {
+                Vector([0,1,0,0]): Vector([2,2,2,2])
+            }
+        },
+        temperature=Const.E
+    )
 """
 
 # test\loading_string.py:
