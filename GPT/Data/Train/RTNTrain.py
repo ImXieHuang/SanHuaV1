@@ -51,7 +51,7 @@ class RTN_Trainer:
                 ret[i][k] = function(i, k, l)
         return ret
     
-    def static_trainer(self, inputs: list[list], outputs: list[list], lossfunction: callable, lambdafunction: callable, r: float, dorpout: float, rtn: RTN):
+    def static_trainer(self, inputs: list[list], outputs: list[list], lossfunction: callable, lambdafunction: callable, r: float, maxdw: float, dorpout: float, rtn: RTN):
         L = 0.0
         for i in list(rtn.weights[0].values()):
             for j in list(i.values()):
@@ -61,21 +61,21 @@ class RTN_Trainer:
                 L = add(L, lambdafunction(j))
         
         def Wgradfunction(start, end, weight):
-            return self.weight_loss_gradient(start, end, ip, lambda x: lossfunction(x, op) + L, rtn)
+            return div(self.weight_loss_gradient(start, end, ip, lambda x: lossfunction(x, op) + L, rtn), abs(weight))
         def Pgradfunction(index, _, weight):
-            return self.parameter_loss_gradient(index, ip, lambda x: lossfunction(x, op) + L, rtn)
+            return div(self.parameter_loss_gradient(index, ip, lambda x: lossfunction(x, op) + L, rtn), abs(rtn.weights[1][index[0]][index[1]]))
         def Witeration(start, end, weight):
             if uniform(0.0,1.0) < dorpout: return
-            rtn.weights[0][start][end] = sub(rtn.weights[0][start][end], mul(r, wg[start][end]))
+            rtn.weights[0][start][end] = sub(rtn.weights[0][start][end], min(max(-maxdw, mul(r, wg[start][end])), maxdw))
         def Piteration(index, _, weight):
             if uniform(0.0,1.0) < dorpout: return
-            rtn.weights[1][index[0]][index[1]] = sub(rtn.weights[1][index[0]][index[1]], mul(r, pg[index][_]))
+            rtn.weights[1][index[0]][index[1]] = sub(rtn.weights[1][index[0]][index[1]], min(max(-maxdw, mul(r, pg[index][_])), maxdw))
     
         for ip,op in zip(inputs, outputs):
-            wg = t.traverse_weight_for_(Wgradfunction, rtn)
-            pg = t.traverse_weight_for_(Pgradfunction, rtn)
-            t.traverse_weight_for_(Witeration, rtn)
-            t.traverse_weight_for_(Piteration, rtn)
+            wg = self.traverse_weight_for_(Wgradfunction, rtn)
+            pg = self.traverse_weight_for_(Pgradfunction, rtn)
+            self.traverse_weight_for_(Witeration, rtn)
+            self.traverse_weight_for_(Piteration, rtn)
 
 if __name__ == "__main__":
     t = RTN_Trainer()
@@ -86,15 +86,16 @@ if __name__ == "__main__":
               tg_graph_brush()
               )
     def loss(x, op):
-        cnt = 0.0
-        for i,j in zip(x,op):
-            cnt += sub(i, j) ** 2
-        return cnt
+        loss = 0.0
+        for o, t in zip(x, op):
+            diff = sub(o, t)
+            loss = add(loss, mul(diff, diff))
+        return loss
     def lambda_(weight):
-        return 0.1 * weight ** 2
+        return mul(0.05, mul(weight, weight))
 
     for i in range(10):
-        t.static_trainer([[i,0,0] for i in range(4)], [[0,0,i] for i in range(4)], loss, lambda_, 0.05, 0.2, rtn)
+        t.static_trainer([[2*i,0,0] for i in range(4)]+[[0,i,0] for i in range(4)]+[[0,0,i] for i in range(4)], [[0,0,2*i] for i in range(4)]+[[0,0,0] for _ in range(8)], loss, lambda_, 0.05, 1.0, 0.2, rtn)
         print(rtn.nn_dynamics([1.0, 0, 0])[-1])
 
     print("Training is end")

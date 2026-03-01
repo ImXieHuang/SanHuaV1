@@ -30,18 +30,18 @@ def weights_brush(res:int = 0, width:int = 3, height: int = 3):
             for i_n in range(height):
                 weights[(i_l, i_n)] = {}
                 for j_n in range(height):
-                    weights[(i_l, i_n)][(i_l+1, j_n)] = 1.0
+                    weights[(i_l, i_n)][(i_l+1, j_n)] = 0.1
     else:
         weights = {}
         for i_l in range(width-1):
             for i_n in range(height):
                 weights[(i_l, i_n)] = {}
                 for j_n in range(height):
-                    weights[(i_l, i_n)][(i_l+1, j_n)] = 1.0
+                    weights[(i_l, i_n)][(i_l+1, j_n)] = 0.1
                 if i_l % res == res-1 and i_l + res < width:
                     for res_n in range(height):
                         weights[(i_l, i_n)][(i_l+res, res_n)] = 1.0
-    return [weights, [[1.0]*width]*height]
+    return [weights, [[0.1]*width]*height]
 
 def tg_brush(width:int = 3, height: int = 3, tg_types: int = 4):
     return [[[0.0 for _ in range(tg_types)] for _ in range(width)] for _ in range(height)]
