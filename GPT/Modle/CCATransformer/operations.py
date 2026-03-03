@@ -168,9 +168,11 @@ def get_meaning_of_tokens_at_(CAT: CCA.CCATransformer, AtQ: Vector, tokens: list
                 else:
                     big_Q = mexp.iterate(mexp.add, vector_list)
                 
-                if not isinstance(big_Q, Vector):
+                if not hasattr(big_Q, 'VECTORFLAG'):
                     if isinstance(big_Q, (int, float)):
                         big_Q = Vector([0.0, 0.0, 0.0, 0.0])
+                    elif isinstance(big_Q, list):
+                        big_Q = Vector([big_Q])
                     else:
                         try:
                             big_Q = Vector([float(big_Q)] * 4)
@@ -179,11 +181,11 @@ def get_meaning_of_tokens_at_(CAT: CCA.CCATransformer, AtQ: Vector, tokens: list
                 
                 bigQ_graph[i][j] = CAT.get_value_for_(tokens[j], big_Q)
 
-                cnt_n[j] = const ** mexp.div(vector.dot(big_Q, AtQ), T.value).value
+                cnt_n[j] = const ** mexp.div(vector.dot(big_Q, AtQ), T.value)
                 cnt_m = mexp.add(cnt_m, cnt_n[j])
             
             for j in range(i+1):
-                bigQ_graph[i][j] = mexp.div(mexp.mul(bigQ_graph[i][j], cnt_n[j]), cnt_m).value
+                bigQ_graph[i][j] = mexp.div(mexp.mul(bigQ_graph[i][j], cnt_n[j]), cnt_m)
     
     meaning_vectors = []
     for i in range(len(tokens)):

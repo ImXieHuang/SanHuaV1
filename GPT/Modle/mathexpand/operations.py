@@ -171,6 +171,9 @@ def process_nested_operation(func: callable, a: Any, b: Any) -> Any:
             raise TypeError(f"Unsupported operand types: {type(a)} and {type(b)}")
 
 def mul(a: Union[Vector, int, float, fraction, list], b: Union[Vector, int, float, fraction, list] = 1) -> Union[Vector, float, fraction, list]:
+    if isinstance(a, str) or isinstance(b, str):
+        return str(a) + str(b)
+    
     def multiply_func(x, y):
         if isinstance(x, fraction) or isinstance(y, fraction):
             if not isinstance(x, fraction):
@@ -183,6 +186,9 @@ def mul(a: Union[Vector, int, float, fraction, list], b: Union[Vector, int, floa
     return process_nested_operation(multiply_func, a, b)
 
 def div(a: Union[Vector, int, float, fraction, list], b: Union[Vector, int, float, fraction, list] = 1, miny: float = 1e-10) -> Union[Vector, float, fraction, list]:
+    if isinstance(a, str) or isinstance(b, str):
+        return str(a) + str(b)
+    
     def divide_func(x, y):
         abs_y = abs(y.value if isinstance(y, fraction) else y)
         if abs_y <= miny:
@@ -199,6 +205,9 @@ def div(a: Union[Vector, int, float, fraction, list], b: Union[Vector, int, floa
     return process_nested_operation(divide_func, a, b)
 
 def add(a: Union[Vector, int, float, fraction, list], b: Union[Vector, int, float, fraction, list] = 0) -> Union[Vector, float, fraction, list]:
+    if isinstance(a, str) or isinstance(b, str):
+        return str(a) + str(b)
+
     def add_func(x, y):
         if isinstance(x, fraction) or isinstance(y, fraction):
             if not isinstance(x, fraction):
@@ -211,6 +220,9 @@ def add(a: Union[Vector, int, float, fraction, list], b: Union[Vector, int, floa
     return process_nested_operation(add_func, a, b)
 
 def sub(a: Union[Vector, int, float, fraction, list], b: Union[Vector, int, float, fraction, list] = 0) -> Union[Vector, float, fraction, list]:
+    if isinstance(a, str) or isinstance(b, str):
+        return str(a) + str(b)
+    
     def subtract_func(x, y):
         if isinstance(x, fraction) or isinstance(y, fraction):
             if not isinstance(x, fraction):

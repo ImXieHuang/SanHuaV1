@@ -10,8 +10,8 @@ def sigmoid(x):
     e = 13580623/4996032
     try:
         return div(1, add(1, e**mul(x,-1)))
-    except:
-        return abs(x)/x
+    except:     
+        return div(abs(x),x)
 
 class RTN:
     __slots__ = ('neurons', 'weights', 'tg', 'sr_graph', 'tg_graph')
@@ -37,7 +37,7 @@ class RTN:
         inputs = [inputs[i] if i < len(inputs) else 0.0 for i in range(len(self.neurons[0]))]
         answer = [[0.0 for _ in self.neurons[i]] for i in range(len(self.neurons))]
 
-        answer[0] = [add(self.neurons[0][i](inputs[i], self.weights[1][0][i], self), self.tg_dynamics(None, (0, i, len(self.tg[0][i])-1))) for i in range(len(inputs))]
+        answer[0] = [add(self.neurons[0][i](inputs[i], self.weights[1][0][i], self, (0,i)), self.tg_dynamics(None, (0, i, len(self.tg[0][i])-1))) for i in range(len(inputs))]
         for i in range(1, len(self.neurons)):
             for j in range(len(self.neurons[i])):
                 cnt = 0
@@ -47,7 +47,7 @@ class RTN:
                             cnt = add(cnt, mul(answer[i-k][l], self.weights[0][(i-k, l)][(i, j)]))
                         except:
                             pass
-                answer[i][j] = add(self.neurons[i][j](cnt, self.weights[1][i][j], self), self.tg_dynamics(None, (i, j, len(self.tg[i][j])-1)))
+                answer[i][j] = add(self.neurons[i][j](cnt, self.weights[1][i][j], self, (i,j)), self.tg_dynamics(None, (i, j, len(self.tg[i][j])-1)))
         return answer
     
     def tg_dynamics(self, start: tuple | None, end: tuple):
@@ -81,7 +81,7 @@ class RTN:
         return [[[self.tg_dynamics(None, (i, j, k)) for k in range(len(self.tg[i][j]))] for j in range(len(self.tg[i]))] for i in range(len(self.tg))]
 
 if __name__ == "__main__":
-    rtn = RTN([[lambda x, parameter, nn: x, lambda x, parameter, nn: x, lambda x, parameter, nn: x], [lambda x, parameter, nn: x, lambda x, parameter, nn: x,lambda x, parameter, nn: x]], 
+    rtn = RTN([[lambda x, parameter, nn, index: x, lambda x, parameter, nn, index: x, lambda x, parameter, nn, index: x], [lambda x, parameter, nn, index: x, lambda x, parameter, nn, index: x,lambda x, parameter, nn, index: x]], 
               [{(0,0):{(1,0): 0.5, (1,1): 1.2, (1,2): -1.0}, (0,1):{(1,0): 0.0, (1,1): 1.8, (1,2): -0.2}, (0,2):{(1,0): 1.0, (1,1): 0.5, (1,2): -1.2}}, [[1.0, 1.0, 1.0], [1.0, 1.0, 1.0]]],
               [[[0.0 for _ in range(4)], [0.0 for _ in range(4)], [0.0 for _ in range(4)]], [[0.0 for _ in range(4)], [0.0 for _ in range(4)], [0.0 for _ in range(4)]]],
               [[[1.0] + [0.0 for _ in range(3)], [0.0] + [0.0 for _ in range(3)], [0.0] + [0.0 for _ in range(3)]], [[0.0] + [0.0 for _ in range(3)], [0.0] + [0.0 for _ in range(3)], [0.0] + [0.0 for _ in range(3)]]],

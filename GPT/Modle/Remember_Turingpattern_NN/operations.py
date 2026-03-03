@@ -15,14 +15,14 @@ from mathexpand import add, sub, mul, div
 
 def neurons_generator(model:str, width:int = 3, height: int = 3):
     preset = {
-        "any": [[lambda x, parameter, nn: sigmoid(x + parameter) * (x + parameter)]],
-        "cnn": [[lambda x, parameter, nn: conv(x, parameter)],[lambda x, parameter, nn: pool(x)]],
-        "vector": [[lambda x, parameter, nn: Vector([sigmoid(i) for i in x.components])]]
+        "any": [[lambda x, parameter, nn, index: sigmoid(x + parameter) * (x + parameter)]],
+        "cnn": [[lambda x, parameter, nn, index: conv(x, parameter)],[lambda x, parameter, nn, index: pool(x)]],
+        "vector": [[lambda x, parameter, nn, index: Vector([sigmoid(i) for i in x.components])]]
     }
 
     return [i*height for i in preset[model]] * width
 
-def weights_brush(res:int = 0, width:int = 3, height: int = 3):
+def weights_brush(weight: float = 0.1, res:int = 0, width:int = 3, height: int = 3):
     if res < 0: raise(ValueError(res))
     if res == 0:
         weights = {}
@@ -30,18 +30,18 @@ def weights_brush(res:int = 0, width:int = 3, height: int = 3):
             for i_n in range(height):
                 weights[(i_l, i_n)] = {}
                 for j_n in range(height):
-                    weights[(i_l, i_n)][(i_l+1, j_n)] = 0.1
+                    weights[(i_l, i_n)][(i_l+1, j_n)] = weight
     else:
         weights = {}
         for i_l in range(width-1):
             for i_n in range(height):
                 weights[(i_l, i_n)] = {}
                 for j_n in range(height):
-                    weights[(i_l, i_n)][(i_l+1, j_n)] = 0.1
+                    weights[(i_l, i_n)][(i_l+1, j_n)] = weight
                 if i_l % res == res-1 and i_l + res < width:
                     for res_n in range(height):
                         weights[(i_l, i_n)][(i_l+res, res_n)] = 1.0
-    return [weights, [[0.1]*width]*height]
+    return [weights, [[weight]*width]*height]
 
 def tg_brush(width:int = 3, height: int = 3, tg_types: int = 4):
     return [[[0.0 for _ in range(tg_types)] for _ in range(width)] for _ in range(height)]

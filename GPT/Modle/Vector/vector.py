@@ -1,5 +1,11 @@
 import math
 from typing import List, Union
+import sys
+from pathlib import Path
+
+udir = str(Path(__file__).parent.parent)
+sys.path.append(udir)
+
 from fraction import fraction
 
 class Vector:
@@ -113,6 +119,9 @@ class Vector:
     
     def __rmul__(self, scalar: float) -> 'Vector':
         return self.__mul__(scalar)
+    
+    def __abs__(self) -> 'Vector':
+        return Vector([abs(x) for x in self.components])
     
     def __truediv__(self, scalar: Union[float, fraction]) -> 'Vector':
         if isinstance(scalar, (int, float, fraction)):

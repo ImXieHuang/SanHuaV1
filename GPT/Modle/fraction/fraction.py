@@ -70,6 +70,9 @@ class fraction:
         if isinstance(power, (int, float)):
             result = self.value ** power
             return fraction(int(result * 1000), 1000)
+        elif isinstance(power, fraction):
+            result = self.value ** power.value
+            return fraction(int(result * 1000), 1000)
         raise TypeError("Power must be a number.")
     
     def __rpow__(self, base):
