@@ -44,7 +44,7 @@ class CCATransformer():
     def get_key_for_(self, token: str):
         if token not in self.database:
             raise KeyError(f"token '{token}' not found in database")
-        return sum([v for v in self.database[token].values()], Vector([0.0, 0.0, 0.0, 0.0]))
+        return div(sum([v for v in self.database[token].values()], Vector([0.0, 0.0, 0.0, 0.0])), len(list(self.database[token].values())))
     
     def get_value_for_(self, token: str, big_Q: Vector):
         if token not in self.database:

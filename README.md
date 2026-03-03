@@ -9,7 +9,7 @@
 
 ## 致谢
 - ### 美术方面
-    - **JetBrainsMono-Bold** 美术字体
+    - **JetBrainsMono-Bold** 美术字体，其许可证遵循 SIL Open Font License (OFL)，详情请查看：`SanHuaV1/Outputio/fonts/OFL.md`
 - ### 学术方面
     - **学术思想先驱：** 艾伦·图灵 与 众多先辈（反应-扩散模型、元胞自动机、机器学习理论框架）
     - **文本训练数据来源：** 鲁迅、刘慈欣等作家的作品。
