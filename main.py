@@ -16,6 +16,13 @@ def main():
         
         def toggle_fullscreen():
             root.attributes('-fullscreen', not root.attributes('-fullscreen'))
+
+        def handle_submit(text, variable_name):  
+            inputs.text_string = ""
+            inputs.cursor_pos = 0
+            
+            inputs.dirty = True
+            app.fast_redraw()
         
         app.bind_global_key("Escape", quit_app)
         app.bind_global_key("F11", toggle_fullscreen)
@@ -33,6 +40,9 @@ def main():
 
         box = TextBox(img1, text_align="left", x=3, palette=palette)
         app.add_text_box(box)
+
+        inputs = InputBox(width=50, y=10, on_submit=handle_submit)
+        app.add_input_box(inputs)
 
         def update():
             app.refresh()

@@ -5,6 +5,7 @@ import wave
 import struct
 import math
 import os
+from time import time
 
 class synthesizer:
     def __init__(self):
@@ -22,7 +23,7 @@ class synthesizer:
                 wav.setframerate(sample_rate)
                 
                 for i in range(int(duration * sample_rate)):
-                    print(f"\rLoading {["—", "/", "|", "\\"][int(i/1000)%4]} {int(i / duration / sample_rate * 100)+1}%", end="      ")
+                    print(f"\rLoading {[".   ", "..  ", "... ", "...."][int(time()*4)%4]} {int(i / duration / sample_rate * 100)+1}%", end="      ")
                     t = i / sample_rate
                     value = func(t)
                     value = math.tanh(value)
@@ -364,9 +365,9 @@ if __name__ == "__main__":
     T = 4
 
     
-    p.add_key("b", morph_key([1.0,1.0,0.5,0.0], 0.0, 1.0))
+    p.add_key("b", morph_key([0.1,0.1,0.5,0.0], 0.0, 1.0))
     p.add_key("a", morph_key([1.0,1.0,1.5,0.75], 0.0, 1.0))
 
-    f = lambda t: p.gate(*p.get_key(p.syllable("b","a", t%2, 2)).speak())(t) * p.s.envelope_adsr(t%2, 2)
+    f = lambda t: p.gate(*p.get_key(p.syllable("b","a", (min((t*2)%4, 2)), 2)).speak())(t) * p.s.envelope_adsr(t%2, 2)
 
     p.s.play_func(f, T)

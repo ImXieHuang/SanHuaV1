@@ -56,12 +56,17 @@ class RTN_Trainer:
         try:
             rtn.tg = [[[0.0 for _ in j] for j in i] for i in rtn.tg]
             L = 0.0
+            Lambdacnt = 0
             for i in list(rtn.weights[0].values()):
                 for j in list(i.values()):
                     L = add(L, lambdafunction(j))
+                    Lambdacnt += 1
             for i in rtn.weights[1]:
                 for j in i:
                     L = add(L, lambdafunction(j))
+                    Lambdacnt += 1
+
+            L = div(L, Lambdacnt)
             
             def Wgradfunction(start, end, weight):
                 return self.weight_loss_gradient(start, end, ip, lambda x: lossfunction(x, op) + L, rtn)
@@ -75,6 +80,7 @@ class RTN_Trainer:
                 rtn.weights[1][index[0]][index[1]] = sub(rtn.weights[1][index[0]][index[1]], min(max(-maxdw, mul(r, pg[index][_])), maxdw))
         
             for ip,op in zip(inputs, outputs):
+                print(f"Training {ip} -> {op}")
                 wg = self.traverse_weight_for_(Wgradfunction, rtn)
                 pg = self.traverse_weight_for_(Pgradfunction, rtn)
                 self.traverse_weight_for_(Witeration, rtn)
@@ -94,6 +100,10 @@ if __name__ == "__main__":
               sr_graph_brush(), 
               tg_graph_brush()
               )
+    
+    ip = [[2*i,0,0] for i in range(4)]+[[0,2*i,0] for i in range(4)]+[[0,0,2*i] for i in range(4)]
+    op = [[0,0,2*i] for i in range(4)]+[[0,0,0] for _ in range(8)]
+
     def loss(x, op):
         loss = 0.0
         for o, t in zip(x, op):
@@ -101,11 +111,22 @@ if __name__ == "__main__":
             loss = add(loss, mul(diff, diff))
         return loss
     def lambda_(weight):
-        return mul(0.05, mul(weight, weight))
+        return mul(0.0005, mul(weight, weight))
+    
+    r = 0.05
 
-    for i in range(10):
-        print(t.static_trainer([[2*i,0,0] for i in range(4)]+[[0,i,0] for i in range(4)]+[[0,0,i] for i in range(4)], [[0,0,2*i] for i in range(4)]+[[0,0,0] for _ in range(8)], loss, lambda_, 0.05, 1.0, 0.2, rtn))
-        print(rtn.nn_dynamics([1.0, 0, 0])[-1])
+    for i in range(100):
+        print(t.static_trainer(ip, op, loss, lambda_, r, 1.0, 0.2, rtn))
+
+        error = 0.0
+        for i, o in zip(ip, op):
+            x = rtn.nn_dynamics(i)
+            error = add(error, loss(x, o))
+        error = sum(error)
+
+        r *= 2**(error/200)
+
+        print(error, r)
 
     print("Training is end")
     
