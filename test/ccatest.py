@@ -20,12 +20,14 @@ ct.load_model("model")
 
 Texts = ct.tokenize(text)
 
+print(Texts)
+
 cat = NewCCATransformer(Texts)
 
 height, width, tg_types = 3, 3, 4
 neurons = [i*height for i in [[lambda x, parameter, nn, index: get_meaning_of_tokens_at_(cat, add(x, Vector(nn.tg[index[0]][index[1]][:4])), tokens)[-1]]]] * width
 
-tokens = [Texts[0]]
+tokens = [Texts[1]]
 
 rtn = RTN(
     neurons,

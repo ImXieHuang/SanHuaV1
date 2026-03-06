@@ -53,5 +53,9 @@ def tg_graph_brush(tg_types: int = 4):
     return [[0.0 for _ in range(tg_types + 1)] for _ in range(tg_types + 1)]
 
 if __name__ == "__main__":
-    rtn = RTN(neurons_generator("any"), weights_brush(), tg_brush(), sr_graph_brush(), tg_graph_brush())
-    rtn.forward([1.0,1.0,1.0])
+    from random import uniform
+    rtn = RTN(neurons_generator("any"), weights_brush(1.0, 2), tg_brush(), sr_graph_brush(), tg_graph_brush())
+    rtn.tg = [[[uniform(-1.0, 1.0) for _ in j] for j in i] for i in rtn.tg]
+    rtn.sr_graph = [[[uniform(0.0, 1.0) for _ in j] for j in i] for i in rtn.sr_graph]
+    rtn.tg_graph = [[uniform(-1.0, 1.0) for _ in i] for i in rtn.tg_graph]
+    while True: print(rtn.forward([1.0,0.0,0.0]))

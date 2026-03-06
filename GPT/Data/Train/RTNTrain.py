@@ -52,35 +52,44 @@ class RTN_Trainer:
         return ret
     
     def static_trainer(self, inputs: list[list], outputs: list[list], lossfunction: callable, lambdafunction: callable, r: float, maxdw: float, dorpout: float, rtn: RTN):
-        L = 0.0
-        for i in list(rtn.weights[0].values()):
-            for j in list(i.values()):
-                L = add(L, lambdafunction(j))
-        for i in rtn.weights[1]:
-            for j in i:
-                L = add(L, lambdafunction(j))
+        original_tg = rtn.tg
+        try:
+            rtn.tg = [[[0.0 for _ in j] for j in i] for i in rtn.tg]
+            L = 0.0
+            for i in list(rtn.weights[0].values()):
+                for j in list(i.values()):
+                    L = add(L, lambdafunction(j))
+            for i in rtn.weights[1]:
+                for j in i:
+                    L = add(L, lambdafunction(j))
+            
+            def Wgradfunction(start, end, weight):
+                return self.weight_loss_gradient(start, end, ip, lambda x: lossfunction(x, op) + L, rtn)
+            def Pgradfunction(index, _, weight):
+                return self.parameter_loss_gradient(index, ip, lambda x: lossfunction(x, op) + L, rtn)
+            def Witeration(start, end, weight):
+                if uniform(0.0,1.0) < dorpout: return
+                rtn.weights[0][start][end] = sub(rtn.weights[0][start][end], min(max(-maxdw, mul(r, wg[start][end])), maxdw))
+            def Piteration(index, _, weight):
+                if uniform(0.0,1.0) < dorpout: return
+                rtn.weights[1][index[0]][index[1]] = sub(rtn.weights[1][index[0]][index[1]], min(max(-maxdw, mul(r, pg[index][_])), maxdw))
         
-        def Wgradfunction(start, end, weight):
-            return div(self.weight_loss_gradient(start, end, ip, lambda x: lossfunction(x, op) + L, rtn), abs(weight))
-        def Pgradfunction(index, _, weight):
-            return div(self.parameter_loss_gradient(index, ip, lambda x: lossfunction(x, op) + L, rtn), abs(rtn.weights[1][index[0]][index[1]]))
-        def Witeration(start, end, weight):
-            if uniform(0.0,1.0) < dorpout: return
-            rtn.weights[0][start][end] = sub(rtn.weights[0][start][end], min(max(-maxdw, mul(r, wg[start][end])), maxdw))
-        def Piteration(index, _, weight):
-            if uniform(0.0,1.0) < dorpout: return
-            rtn.weights[1][index[0]][index[1]] = sub(rtn.weights[1][index[0]][index[1]], min(max(-maxdw, mul(r, pg[index][_])), maxdw))
-    
-        for ip,op in zip(inputs, outputs):
-            wg = self.traverse_weight_for_(Wgradfunction, rtn)
-            pg = self.traverse_weight_for_(Pgradfunction, rtn)
-            self.traverse_weight_for_(Witeration, rtn)
-            self.traverse_weight_for_(Piteration, rtn)
+            for ip,op in zip(inputs, outputs):
+                wg = self.traverse_weight_for_(Wgradfunction, rtn)
+                pg = self.traverse_weight_for_(Pgradfunction, rtn)
+                self.traverse_weight_for_(Witeration, rtn)
+                self.traverse_weight_for_(Piteration, rtn)
+        except Exception as error:
+            rtn.tg = original_tg
+            return error
+
+        rtn.tg = original_tg
+        return True
 
 if __name__ == "__main__":
     t = RTN_Trainer()
     rtn = RTN(neurons_generator('any'),
-              weights_brush(), 
+              weights_brush(2.0, 2), 
               tg_brush(), 
               sr_graph_brush(), 
               tg_graph_brush()
@@ -95,7 +104,7 @@ if __name__ == "__main__":
         return mul(0.05, mul(weight, weight))
 
     for i in range(10):
-        t.static_trainer([[2*i,0,0] for i in range(4)]+[[0,i,0] for i in range(4)]+[[0,0,i] for i in range(4)], [[0,0,2*i] for i in range(4)]+[[0,0,0] for _ in range(8)], loss, lambda_, 0.05, 1.0, 0.2, rtn)
+        print(t.static_trainer([[2*i,0,0] for i in range(4)]+[[0,i,0] for i in range(4)]+[[0,0,i] for i in range(4)], [[0,0,2*i] for i in range(4)]+[[0,0,0] for _ in range(8)], loss, lambda_, 0.05, 1.0, 0.2, rtn))
         print(rtn.nn_dynamics([1.0, 0, 0])[-1])
 
     print("Training is end")
