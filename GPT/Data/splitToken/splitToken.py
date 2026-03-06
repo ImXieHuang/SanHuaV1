@@ -132,17 +132,18 @@ class ChineseTokenizer:
                 print(f"  Evaluated {evaluated} n-grams...")
             
             cohesion = self.calculate_cohesion(ngram, ngram_freq, total_chars)
-            if cohesion < 20:
+            if cohesion < 1.5:
                 continue
             
             left_entropy, right_entropy = self.calculate_boundary_entropy(ngram, text)
             min_entropy = min(left_entropy, right_entropy)
             
-            if min_entropy < 1.0:
+            if min_entropy < 0.02:
                 continue
             
             score = cohesion * min_entropy * math.log(freq + 1)
             candidate_scores[ngram] = score
+            print(f"  - candidate_scores[{"\\n".join(ngram.split("\n"))}]={candidate_scores[ngram]}")
         
         print(f"Found {len(candidate_scores)} candidates")
         
@@ -226,6 +227,10 @@ class ChineseTokenizer:
         print(f"Vocabulary: {len(self.tokens)} tokens")
         return True
     
+    def load_list_as_model(self, tokens:list[str]):
+        self.tokens = self.tokens | set(tokens)
+        return True
+    
     def list_models(self):
         models_dir = self.get_models_dir()
         models = []
@@ -252,7 +257,7 @@ class ChineseTokenizer:
         self.ngram_freq, total_chars = self.count_ngrams(text)
         print(f"Unique n-grams: {len(self.ngram_freq)}")
         
-        self.tokens = self.extract_tokens(self.ngram_freq, total_chars, text)
+        self.tokens = self.tokens | self.extract_tokens(self.ngram_freq, total_chars, text)
         print(f"Final tokens: {len(self.tokens)}")
         
         self.model_info = {
@@ -343,12 +348,12 @@ class ChineseTokenizer:
 
 
 if __name__ == "__main__":
-    """tokenizer = ChineseTokenizer(max_token_len=6, min_freq_factor=50)
+    tokenizer = ChineseTokenizer(max_token_len=20, min_freq_factor=50)
     
     filespath = Path(__file__).parent.parent / "Text"
     
     if filespath.exists() and any(filespath.glob("*.txt")):
-        tokens = tokenizer.train(filespath, save_model=True)
+        tokens = tokenizer.train(filespath, save_model=True, model_name="model")
         
         print("\nTop 100 tokens by frequency:")
         sorted_tokens = sorted(
@@ -369,7 +374,8 @@ if __name__ == "__main__":
             "三体世界",
             "黑暗森林",
             "物理学不存在了",
-            "叶文洁看着红岸基地"
+            "叶文洁看着红岸基地",
+            "我在研究一门自己的学问"
         ]
         
         for test_text in test_texts:
@@ -399,13 +405,4 @@ if __name__ == "__main__":
                 segmented = tokenizer.tokenize(test_text)
                 print(f"\nTest: '{test_text}' -> {segmented}")
         else:
-            print("No models found")"""
-    
-    text = """从去年起，仿佛听得有人说我是仇猫的。那根据自然是在我的那一篇《兔和猫》；这是自画招供，当然无话可说，——但倒也毫不介意。一到今年，我可很有点担心了。我是常不免于弄弄笔墨的，写了下来，印了出去，对于有些人似乎总是搔着癢处的时候少，碰着痛处的时候多。万一不谨，甚而至于得罪了名人或名教授，或者更甚而至于得罪了“负有指导青年责任的前辈”之流，可就危险已极。为什么呢？因为这些大脚色是“不好惹”的。怎地“不好惹”呢？就是怕要浑身发热之后，做一封信登在报纸上，广告道：“看哪！狗不是仇猫的么？鲁迅先生却自己承认是仇猫的，而他还说要打‘落水狗’！”①这“逻辑”的奥义，即在用我的话，来证明我倒是狗，于是而凡有言说，全都根本推翻，即使我说二二得四，三三见九，也没有一字不错。这些既然都错，则绅士口头的二二得七，三三见千等等，自然就不错了。
-我于是就间或留心着查考它们成仇的“动机”。
-"""
-
-    model = ChineseTokenizer()
-    model.load_model(str("model"))
-    ret = model.tokenize(text)
-    print(ret)
+            print("No models found")
