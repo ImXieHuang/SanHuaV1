@@ -53,6 +53,7 @@ class RTN_Trainer:
     
     def static_trainer(self, inputs: list[list], outputs: list[list], lossfunction: callable, lambdafunction: callable, r: float, maxdw: float, dorpout: float, rtn: RTN):
         original_tg = rtn.tg
+        original_weights = rtn.weights
         try:
             rtn.tg = [[[0.0 for _ in j] for j in i] for i in rtn.tg]
             L = 0.0
@@ -86,6 +87,7 @@ class RTN_Trainer:
                 self.traverse_weight_for_(Witeration, rtn)
                 self.traverse_weight_for_(Piteration, rtn)
         except Exception as error:
+            rtn.weights = original_weights
             rtn.tg = original_tg
             return error
 
@@ -95,14 +97,14 @@ class RTN_Trainer:
 if __name__ == "__main__":
     t = RTN_Trainer()
     rtn = RTN(neurons_generator('any'),
-              weights_brush(2.0, 2), 
+              weights_brush(0.0, 0.1, 2), 
               tg_brush(), 
               sr_graph_brush(), 
               tg_graph_brush()
               )
     
-    ip = [[2*i,0,0] for i in range(4)]+[[0,2*i,0] for i in range(4)]+[[0,0,2*i] for i in range(4)]
-    op = [[0,0,2*i] for i in range(4)]+[[0,0,0] for _ in range(8)]
+    ip = [[2*i+1,0,0] for i in range(4)]+[[0,2*i+1,0] for i in range(4)]+[[0,0,2*i+1] for i in range(4)]
+    op = [[0,0,2*i+1] for i in range(4)]+[[0,0,0] for _ in range(8)]
 
     def loss(x, op):
         loss = 0.0
@@ -111,7 +113,7 @@ if __name__ == "__main__":
             loss = add(loss, mul(diff, diff))
         return loss
     def lambda_(weight):
-        return mul(0.0005, mul(weight, weight))
+        return mul(mul(r, 0.01), mul(weight, weight))
     
     r = 0.05
 
@@ -124,9 +126,11 @@ if __name__ == "__main__":
             error = add(error, loss(x, o))
         error = sum(error)
 
-        r *= 2**(error/200)
+        try: r *= 2**(error/200)-1
+        except Exception as e: print(e)
+        r = max(min(r, 0.5), 0)
 
-        print(error, r)
+        print(f"{error = }, {r = }\n{rtn.nn_dynamics([1, 0, 0])[-1] = }\n")
 
     print("Training is end")
     
