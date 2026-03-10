@@ -115,7 +115,7 @@ if __name__ == "__main__":
     def lambda_(weight):
         return mul(mul(r, 0.01), mul(weight, weight))
     
-    r = 0.05
+    r = 0.1
 
     for i in range(100):
         print(t.static_trainer(ip, op, loss, lambda_, r, 1.0, 0.2, rtn))
@@ -125,10 +125,6 @@ if __name__ == "__main__":
             x = rtn.nn_dynamics(i)
             error = add(error, loss(x, o))
         error = sum(error)
-
-        try: r *= 2**(error/200)-1
-        except Exception as e: print(e)
-        r = max(min(r, 0.5), 0)
 
         print(f"{error = }, {r = }\n{rtn.nn_dynamics([1, 0, 0])[-1] = }\n")
 
