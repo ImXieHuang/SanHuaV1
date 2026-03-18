@@ -12,7 +12,8 @@ from .operations import (
     dot,
     cross,
     abs_vector,
-    compare
+    compare,
+    normalize
 )
 
 __all__ = [
@@ -24,5 +25,6 @@ __all__ = [
     'dot',
     'cross',
     'abs_vector',
-    'compare'
+    'compare',
+    'normalize'
 ]

@@ -1,8 +1,8 @@
 import tkinter as tk
 
 class ColorPalette:
-    def __init__(self):
-        self.colors = [
+    def __init__(self, palette=None, map=None):
+        self.colors = palette or [
             "#000000", "#FFFFFF", "#811AFF", "#3BFFAD", "#0000FF", "#65CCFF", "#7298FF", "#00FFFF",
             "#111111", "#222222", "#333333", "#444444", "#555555", "#666666", "#777777", "#888888",
             "#1E90FF", "#87CEEB", "#4682B4", "#5F9EA0", "#2E8B57", "#3CB371", "#20B2AA", "#48D1CC",
@@ -10,7 +10,7 @@ class ColorPalette:
             "#1E90FF", "#87CEEB", "#4682B4", "#5F9EA0", "#2E8B57", "#3CB371", "#20B2AA", "#48D1CC"
         ]
         
-        self.default_map = {
+        self.default_map = map or {
             "background": 0,
             "text": 1,
             "border": 1,

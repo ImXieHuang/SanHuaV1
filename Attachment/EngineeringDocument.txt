@@ -7,15 +7,20 @@ Project file tree:
     │   ├── Data
     │   │   ├── Text
     │   │   │   ├── 训练文本1(三体).txt
-    │   │   │   └── 训练文本2(朝花夕拾).txt
+    │   │   │   ├── 训练文本2(朝花夕拾).txt
+    │   │   │   └── 训练文本3(GPT生成作文).txt
     │   │   ├── Train
     │   │   │   └── RTNTrain.py
     │   │   └── splitToken
+    │   │       ├── __pycache__
+    │   │       │   ├── __init__.cpython-313.pyc
+    │   │       │   └── splitToken.cpython-313.pyc
     │   │       ├── models
-    │   │       │   ├── model.json
-    │   │       │   └── model.pkl
+    │   │       │   ├── model.zip
+    │   │       │   └── model_info.json
+    │   │       ├── __init__.py
     │   │       └── splitToken.py
-    │   └── Modle
+    │   └── Model
     │       ├── CCATransformer
     │       │   ├── __pycache__
     │       │   │   ├── CCA.cpython-313.pyc
@@ -69,6 +74,9 @@ Project file tree:
     │   │   ├── JetBrainsMono-Bold.ttf
     │   │   └── OFL.md
     │   ├── parrot
+    │   │   ├── __pycache__
+    │   │   │   ├── __init__.cpython-313.pyc
+    │   │   │   └── parrot.cpython-313.pyc
     │   │   ├── __init__.py
     │   │   └── parrot.py
     │   ├── tuidisplay
@@ -81,7 +89,9 @@ Project file tree:
     │       └── model.py
     ├── test
     │   ├── ccatest.py
-    │   └── loading_string.py
+    │   ├── loading_string.py
+    │   └── prtest.py
+    ├── LICENSE
     ├── README.md
     └── main.py
 
@@ -109,6 +119,14 @@ def main():
         
         def toggle_fullscreen():
             root.attributes('-fullscreen', not root.attributes('-fullscreen'))
+
+        def handle_submit(text, variable_name):  
+            inputs.text_string = ""
+            inputs.cursor_pos = 0
+            textprocessor(text)
+            
+            inputs.dirty = True
+            app.fast_redraw()
         
         app.bind_global_key("Escape", quit_app)
         app.bind_global_key("F11", toggle_fullscreen)
@@ -127,17 +145,27 @@ def main():
         box = TextBox(img1, text_align="left", x=3, palette=palette)
         app.add_text_box(box)
 
+        inputs = InputBox(width=49, y=10, on_submit=handle_submit)
+        app.add_input_box(inputs)
+
+        enter = TextBox("↩", y=10, x=25, palette=ColorPalette(map={"text": 1, "background": 5}))
+        app.add_text_box(enter)
+
         def update():
             app.refresh()
-            root.after(1, update)
+            root.after(50, update)
             
-        root.after(1, update)
+        root.after(50, update)
         root.mainloop()
     else:
         print("字体文件未找到，请确保 'JetBrainsMono-Bold.ttf' 在 'fonts' 目录中")
 
+def textprocessor(text):
+    print(text)
+
 if __name__ == "__main__":
     main()
+
 """
 
 # GPT\Data\splitToken\splitToken.py:
@@ -276,17 +304,18 @@ class ChineseTokenizer:
                 print(f"  Evaluated {evaluated} n-grams...")
             
             cohesion = self.calculate_cohesion(ngram, ngram_freq, total_chars)
-            if cohesion < 20:
+            if cohesion < 1.5:
                 continue
             
             left_entropy, right_entropy = self.calculate_boundary_entropy(ngram, text)
             min_entropy = min(left_entropy, right_entropy)
             
-            if min_entropy < 1.0:
+            if min_entropy < 0.02:
                 continue
             
             score = cohesion * min_entropy * math.log(freq + 1)
             candidate_scores[ngram] = score
+            print(f"  - candidate_scores[{"\\n".join(ngram.split("\n"))}]={candidate_scores[ngram]}")
         
         print(f"Found {len(candidate_scores)} candidates")
         
@@ -370,6 +399,10 @@ class ChineseTokenizer:
         print(f"Vocabulary: {len(self.tokens)} tokens")
         return True
     
+    def load_list_as_model(self, tokens:list[str]):
+        self.tokens = self.tokens | set(tokens)
+        return True
+    
     def list_models(self):
         models_dir = self.get_models_dir()
         models = []
@@ -396,7 +429,7 @@ class ChineseTokenizer:
         self.ngram_freq, total_chars = self.count_ngrams(text)
         print(f"Unique n-grams: {len(self.ngram_freq)}")
         
-        self.tokens = self.extract_tokens(self.ngram_freq, total_chars, text)
+        self.tokens = self.tokens | self.extract_tokens(self.ngram_freq, total_chars, text)
         print(f"Final tokens: {len(self.tokens)}")
         
         self.model_info = {
@@ -487,12 +520,12 @@ class ChineseTokenizer:
 
 
 if __name__ == "__main__":
-    """tokenizer = ChineseTokenizer(max_token_len=6, min_freq_factor=50)
+    tokenizer = ChineseTokenizer(max_token_len=20, min_freq_factor=50)
     
     filespath = Path(__file__).parent.parent / "Text"
     
     if filespath.exists() and any(filespath.glob("*.txt")):
-        tokens = tokenizer.train(filespath, save_model=True)
+        tokens = tokenizer.train(filespath, save_model=True, model_name="model")
         
         print("\nTop 100 tokens by frequency:")
         sorted_tokens = sorted(
@@ -513,7 +546,8 @@ if __name__ == "__main__":
             "三体世界",
             "黑暗森林",
             "物理学不存在了",
-            "叶文洁看着红岸基地"
+            "叶文洁看着红岸基地",
+            "我在研究一门自己的学问"
         ]
         
         for test_text in test_texts:
@@ -543,16 +577,14 @@ if __name__ == "__main__":
                 segmented = tokenizer.tokenize(test_text)
                 print(f"\nTest: '{test_text}' -> {segmented}")
         else:
-            print("No models found")"""
-    
-    text = """从去年起，仿佛听得有人说我是仇猫的。那根据自然是在我的那一篇《兔和猫》；这是自画招供，当然无话可说，——但倒也毫不介意。一到今年，我可很有点担心了。我是常不免于弄弄笔墨的，写了下来，印了出去，对于有些人似乎总是搔着癢处的时候少，碰着痛处的时候多。万一不谨，甚而至于得罪了名人或名教授，或者更甚而至于得罪了“负有指导青年责任的前辈”之流，可就危险已极。为什么呢？因为这些大脚色是“不好惹”的。怎地“不好惹”呢？就是怕要浑身发热之后，做一封信登在报纸上，广告道：“看哪！狗不是仇猫的么？鲁迅先生却自己承认是仇猫的，而他还说要打‘落水狗’！”①这“逻辑”的奥义，即在用我的话，来证明我倒是狗，于是而凡有言说，全都根本推翻，即使我说二二得四，三三见九，也没有一字不错。这些既然都错，则绅士口头的二二得七，三三见千等等，自然就不错了。
-我于是就间或留心着查考它们成仇的“动机”。
+            print("No models found")
 """
 
-    model = ChineseTokenizer()
-    model.load_model(str("model"))
-    ret = model.tokenize(text)
-    print(ret)
+# GPT\Data\splitToken\__init__.py:
+"""
+from .splitToken import ChineseTokenizer
+
+__all__ = ['ChineseTokenizer']
 """
 
 # GPT\Data\Train\RTNTrain.py:
@@ -565,12 +597,22 @@ from random import uniform
 udir = str(Path(__file__).parent.parent.parent)
 sys.path.append(udir)
 
-from Modle.Remember_Turingpattern_NN import RTN, neurons_generator, weights_brush, tg_brush, sr_graph_brush, tg_graph_brush
-from Modle.mathexpand import add, sub, mul, div
+from Model.Remember_Turingpattern_NN import RTN, neurons_generator, weights_brush, tg_brush, sr_graph_brush, tg_graph_brush
+from Model.mathexpand import add, sub, mul, div, iterate
 
 class RTN_Trainer:
-    def __init__(self):
-        self.dx = 1e-5
+    def __init__(self, dx = None, maxpid_i = None):
+        self.dx = dx or 1e-5
+        self.pid_i = 0.0
+        self.pid_d = 0.0
+        self.maxpid_i = maxpid_i or 10
+
+    def pid(self, kp, ki, kd, loss):
+        ret = kp * loss + ki * self.pid_i + kd * (loss - self.pid_d)
+        self.pid_i = max(min(self.pid_i + loss, self.maxpid_i), -self.maxpid_i)
+        self.pid_d = loss
+
+        return ret 
 
     def weight_loss_gradient(self, start: tuple, end: tuple, inputs: list, loss: callable, rtn: RTN):
         original_weights = rtn.weights[0][start][end]
@@ -583,9 +625,7 @@ class RTN_Trainer:
         add_loss = loss(rtn.nn_dynamics(inputs)[-1])
         rtn.weights[0][start][end] = original_weights
 
-        d_loss = div(sub(add_loss, sub_loss), 2)
-
-        return div(d_loss, self.dx)
+        return div(div(sub(add_loss, sub_loss), 2), self.dx)
     
     def parameter_loss_gradient(self, index: tuple, inputs: list, loss: callable, rtn: RTN):
         original_weights = rtn.weights[1][index[0]][index[1]]
@@ -598,9 +638,7 @@ class RTN_Trainer:
         add_loss = loss(rtn.nn_dynamics(inputs)[-1])
         rtn.weights[1][index[0]][index[1]] = original_weights
 
-        d_loss = div(sub(add_loss, sub_loss), 2)
-
-        return div(d_loss, self.dx)
+        return div(div(sub(add_loss, sub_loss), 2), self.dx)
     
     def traverse_weight_for_(self, function: callable, rtn: RTN):
         ret = {}
@@ -611,59 +649,502 @@ class RTN_Trainer:
         return ret
     
     def static_trainer(self, inputs: list[list], outputs: list[list], lossfunction: callable, lambdafunction: callable, r: float, maxdw: float, dorpout: float, rtn: RTN):
-        L = 0.0
-        for i in list(rtn.weights[0].values()):
-            for j in list(i.values()):
-                L = add(L, lambdafunction(j))
-        for i in rtn.weights[1]:
-            for j in i:
-                L = add(L, lambdafunction(j))
+        original_tg = rtn.tg
+        original_weights = rtn.weights
+        try:
+            rtn.tg = [[[0.0 for _ in j] for j in i] for i in rtn.tg]
+            Lam = 0.0
+            Lambdacnt = 0
+            for i in list(rtn.weights[0].values()):
+                for j in list(i.values()):
+                    Lam = add(Lam, lambdafunction(j))
+                    Lambdacnt += 1
+            for i in rtn.weights[1]:
+                for j in i:
+                    Lam = add(Lam, lambdafunction(j))
+                    Lambdacnt += 1
+
+            Lam = div(Lam, Lambdacnt)
+            
+            def Wgradfunction(start, end, weight):
+                return self.weight_loss_gradient(start, end, ip, lambda x: lossfunction(x, op) + Lam, rtn)
+            def Pgradfunction(index, _, weight):
+                return self.parameter_loss_gradient(index, ip, lambda x: lossfunction(x, op) + Lam, rtn)
+            def Witeration(start, end, weight):
+                if uniform(0.0,1.0) < dorpout: return
+                rtn.weights[0][start][end] = sub(rtn.weights[0][start][end], min(max(-maxdw, mul(r, wg[start][end])), maxdw))
+            def Piteration(index, _, weight):
+                if uniform(0.0,1.0) < dorpout: return
+                rtn.weights[1][index[0]][index[1]] = sub(rtn.weights[1][index[0]][index[1]], min(max(-maxdw, mul(r, pg[index][_])), maxdw))
         
-        def Wgradfunction(start, end, weight):
-            return div(self.weight_loss_gradient(start, end, ip, lambda x: lossfunction(x, op) + L, rtn), abs(weight))
-        def Pgradfunction(index, _, weight):
-            return div(self.parameter_loss_gradient(index, ip, lambda x: lossfunction(x, op) + L, rtn), abs(rtn.weights[1][index[0]][index[1]]))
-        def Witeration(start, end, weight):
-            if uniform(0.0,1.0) < dorpout: return
-            rtn.weights[0][start][end] = sub(rtn.weights[0][start][end], min(max(-maxdw, mul(r, wg[start][end])), maxdw))
-        def Piteration(index, _, weight):
-            if uniform(0.0,1.0) < dorpout: return
-            rtn.weights[1][index[0]][index[1]] = sub(rtn.weights[1][index[0]][index[1]], min(max(-maxdw, mul(r, pg[index][_])), maxdw))
-    
-        for ip,op in zip(inputs, outputs):
-            wg = self.traverse_weight_for_(Wgradfunction, rtn)
-            pg = self.traverse_weight_for_(Pgradfunction, rtn)
-            self.traverse_weight_for_(Witeration, rtn)
-            self.traverse_weight_for_(Piteration, rtn)
+            for ip,op in zip(inputs, outputs):
+                print(f"Training {ip} -> {op}")
+                wg = self.traverse_weight_for_(Wgradfunction, rtn)
+                pg = self.traverse_weight_for_(Pgradfunction, rtn)
+                self.traverse_weight_for_(Witeration, rtn)
+                self.traverse_weight_for_(Piteration, rtn)
+
+        except Exception as error:
+            rtn.weights = original_weights
+            rtn.tg = original_tg
+            return error
+
+        rtn.tg = original_tg
+        return True
+
+    def rtn_sample(self, rtn:RTN, inputs, maxt: int = 30, sample_rate: int = 5):
+        rtn_sampling = []
+        sample_step = int(maxt / sample_rate)
+        
+        for i in range(maxt):
+            ans = rtn.forward(inputs)
+            if i % sample_step == 0:
+                rtn_sampling.append(ans)
+            
+        return rtn_sampling
+
+    def fitting_pid_for_(self, rtn_sampling, maxt: int = 30, sample_rate: int = 5, r: float = 0.03):
+        if not rtn_sampling:
+            return [[0.0, 0.0, 0.0]]
+            
+        rtn_sampling = [list(row) for row in zip(*rtn_sampling)]
+
+        kp = [0.01 for _ in rtn_sampling]
+        ki = [0.001 for _ in rtn_sampling]
+        kd = [0.005 for _ in rtn_sampling]
+        
+        KP_MIN, KP_MAX = -1.0, 1.0
+        KI_MIN, KI_MAX = -0.1, 0.1
+        KD_MIN, KD_MAX = -0.1, 0.1
+        
+        sample_indices = list(range(0, maxt, int(maxt/sample_rate)))
+        
+        for _ in range(200):
+            total_loss = 0.0
+            for pipe in range(len(rtn_sampling)):
+                target = rtn_sampling[pipe][-1]
+                
+                for param_idx in range(3):
+                    self.pid_i = 0.0
+                    self.pid_d = 0.0
+                    pid_sampling = []
+                    for i in range(maxt):
+                        error = target - (pid_sampling[-1] if pid_sampling else 0)
+                        kp_tmp = kp[pipe] + (self.dx if param_idx==0 else 0)
+                        ki_tmp = ki[pipe] + (self.dx if param_idx==1 else 0)
+                        kd_tmp = kd[pipe] + (self.dx if param_idx==2 else 0)
+                        ans = self.pid(kp_tmp, ki_tmp, kd_tmp, error)
+                        if i in sample_indices:
+                            pid_sampling.append(ans)
+                    
+                    sub_loss = sum([(rtn_val - pid_val)**2 for rtn_val, pid_val in zip(rtn_sampling[pipe], pid_sampling)])
+                    
+                    self.pid_i = 0.0
+                    self.pid_d = 0.0
+                    pid_sampling = []
+                    for i in range(maxt):
+                        error = target - (pid_sampling[-1] if pid_sampling else 0)
+                        kp_tmp = kp[pipe] - (self.dx if param_idx==0 else 0)
+                        ki_tmp = ki[pipe] - (self.dx if param_idx==1 else 0)
+                        kd_tmp = kd[pipe] - (self.dx if param_idx==2 else 0)
+                        ans = self.pid(kp_tmp, ki_tmp, kd_tmp, error)
+                        if i in sample_indices:
+                            pid_sampling.append(ans)
+                    
+                    add_loss = sum([(rtn_val - pid_val)**2 for rtn_val, pid_val in zip(rtn_sampling[pipe], pid_sampling)])
+                    
+                    gradient = (add_loss - sub_loss) / (2 * self.dx)
+                    gradient = max(min(gradient, 1.0), -1.0)
+                    
+                    if param_idx == 0:
+                        kp[pipe] -= gradient * r
+                        kp[pipe] = max(min(kp[pipe], KP_MAX), KP_MIN)
+                    elif param_idx == 1:
+                        ki[pipe] -= gradient * r
+                        ki[pipe] = max(min(ki[pipe], KI_MAX), KI_MIN)
+                    else:
+                        kd[pipe] -= gradient * r
+                        kd[pipe] = max(min(kd[pipe], KD_MAX), KD_MIN)
+                
+                self.pid_i = 0.0
+                self.pid_d = 0.0
+                final_sampling = []
+                for t in range(maxt):
+                    error = target - (final_sampling[-1] if final_sampling else 0)
+                    control = self.pid(kp[pipe], ki[pipe], kd[pipe], error)
+                    if t in sample_indices:
+                        final_sampling.append(control)
+                
+                current_loss = sum([(rtn_val - pid_val)**2 for rtn_val, pid_val in zip(rtn_sampling[pipe], final_sampling)])
+                total_loss += current_loss
+        return [list(row) for row in zip(kp, ki, kd)]
+
+    def rtn_sample(self, rtn:RTN, inputs, maxt: int = 30, sample_rate: int = 5):
+        rtn_sampling = []
+        sample_step = int(maxt / sample_rate)
+        
+        for i in range(maxt):
+            ans = rtn.forward(inputs)
+            if i % sample_step == 0:
+                rtn_sampling.append(ans)
+            
+        return rtn_sampling
+
+    def fitting_pid_for_(self, rtn_sampling, maxt: int = 30, sample_rate: int = 5, r: float = 0.03):
+        if not rtn_sampling:
+            return [[0.0, 0.0, 0.0]]
+            
+        rtn_sampling = [list(row) for row in zip(*rtn_sampling)]
+
+        kp = [0.01 for _ in rtn_sampling]
+        ki = [0.001 for _ in rtn_sampling]
+        kd = [0.005 for _ in rtn_sampling]
+        
+        KP_MIN, KP_MAX = -1.0, 1.0
+        KI_MIN, KI_MAX = -0.1, 0.1
+        KD_MIN, KD_MAX = -0.1, 0.1
+        
+        sample_indices = list(range(0, maxt, int(maxt/sample_rate)))
+        
+        for _ in range(200):
+            total_loss = 0.0
+            for pipe in range(len(rtn_sampling)):
+                target = rtn_sampling[pipe][-1]
+                
+                for param_idx in range(3):
+                    self.pid_i = 0.0
+                    self.pid_d = 0.0
+                    pid_sampling = []
+                    for i in range(maxt):
+                        error = target - (pid_sampling[-1] if pid_sampling else 0)
+                        kp_tmp = kp[pipe] + (self.dx if param_idx==0 else 0)
+                        ki_tmp = ki[pipe] + (self.dx if param_idx==1 else 0)
+                        kd_tmp = kd[pipe] + (self.dx if param_idx==2 else 0)
+                        ans = self.pid(kp_tmp, ki_tmp, kd_tmp, error)
+                        if i in sample_indices:
+                            pid_sampling.append(ans)
+                    
+                    sub_loss = sum([(rtn_val - pid_val)**2 for rtn_val, pid_val in zip(rtn_sampling[pipe], pid_sampling)])
+                    
+                    self.pid_i = 0.0
+                    self.pid_d = 0.0
+                    pid_sampling = []
+                    for i in range(maxt):
+                        error = target - (pid_sampling[-1] if pid_sampling else 0)
+                        kp_tmp = kp[pipe] - (self.dx if param_idx==0 else 0)
+                        ki_tmp = ki[pipe] - (self.dx if param_idx==1 else 0)
+                        kd_tmp = kd[pipe] - (self.dx if param_idx==2 else 0)
+                        ans = self.pid(kp_tmp, ki_tmp, kd_tmp, error)
+                        if i in sample_indices:
+                            pid_sampling.append(ans)
+                    
+                    add_loss = sum([(rtn_val - pid_val)**2 for rtn_val, pid_val in zip(rtn_sampling[pipe], pid_sampling)])
+                    
+                    gradient = (add_loss - sub_loss) / (2 * self.dx)
+                    gradient = max(min(gradient, 1.0), -1.0)
+                    
+                    if param_idx == 0:
+                        kp[pipe] -= gradient * r
+                        kp[pipe] = max(min(kp[pipe], KP_MAX), KP_MIN)
+                    elif param_idx == 1:
+                        ki[pipe] -= gradient * r
+                        ki[pipe] = max(min(ki[pipe], KI_MAX), KI_MIN)
+                    else:
+                        kd[pipe] -= gradient * r
+                        kd[pipe] = max(min(kd[pipe], KD_MAX), KD_MIN)
+                
+                self.pid_i = 0.0
+                self.pid_d = 0.0
+                final_sampling = []
+                for t in range(maxt):
+                    error = target - (final_sampling[-1] if final_sampling else 0)
+                    control = self.pid(kp[pipe], ki[pipe], kd[pipe], error)
+                    if t in sample_indices:
+                        final_sampling.append(control)
+                
+                current_loss = sum([(rtn_val - pid_val)**2 for rtn_val, pid_val in zip(rtn_sampling[pipe], final_sampling)])
+                total_loss += current_loss
+        return [list(row) for row in zip(kp, ki, kd)]
+
+    def sr_graph_loss_gradient(self, index: tuple, input, target_output, target_pid: list, samplingloss: callable, staticloss: callable, rtn: RTN, maxt: int = 30, sample_rate: int = 5):     
+        print(f"  compute sr gradient {index = }")
+        original_sr_graph = rtn.sr_graph[index[0]][index[1]][index[2]]
+        
+        rtn.sr_graph[index[0]][index[1]][index[2]] = add(rtn.sr_graph[index[0]][index[1]][index[2]], self.dx)
+        sampling = self.rtn_sample(rtn, input, maxt, sample_rate)
+        pid_params = self.fitting_pid_for_(sampling, maxt, sample_rate)
+        rtn.sr_graph[index[0]][index[1]][index[2]] = original_sr_graph
+        add_loss = add(samplingloss(pid_params, target_pid), staticloss(sampling[-1], target_output))
+
+        rtn.sr_graph[index[0]][index[1]][index[2]] = sub(rtn.sr_graph[index[0]][index[1]][index[2]], self.dx)
+        sampling = self.rtn_sample(rtn, input, maxt, sample_rate)
+        pid_params = self.fitting_pid_for_(sampling, maxt, sample_rate)
+        rtn.sr_graph[index[0]][index[1]][index[2]] = original_sr_graph
+        sub_loss = add(samplingloss(pid_params, target_pid), staticloss(sampling[-1], target_output))
+
+        return div(div(sub(add_loss, sub_loss), 2), self.dx)
+
+    def tg_graph_loss_gradient(self, i: int, j: int, input, target_output, target_pid: list, samplingloss: callable, staticloss: callable, rtn: RTN, maxt: int = 30, sample_rate: int = 5):
+        print(f"  compute tg gradient tg.{i = } tg.{j = }")
+        original_tg_graph = rtn.tg_graph[i][j]
+        
+        rtn.tg_graph[i][j] = add(rtn.tg_graph[i][j], self.dx)
+        sampling = self.rtn_sample(rtn, input, maxt, sample_rate)
+        pid_params = self.fitting_pid_for_(sampling, maxt, sample_rate)
+        rtn.tg_graph[i][j] = original_tg_graph
+        add_loss = add(samplingloss(pid_params, target_pid), staticloss(sampling[-1], target_output))
+
+        rtn.tg_graph[i][j] = sub(rtn.tg_graph[i][j], self.dx)
+        sampling = self.rtn_sample(rtn, input, maxt, sample_rate)
+        pid_params = self.fitting_pid_for_(sampling, maxt, sample_rate)
+        rtn.tg_graph[i][j] = original_tg_graph
+        sub_loss = add(samplingloss(pid_params, target_pid), staticloss(sampling[-1], target_output))
+
+        return div(div(sub(add_loss, sub_loss), 2), self.dx)
+
+    def rtn_sampling_trainer(self, inputs: list[list], outputs: list[list], target_pids: list[list], samplinglossfunction: callable, staticlossfunction: callable, lambdafunction: callable, r: float, maxdw: float, dorpout: float, rtn: RTN, maxt: int = 30, sample_rate: int = 5):
+        original_tg = rtn.tg
+        original_sr_graph = rtn.sr_graph
+        original_tg_graph = rtn.tg_graph
+        
+        try:
+            Lam = 0.0
+            Lambdacnt = 0
+            
+            for i in rtn.tg_graph:
+                for j in i:
+                    Lam = add(Lam, lambdafunction(j))
+                    Lambdacnt += 1
+            for i in rtn.sr_graph:
+                for j in i:
+                    for k in j:
+                        Lam = add(Lam, lambdafunction(k))
+                        Lambdacnt += 1
+
+            Lam = div(Lam, Lambdacnt) if Lambdacnt > 0 else 0.0
+            
+            for ip, op, target_pid in zip(inputs, outputs, target_pids):
+                print(f"Training {ip} -> {op} with target PID {target_pid}")
+
+                for i in range(len(rtn.sr_graph)):
+                    for j in range(len(rtn.sr_graph[i])):
+                        for k in range(len(rtn.sr_graph[i][j])):
+                            if uniform(0.0,1.0) >= dorpout:
+                                gradient = self.sr_graph_loss_gradient((i, j, k), ip, op, target_pid, samplinglossfunction, lambda x, y: add(staticlossfunction(x, y), Lam), rtn, maxt, sample_rate)
+                                rtn.sr_graph[i][j][k] = sub(rtn.sr_graph[i][j][k], min(max(-maxdw, mul(r, gradient)), maxdw))
+                
+                for i in range(len(rtn.tg_graph)):
+                    for j in range(len(rtn.tg_graph[i])):
+                        if uniform(0.0,1.0) >= dorpout:
+                            gradient = self.tg_graph_loss_gradient(i, j, ip, op, target_pid, samplinglossfunction, lambda x, y: add(staticlossfunction(x, y), Lam), rtn, maxt, sample_rate)
+                            rtn.tg_graph[i][j] = sub(rtn.tg_graph[i][j], min(max(-maxdw, mul(r, gradient)), maxdw))
+
+        except Exception as error:
+            rtn.tg = original_tg
+            rtn.sr_graph = original_sr_graph
+            rtn.tg_graph = original_tg_graph
+            return error
+
+        return True
 
 if __name__ == "__main__":
-    t = RTN_Trainer()
-    rtn = RTN(neurons_generator('any'),
-              weights_brush(), 
-              tg_brush(), 
-              sr_graph_brush(), 
-              tg_graph_brush()
-              )
-    def loss(x, op):
-        loss = 0.0
-        for o, t in zip(x, op):
-            diff = sub(o, t)
-            loss = add(loss, mul(diff, diff))
-        return loss
-    def lambda_(weight):
-        return mul(0.05, mul(weight, weight))
+    ipt = input(
+"""Please choose a test content:
+1) static trainer
+2) PID controller
+3) rtn_sampling trainer
+4) None
+>> """
+)
+    print("\n"+"="*20+"\n")
+    if  ipt == "1":
+        print("# static trainer start\n")
 
-    for i in range(10):
-        t.static_trainer([[2*i,0,0] for i in range(4)]+[[0,i,0] for i in range(4)]+[[0,0,i] for i in range(4)], [[0,0,2*i] for i in range(4)]+[[0,0,0] for _ in range(8)], loss, lambda_, 0.05, 1.0, 0.2, rtn)
-        print(rtn.nn_dynamics([1.0, 0, 0])[-1])
+        t = RTN_Trainer()
+        rtn = RTN(neurons_generator('any'),
+                weights_brush(0.0, 0.1, 2), 
+                tg_brush(), 
+                sr_graph_brush(), 
+                tg_graph_brush()
+                )
+        
+        ip = [[2*i+1,0,0] for i in range(4)]+[[0,2*i+1,0] for i in range(4)]+[[0,0,2*i+1] for i in range(4)]
+        op = [[0,0,2*i+1] for i in range(4)]+[[0,0,0] for _ in range(8)]
 
-    print("Training is end")
-    
-    for i in range(10):
-        print(rtn.nn_dynamics([i, 0, 0])[-1])
+        print("data:")
+        
+        for i,j in zip(ip, op):
+            print(f"{i} -> {j}")
+
+        def static_loss(x, op):
+            loss = 0.0
+            for o, t in zip(x, op):
+                diff = sub(o, t)
+                loss = add(loss, mul(diff, diff))
+            return loss
+        def lambda_loss(weight):
+            return mul(mul(r, 0.01), mul(weight, weight))
+
+        r = 0.03
+
+        print(f"\n{r = }\n")
+
+        for cnt in range(10):
+            print(f"## turn {cnt+1}")
+
+            print(t.static_trainer(ip, op, static_loss, lambda_loss, r, 0.05, 0.2, rtn))
+
+            error = 0.0
+            for i, o in zip(ip, op):
+                x = rtn.nn_dynamics(i)
+                error = add(error, static_loss(x, o))
+
+            print(f"{error = }, {r = }\n{rtn.nn_dynamics([1, 0, 0])[-1] = }\n")
+
+        print("Training is end")
+        
+        print("\ntest data:")
+        for i in range(10):
+            print(f"[{i},0,0] -> {rtn.nn_dynamics([i, 0, 0])[-1]}")
+
+    elif ipt == "2":
+        g = 9.8
+        m = 10
+
+        print("# PID controller\n")
+        print("| d^2/dt^2 ym = -gm + alpha <- Process Value")
+        print("| setpoint y = 10")
+        print(f"| {g = } {m = }")
+
+        def loss(x, y): return x-y
+
+        print("\nrun Simulation:")
+        
+        pid = RTN_Trainer().pid
+
+        y = 0
+        v = 0
+
+        for i in range(200):
+            alpha = pid(20.0, 9.8, 5.0, loss(10, y))
+            v += -g + alpha/m
+            y += v
+
+            print(y)
+
+    elif ipt == "3":
+        print("# sampling trainer start\n")
+
+        t = RTN_Trainer()
+        rtn = RTN(neurons_generator('any'),
+                weights_brush(0.0, 0.1, 2), 
+                tg_brush(), 
+                sr_graph_brush(), 
+                tg_graph_brush()
+                )
+        
+        ip = [[2*i+1,0,0] for i in range(4)]+[[0,2*i+1,0] for i in range(4)]+[[0,0,2*i+1] for i in range(4)]
+        op = [[0,0,2*i+1] for i in range(4)]+[[0,0,0] for _ in range(8)]
+        tp = [[0.1, 0.01, 0.05] for _ in range(len(ip))]
+        
+        print("data:")
+        for i,j,p in zip(ip, op, tp):
+            print(f"{i} -> {j}  target PID: {p}")
+        
+        def sample_loss(pid_params, target_pid):
+            loss = 0.0
+            if isinstance(pid_params, list) and len(pid_params) > 0:
+                if isinstance(pid_params[0], list):
+                    for p, t in zip(pid_params[0], target_pid):
+                        diff = sub(p, t)
+                        loss = add(loss, mul(diff, diff))
+                else:
+                    for p, t in zip(pid_params, target_pid):
+                        diff = sub(p, t)
+                        loss = add(loss, mul(diff, diff))
+            return loss
+        
+        def static_loss(x, op):
+            loss = 0.0
+            for o, t in zip(x, op):
+                diff = sub(o, t)
+                loss = add(loss, mul(diff, diff))
+            return loss
+        
+        def lambda_loss(weight):
+            return mul(mul(r, 0.01), mul(weight, weight))
+        
+        r = 0.03
+        maxdw = 0.05
+        dropout = 0.2
+        maxt = 30
+        sample_rate = 5
+        
+        print(f"\n{r = }")
+        print(f"{maxdw = }")
+        print(f"{dropout = }")
+        print(f"{maxt = }")
+        print(f"{sample_rate = }\n")
+        
+        print("pre-training test:")
+        for i, o in zip(ip[:3], op[:3]):
+            sampling = t.rtn_sample(rtn, i, maxt, sample_rate)
+            output_val = sampling[-1][0] if sampling and sampling[-1] else 0
+            target_val = o[0] if o else 0
+            print(f"input {i} -> output {output_val:.6f}, target {target_val}")
+        
+        print("\nstarting training...\n")
+        
+        for epoch in range(5):
+            print(f"## turn {epoch+1}")
+            
+            result = t.rtn_sampling_trainer(
+                ip, op, tp,
+                sample_loss,
+                static_loss,
+                lambda_loss,
+                r, maxdw, dropout,
+                rtn,
+                maxt, sample_rate
+            )
+            
+            if isinstance(result, Exception):
+                print(f"training error: {result}")
+                break
+            
+            total_error = 0.0
+            for i, o in zip(ip, op):
+                sampling = t.rtn_sample(rtn, i, maxt, sample_rate)
+                if sampling and sampling[-1]:
+                    error = static_loss(sampling[-1], o)
+                    total_error = add(total_error, error)
+            
+            test_input = [1, 0, 0]
+            test_output = rtn.nn_dynamics(test_input)[-1]
+            test_val = test_output[0] if test_output else 0
+            
+            print(f"{total_error = }, {r = }")
+            print(f"{rtn.nn_dynamics([1, 0, 0])[-1] = }\n")
+        
+        print("training completed!\n")
+        
+        print("test data:")
+        for i in range(5):
+            test_input = [i, 0, 0]
+            test_output = rtn.nn_dynamics(test_input)[-1]
+            test_val = test_output[0] if test_output else 0
+            print(f"[{i},0,0] -> {test_val}")
+        
+        print("\nfitted PID parameters for each input:")
+        for i in ip[:3]:
+            sampling = t.rtn_sample(rtn, i, maxt, sample_rate)
+            pid_params = t.fitting_pid_for_(sampling)
+            print(f"input {i} -> PID: {pid_params}")
+
+    else: print(None)
 """
 
-# GPT\Modle\CCATransformer\CCA.py:
+# GPT\Model\CCATransformer\CCA.py:
 """
 import sys
 import math
@@ -686,9 +1167,10 @@ class Const():
     INF = float('inf')
 
 class CCATransformer():
-    def __init__(self, database: Dict[str, Dict[Vector, Vector]], temperature: fraction = fraction(1, 1)):
+    def __init__(self, database: Dict[str, Dict[Vector, Vector]], temperature: fraction = fraction(1, 1), dim = 8):
         self.database = database
         self.temperature = temperature
+        self.dim = dim
         
         self._validate_database()
     
@@ -701,17 +1183,13 @@ class CCATransformer():
             for query_vec, value_vec in query_dict.items():
                 if not hasattr(query_vec, "VECTORFLAG"):
                     raise TypeError("The type of the Query must be Vector.")
-                elif query_vec.dimension != 4:
-                    raise ValueError("The dimension of the Query must be 4.")
                 if not hasattr(value_vec, "VECTORFLAG"):
                     raise TypeError("The type of the Val must be Vector.")
-                elif value_vec.dimension != 4:
-                    raise ValueError("The dimension of the Val must be 4.")
 
     def get_key_for_(self, token: str):
         if token not in self.database:
             raise KeyError(f"token '{token}' not found in database")
-        return sum([v for v in self.database[token].values()], Vector([0.0, 0.0, 0.0, 0.0]))
+        return div(sum([v for v in self.database[token].values()], Vector([0.0] * self.dim)), len(list(self.database[token].values())))
     
     def get_value_for_(self, token: str, big_Q: Vector):
         if token not in self.database:
@@ -771,7 +1249,7 @@ class CCATransformer():
 
         delat_graph = [(Value - list(injection.values())[i]) * influence_graph[i] for i in range(len(list(injection.values())))]
 
-        injection = [influence_graph[i] + delat_graph[i] for i in range(len(influence_graph))]
+        injection = [influence_graph[i] * delat_graph[i] for i in range(len(influence_graph))]
 
         self.database[token] = injection
 
@@ -781,9 +1259,9 @@ class CCATransformer():
         
         query_dict = self.database[token]
         if not query_dict:
-            return Vector([0.0, 0.0, 0.0, 0.0])
+            return Vector([0.0] * self.dim)
         
-        cnt_n = Vector([fraction(0, 1), fraction(0, 1), fraction(0, 1), fraction(0, 1)])
+        cnt_n = Vector([fraction(0, 1)] * self.dim)
         cnt_m = fraction(0, 1)
 
         for i in query_dict:
@@ -791,7 +1269,7 @@ class CCATransformer():
             exponent = div(dot_val, T)
             
             weight = const.value ** exponent.value
-            weight_vec = [weight for _ in range(4)]
+            weight_vec = [weight for _ in range(self.dim)]
             weighted_val = mul(weight_vec, query_dict[i].components)
             cnt_n = add(cnt_n, Vector(weighted_val))
             cnt_m = add(cnt_m, weight)
@@ -808,17 +1286,17 @@ class CCATransformer():
         
         query_dict = self.database[token]
         if not query_dict:
-            return Vector([0.0, 0.0, 0.0, 0.0])
+            return Vector([0.0] * self.dim)
         
-        cnt_n = Vector([fraction(0, 1), fraction(0, 1), fraction(0, 1), fraction(0, 1)])
+        cnt_n = Vector([fraction(0, 1)] * self.dim)
         cnt_m = fraction(0, 1)
 
         for i in query_dict:
-            dot_val = dot(mul(sub(Val, query_dict[i]), sub(Val, query_dict[i])), Vector([1.0, 1.0, 1.0, 1.0]))
+            dot_val = dot(mul(sub(Val, query_dict[i]), sub(Val, query_dict[i])), Vector([1.0] * self.dim))
             exponent = div(dot_val, T)
             
             weight = const.value ** exponent
-            weight_vec = [weight for _ in range(4)]
+            weight_vec = [weight for _ in range(self.dim)]
             weighted_val = mul(weight_vec, i.components)
             cnt_n = add(cnt_n, Vector(weighted_val))
             cnt_m = add(cnt_m, weight)
@@ -858,11 +1336,11 @@ if __name__ == "__main__":
     cat = CCATransformer(
         {
             "苹果": {
-                Vector([1,0,0,0]): Vector([1,1,1,1]),
-                Vector([0,0,1,0]): Vector([2,2,2,2])
+                Vector([1,0,0,0,1,0,0,0]): Vector([1,1,1,1,1,1,1,1]),
+                Vector([0,0,1,0,0,0,1,0]): Vector([2,2,2,2,2,2,2,2])
             },
             "香蕉": {
-                Vector([0,1,0,0]): Vector([2,2,2,2])
+                Vector([0,1,0,0,0,1,0,0]): Vector([2,2,2,2,2,2,2,2])
             }
         },
         temperature=Const.E
@@ -878,10 +1356,10 @@ if __name__ == "__main__":
     print(f"Values for '香蕉': {cat.get_value_for_('香蕉', big_Q)}")
     print(f"Query for '香蕉': {cat.get_query_for_('香蕉')}")
 
-    print(f"\nBest token for Vector([1.5,1.5,1.5,1.5]): {cat.query_best_token_for_(Vector([1.5,1.5,1.5,1.5]), big_Q)}")
+    print(f"\nBest token for Vector([1.5]*8): {cat.query_best_token_for_(Vector([1.5]*8), big_Q)}")
 """
 
-# GPT\Modle\CCATransformer\operations.py:
+# GPT\Model\CCATransformer\operations.py:
 """
 try:
     from . import CCA
@@ -900,13 +1378,13 @@ from Vector.vector import Vector
 from fraction import fraction
 import mathexpand as mexp
 
-def NewCCATransformer(Texts: Union[list[str],str]) -> CCA.CCATransformer:
+def NewCCATransformer(Texts: Union[list[str],str], dim: int = 8) -> CCA.CCATransformer:
     if not isinstance(Texts, list):
-        return {Texts: {Vector([0.0,0.0,0.0,0.0]): Vector([random.uniform(-1,1),random.uniform(-1,1),random.uniform(-1,1),random.uniform(-1,1)])}}
+        return {Texts: {Vector([random.uniform(-1,1) for _ in range(dim)]): Vector([random.uniform(-1,1) for _ in range(dim)])}}
     
     database = {}
     for i in Texts:
-        database[i] = {Vector([0.0,0.0,0.0,0.0]): Vector([random.uniform(-1,1),random.uniform(-1,1),random.uniform(-1,1),random.uniform(-1,1)])}
+        database[i] = {Vector([random.uniform(-1,1) for _ in range(dim)]): Vector([random.uniform(-1,1) for _ in range(dim)])}
     return CCA.CCATransformer(database, CCA.Const.E)
 
 def FusionCCATransformer(CAT1: CCA.CCATransformer, CAT2: CCA.CCATransformer) -> CCA.CCATransformer:
@@ -944,7 +1422,7 @@ def get_meaning_of_tokens_for_(CAT: CCA.CCATransformer, tokens: list[str]) -> li
         sum_exp = sum(exp_row)
         influence_graph[i] = [val / sum_exp for val in exp_row]
     
-    bigQ_graph = [[Vector([0.0,0.0,0.0,0.0]) for _ in range(len(tokens))] for _ in range(len(tokens))]
+    bigQ_graph = [[Vector([0.0] * CAT.dim) for _ in range(len(tokens))] for _ in range(len(tokens))]
 
     for i in range(len(tokens)):
         for j in range(i+1):
@@ -954,7 +1432,7 @@ def get_meaning_of_tokens_for_(CAT: CCA.CCATransformer, tokens: list[str]) -> li
                 vector_list = []
                 for k in range(j):
                     components = []
-                    for l in range(4):
+                    for l in range(CAT.dim):
                         influence_val = influence_graph[i][k]
                         if isinstance(influence_val, fraction):
                             influence_val = influence_val.value
@@ -965,18 +1443,18 @@ def get_meaning_of_tokens_for_(CAT: CCA.CCATransformer, tokens: list[str]) -> li
                     vector_list.append(Vector(components))
                 
                 if not vector_list:
-                    big_Q = Vector([0.0, 0.0, 0.0, 0.0])
+                    big_Q = Vector([0.0] * CAT.dim)
                 else:
                     big_Q = mexp.iterate(mexp.add, vector_list)
                 
                 if not isinstance(big_Q, Vector):
                     if isinstance(big_Q, (int, float)):
-                        big_Q = Vector([0.0, 0.0, 0.0, 0.0])
+                        big_Q = Vector([0.0] * CAT.dim)
                     else:
                         try:
-                            big_Q = Vector([float(big_Q)] * 4)
+                            big_Q = Vector([float(big_Q)] * CAT.dim)
                         except:
-                            big_Q = Vector([0.0, 0.0, 0.0, 0.0])
+                            big_Q = Vector([0.0] * CAT.dim)
                 
                 bigQ_graph[i][j] = CAT.get_value_for_(tokens[j], big_Q)
     
@@ -992,18 +1470,18 @@ def get_meaning_of_tokens_for_(CAT: CCA.CCATransformer, tokens: list[str]) -> li
                 vector_list.append(mexp.mul(bigQ_graph[i][j], influence_val))
         
         if not vector_list:
-            meaning_vector = Vector([0.0, 0.0, 0.0, 0.0])
+            meaning_vector = Vector([0.0] * CAT.dim)
         else:
             meaning_vector = mexp.iterate(mexp.add, vector_list)
         
         if not isinstance(meaning_vector, Vector):
             if isinstance(meaning_vector, (int, float)):
-                meaning_vector = Vector([0.0, 0.0, 0.0, 0.0])
+                meaning_vector = Vector([0.0] * CAT.dim)
             else:
                 try:
-                    meaning_vector = Vector([float(meaning_vector)] * 4)
+                    meaning_vector = Vector([float(meaning_vector)] * CAT.dim)
                 except:
-                    meaning_vector = Vector([0.0, 0.0, 0.0, 0.0])
+                    meaning_vector = Vector([0.0] * CAT.dim)
         
         meaning_vectors.append(meaning_vector)
     
@@ -1026,7 +1504,7 @@ def get_meaning_of_tokens_at_(CAT: CCA.CCATransformer, AtQ: Vector, tokens: list
         sum_exp = sum(exp_row)
         influence_graph[i] = [val / sum_exp for val in exp_row]
     
-    bigQ_graph = [[Vector([0.0,0.0,0.0,0.0]) for _ in range(len(tokens))] for _ in range(len(tokens))]
+    bigQ_graph = [[Vector([0.0] * CAT.dim) for _ in range(len(tokens))] for _ in range(len(tokens))]
 
     for i in range(len(tokens)):
         cnt_n = [0.0 for _ in range(i+1)]
@@ -1038,7 +1516,7 @@ def get_meaning_of_tokens_at_(CAT: CCA.CCATransformer, AtQ: Vector, tokens: list
                 vector_list = []
                 for k in range(j):
                     components = []
-                    for l in range(4):
+                    for l in range(CAT.dim):
                         influence_val = influence_graph[i][k]
                         if isinstance(influence_val, fraction):
                             influence_val = influence_val.value
@@ -1049,26 +1527,28 @@ def get_meaning_of_tokens_at_(CAT: CCA.CCATransformer, AtQ: Vector, tokens: list
                     vector_list.append(Vector(components))
                 
                 if not vector_list:
-                    big_Q = Vector([0.0, 0.0, 0.0, 0.0])
+                    big_Q = Vector([0.0] * CAT.dim)
                 else:
                     big_Q = mexp.iterate(mexp.add, vector_list)
                 
-                if not isinstance(big_Q, Vector):
+                if not hasattr(big_Q, 'VECTORFLAG'):
                     if isinstance(big_Q, (int, float)):
-                        big_Q = Vector([0.0, 0.0, 0.0, 0.0])
+                        big_Q = Vector([0.0] * CAT.dim)
+                    elif isinstance(big_Q, list):
+                        big_Q = Vector([big_Q])
                     else:
                         try:
-                            big_Q = Vector([float(big_Q)] * 4)
+                            big_Q = Vector([float(big_Q)] * CAT.dim)
                         except:
-                            big_Q = Vector([0.0, 0.0, 0.0, 0.0])
+                            big_Q = Vector([0.0] * CAT.dim)
                 
                 bigQ_graph[i][j] = CAT.get_value_for_(tokens[j], big_Q)
 
-                cnt_n[j] = const ** mexp.div(vector.dot(big_Q, AtQ), T.value).value
+                cnt_n[j] = const ** mexp.div(vector.dot(big_Q, AtQ), T.value)
                 cnt_m = mexp.add(cnt_m, cnt_n[j])
             
             for j in range(i+1):
-                bigQ_graph[i][j] = mexp.div(mexp.mul(bigQ_graph[i][j], cnt_n[j]), cnt_m).value
+                bigQ_graph[i][j] = mexp.div(mexp.mul(bigQ_graph[i][j], cnt_n[j]), cnt_m)
     
     meaning_vectors = []
     for i in range(len(tokens)):
@@ -1082,18 +1562,18 @@ def get_meaning_of_tokens_at_(CAT: CCA.CCATransformer, AtQ: Vector, tokens: list
                 vector_list.append(mexp.mul(bigQ_graph[i][j], influence_val))
         
         if not vector_list:
-            meaning_vector = Vector([0.0, 0.0, 0.0, 0.0])
+            meaning_vector = Vector([0.0] * CAT.dim)
         else:
             meaning_vector = mexp.iterate(mexp.add, vector_list)
         
         if not isinstance(meaning_vector, Vector):
             if isinstance(meaning_vector, (int, float)):
-                meaning_vector = Vector([0.0, 0.0, 0.0, 0.0])
+                meaning_vector = Vector([0.0] * CAT.dim)
             else:
                 try:
-                    meaning_vector = Vector([float(meaning_vector)] * 4)
+                    meaning_vector = Vector([float(meaning_vector)] * CAT.dim)
                 except:
-                    meaning_vector = Vector([0.0, 0.0, 0.0, 0.0])
+                    meaning_vector = Vector([0.0] * CAT.dim)
         
         meaning_vectors.append(meaning_vector)
     
@@ -1119,14 +1599,14 @@ def get_meaning_of_sentence_for_(CAT: CCA.CCATransformer, tokens: list[str]) -> 
     for i in range(len(influence_graph)):
         tokens_influence[i] = sum([influence_graph[i][j] for j in range(len(influence_graph))])
     
-    sentence_meaning = Vector([0.0, 0.0, 0.0, 0.0])
+    sentence_meaning = Vector([0.0] * CAT.dim)
 
-    cnt_n = Vector([0.0, 0.0, 0.0, 0.0])
+    cnt_n = Vector([0.0] * CAT.dim)
     cnt_m = 0.0
 
     for i in range(len(tokens)):
         weight = tokens_influence[i]
-        weight_vec = [weight for _ in range(4)]
+        weight_vec = [weight for _ in range(CAT.dim)]
         weighted_val = mexp.mul(weight_vec, tokens_meaning[i].components)
         cnt_n = mexp.add(cnt_n, Vector(weighted_val))
         cnt_m += weight
@@ -1153,14 +1633,14 @@ def get_meaning_of_sentence_at_(CAT: CCA.CCATransformer, AtQ: Vector, tokens: li
     for i in range(len(influence_graph)):
         tokens_influence[i] = sum([influence_graph[i][j] for j in range(len(influence_graph))])
     
-    sentence_meaning = Vector([0.0, 0.0, 0.0, 0.0])
+    sentence_meaning = Vector([0.0] * CAT.dim)
 
-    cnt_n = Vector([0.0, 0.0, 0.0, 0.0])
+    cnt_n = Vector([0.0] * CAT.dim)
     cnt_m = 0.0
 
     for i in range(len(tokens)):
         weight = tokens_influence[i]
-        weight_vec = [weight for _ in range(4)]
+        weight_vec = [weight for _ in range(CAT.dim)]
         weighted_val = mexp.mul(weight_vec, tokens_meaning[i].components)
         cnt_n = mexp.add(cnt_n, Vector(weighted_val))
         cnt_m += weight
@@ -1171,7 +1651,7 @@ def get_meaning_of_sentence_at_(CAT: CCA.CCATransformer, AtQ: Vector, tokens: li
 
 def think_about_next_token_for_(CAT: CCA.CCATransformer, tokens: list[str], T: float = CCA.Const.E.value) -> str:
     sentence_meaning = get_meaning_of_sentence_for_(CAT, tokens)
-    cnt_n = Vector([0.0, 0.0, 0.0, 0.0])
+    cnt_n = Vector([0.0] * CAT.dim)
     cnt_m = 0.0
     for token in CAT.get_tokens():
         dot_val = vector.dot(get_meaning_of_tokens_for_(CAT, tokens + [token])[-1], sentence_meaning)
@@ -1181,12 +1661,12 @@ def think_about_next_token_for_(CAT: CCA.CCATransformer, tokens: list[str], T: f
         cnt_m += weight
     
     if cnt_m == 0:
-        next_token = Vector([0.0, 0.0, 0.0, 0.0])
+        next_token = Vector([0.0] * CAT.dim)
     else:
         next_token = mexp.div(cnt_n, cnt_m)
 
     next_token = next_token.components
-    for i in range(4):
+    for i in range(CAT.dim):
         random_val = random.uniform(-T, T)
         next_token[i] += ((abs(random_val) ** CCA.Const.E.value) * random_val) / (abs(random_val) * (CCA.Const.E.value ** CCA.Const.E.value))
 
@@ -1196,7 +1676,7 @@ def think_about_next_token_for_(CAT: CCA.CCATransformer, tokens: list[str], T: f
 
 def think_about_next_token_at_(CAT: CCA.CCATransformer, tokens: list[str], AtQ: Vector, T: float = CCA.Const.E.value) -> str:
     sentence_meaning = get_meaning_of_sentence_at_(CAT, AtQ, tokens)
-    cnt_n = Vector([0.0, 0.0, 0.0, 0.0])
+    cnt_n = Vector([0.0] * CAT.dim)
     cnt_m = 0.0
     for token in CAT.get_tokens():
         dot_val = vector.dot(get_meaning_of_tokens_at_(CAT, AtQ, tokens + [token])[-1], sentence_meaning)
@@ -1206,12 +1686,12 @@ def think_about_next_token_at_(CAT: CCA.CCATransformer, tokens: list[str], AtQ: 
         cnt_m += weight
     
     if cnt_m == 0:
-        next_token = Vector([0.0, 0.0, 0.0, 0.0])
+        next_token = Vector([0.0] * CAT.dim)
     else:
         next_token = mexp.div(cnt_n, cnt_m)
 
     next_token = next_token.components
-    for i in range(4):
+    for i in range(CAT.dim):
         random_val = random.uniform(-T, T)
         next_token[i] += ((abs(random_val) ** CCA.Const.E.value) * random_val) / (abs(random_val) * (CCA.Const.E.value ** CCA.Const.E.value))
 
@@ -1226,28 +1706,34 @@ def get_complate_for_(CAT: CCA.CCATransformer, tokens: list[str]):
 
 if __name__ == "__main__":
     import random
-    CAT = CCA.CCATransformer({"好吃":{Vector([1.0,1.0,0.0,0.0]): Vector([0.0, 0.0, 1.0, 1.0])},
-                             "饺子":{Vector([0.0, 0.0, 1.0, 1.0]): Vector([1.0,1.0,0.0,0.0])},
-                             "包子":{Vector([0.0, 0.5, 0.7, 1.0]): Vector([1.0,1.0,0.0,0.0])}},
-                            )
+    CAT = NewCCATransformer(["苹果","好吃","香蕉"])
 
     start_tokens = [random.choice(CAT.get_tokens())] + [random.choice(CAT.get_tokens())] + [random.choice(CAT.get_tokens())]
     print(f"Start token: {start_tokens}")
 
     i = 0
-    C = 10.0
+    C = 2.5
 
     while get_complate_for_(CAT, start_tokens) < C:
         next_token = think_about_next_token_for_(CAT, start_tokens)
         start_tokens.append(next_token)
         print(f"No. {i+4} token: {next_token}", f"complate: {get_complate_for_(CAT, start_tokens)}")
         i += 1
-        C /= 2
+    print("Generated token sequence:")
+    print(start_tokens)
+
+    start_tokens = start_tokens[:3]
+
+    while get_complate_for_(CAT, start_tokens) < C:
+        next_token = think_about_next_token_at_(CAT, start_tokens, CAT.get_value_for_("苹果", CAT.get_query_for_("苹果")))
+        start_tokens.append(next_token)
+        print(f"No. {i+4} token: {next_token}", f"complate: {get_complate_for_(CAT, start_tokens)}")
+        i += 1
     print("Generated token sequence:")
     print(start_tokens)
 """
 
-# GPT\Modle\CCATransformer\__init__.py:
+# GPT\Model\CCATransformer\__init__.py:
 """
 from .CCA import Const, CCATransformer
 from .operations import (
@@ -1275,7 +1761,7 @@ __all__=[
 ]
 """
 
-# GPT\Modle\compare\operations.py:
+# GPT\Model\compare\operations.py:
 """
 def distance(a, b, visited=None, depth=0, max_depth=10):
     if visited is None:
@@ -1430,7 +1916,7 @@ def distance(a, b, visited=None, depth=0, max_depth=10):
         return 1.0
 """
 
-# GPT\Modle\compare\__init__.py:
+# GPT\Model\compare\__init__.py:
 """
 from .operations import distance
 
@@ -1439,7 +1925,7 @@ __all__ = [
 ]
 """
 
-# GPT\Modle\convolutional\conv.py:
+# GPT\Model\convolutional\conv.py:
 """
 class kernel:
     def __init__(self, weights: list, size: int):
@@ -1462,14 +1948,14 @@ if __name__ == "__main__":
     kernel([1,1,1,1,1,1,1], 3)
 """
 
-# GPT\Modle\convolutional\__init__.py:
+# GPT\Model\convolutional\__init__.py:
 """
 from .conv import conv, pool, kernel
 
 __all__ = ["conv", "pool", "kernel"]
 """
 
-# GPT\Modle\fraction\fraction.py:
+# GPT\Model\fraction\fraction.py:
 """
 class fraction:
     def __init__(self, numerator: int, denominator: int):
@@ -1543,6 +2029,9 @@ class fraction:
         if isinstance(power, (int, float)):
             result = self.value ** power
             return fraction(int(result * 1000), 1000)
+        elif isinstance(power, fraction):
+            result = self.value ** power.value
+            return fraction(int(result * 1000), 1000)
         raise TypeError("Power must be a number.")
     
     def __rpow__(self, base):
@@ -1602,14 +2091,14 @@ class fraction:
         return f"fraction({self.numerator}, {self.denominator})"
 """
 
-# GPT\Modle\fraction\__init__.py:
+# GPT\Model\fraction\__init__.py:
 """
 from .fraction import fraction
 
 __all__ = ['fraction']
 """
 
-# GPT\Modle\mathexpand\operations.py:
+# GPT\Model\mathexpand\operations.py:
 """
 import threading
 from typing import Union, Any, List, Tuple
@@ -1784,6 +2273,9 @@ def process_nested_operation(func: callable, a: Any, b: Any) -> Any:
             raise TypeError(f"Unsupported operand types: {type(a)} and {type(b)}")
 
 def mul(a: Union[Vector, int, float, fraction, list], b: Union[Vector, int, float, fraction, list] = 1) -> Union[Vector, float, fraction, list]:
+    if isinstance(a, str) or isinstance(b, str):
+        return str(a) + str(b)
+    
     def multiply_func(x, y):
         if isinstance(x, fraction) or isinstance(y, fraction):
             if not isinstance(x, fraction):
@@ -1796,6 +2288,9 @@ def mul(a: Union[Vector, int, float, fraction, list], b: Union[Vector, int, floa
     return process_nested_operation(multiply_func, a, b)
 
 def div(a: Union[Vector, int, float, fraction, list], b: Union[Vector, int, float, fraction, list] = 1, miny: float = 1e-10) -> Union[Vector, float, fraction, list]:
+    if isinstance(a, str) or isinstance(b, str):
+        return str(a) + str(b)
+    
     def divide_func(x, y):
         abs_y = abs(y.value if isinstance(y, fraction) else y)
         if abs_y <= miny:
@@ -1812,6 +2307,9 @@ def div(a: Union[Vector, int, float, fraction, list], b: Union[Vector, int, floa
     return process_nested_operation(divide_func, a, b)
 
 def add(a: Union[Vector, int, float, fraction, list], b: Union[Vector, int, float, fraction, list] = 0) -> Union[Vector, float, fraction, list]:
+    if isinstance(a, str) or isinstance(b, str):
+        return str(a) + str(b)
+
     def add_func(x, y):
         if isinstance(x, fraction) or isinstance(y, fraction):
             if not isinstance(x, fraction):
@@ -1824,6 +2322,9 @@ def add(a: Union[Vector, int, float, fraction, list], b: Union[Vector, int, floa
     return process_nested_operation(add_func, a, b)
 
 def sub(a: Union[Vector, int, float, fraction, list], b: Union[Vector, int, float, fraction, list] = 0) -> Union[Vector, float, fraction, list]:
+    if isinstance(a, str) or isinstance(b, str):
+        return str(a) + str(b)
+    
     def subtract_func(x, y):
         if isinstance(x, fraction) or isinstance(y, fraction):
             if not isinstance(x, fraction):
@@ -1844,7 +2345,81 @@ def iterate(func: callable, items: list) -> Any:
         return func(items[0], items[1])
     else:
         return func(items[0], iterate(func, items[1:]))
+
+class LinearAlgebra:
+    def __init__(self):
+        pass
+
+    def is_matrix(self, obj):
+        if not obj or not is_list_like(obj):
+            return False
+        if not all(isinstance(row, list) for row in obj):
+            return False
+        col_count = len(obj[0])
+        if not all(len(row) == col_count for row in obj):
+            return False
+        return True
     
+    def dim(self, obj):
+        if is_vector(obj):
+            return (obj.dimension,)
+        elif self.is_matrix(obj):
+            return (len(obj), len(obj[0]))
+        else:
+            raise ValueError("obj must be Vector or Matrix")
+        
+    def mul(self, a, b):
+        dim_a = self.dim(a)
+        dim_b = self.dim(b)
+        
+        if len(dim_a) == 1 and len(dim_b) == 1:
+            if dim_a[0] != dim_b[0]:
+                raise ValueError("Vector dimensions must match for dot product")
+            a_comp = a.components if is_vector(a) else a
+            b_comp = b.components if is_vector(b) else b
+            return sum(mul(ai, bi) for ai, bi in zip(a_comp, b_comp))
+        
+        elif len(dim_a) == 2 and len(dim_b) == 2:
+            if dim_a[1] != dim_b[0]:
+                raise ValueError(f"Matrix dimensions incompatible: {dim_a} and {dim_b}")
+            result = []
+            for i in range(dim_a[0]):
+                row = []
+                for j in range(dim_b[1]):
+                    val = 0
+                    for k in range(dim_a[1]):
+                        val = add(val, mul(a[i][k], b[k][j]))
+                    row.append(val)
+                result.append(row)
+            return result
+        
+        elif len(dim_a) == 2 and len(dim_b) == 1:
+            if dim_a[1] != dim_b[0]:
+                raise ValueError("Matrix and vector dimensions incompatible")
+            result = []
+            b_comp = b.components if is_vector(b) else b
+            for i in range(dim_a[0]):
+                val = 0
+                for k in range(dim_a[1]):
+                    val = add(val, mul(a[i][k], b_comp[k]))
+                result.append(val)
+            return Vector(result) if is_vector(b) else result
+        
+        elif len(dim_a) == 1 and len(dim_b) == 2:
+            if dim_a[0] != dim_b[0]:
+                raise ValueError("Vector and matrix dimensions incompatible")
+            result = []
+            a_comp = a.components if is_vector(a) else a
+            for j in range(dim_b[1]):
+                val = 0
+                for k in range(dim_a[0]):
+                    val = add(val, mul(a_comp[k], b[k][j]))
+                result.append(val)
+            return Vector(result) if is_vector(a) else result
+        
+        else:
+            raise ValueError("Unsupported operand types")
+
 class ThreadManager:
     def __init__(self):
         self._threads = []
@@ -1879,35 +2454,11 @@ class ThreadManager:
         return [i for i in results]
 
 if __name__ == '__main__':
-    from fraction import fraction
-    
-    print(is_vector(Vector([1,2,3])))
-    print(is_vector(6))
-
-    print("Nested list with vectors and fractions:")
-    vec_list1 = [Vector([fraction(1, 1), fraction(2, 1)]), Vector([3, 4])]
-    vec_list2 = [Vector([2, 3]), Vector([fraction(4, 1), fraction(5, 1)])]
-    print(mul(vec_list1, vec_list2))
-    print(add(vec_list1, fraction(1, 1)))
-    print(mul(vec_list1, 2))
-    
-    print("Mixed nested structures with fractions:")
-    mixed1 = [Vector([1, fraction(2, 1)]), [Vector([3, 4]), Vector([5, 6])]]
-    mixed2 = [2, [fraction(3, 1), 4]]
-    print(mul(mixed1, mixed2))
-    
-    print("Deep nesting with fractions:")
-    deep1 = [[Vector([1, 2]), Vector([fraction(3, 1), 4])], [Vector([5, 6])]]
-    deep2 = [[2, fraction(3, 1)], [4]]
-    print(add(deep1, deep2))
-    
-    print("Pure fraction operations:")
-    print(add(fraction(1, 2), fraction(1, 3)))
-    print(mul(fraction(2, 3), 1.5))
-    print(div(fraction(3, 4), 0.25))
+    la = LinearAlgebra()
+    print(la.mul(Vector([1.0,0.0]), [[0.0,1.0],[1.0,0.0]]))
 """
 
-# GPT\Modle\mathexpand\__init__.py:
+# GPT\Model\mathexpand\__init__.py:
 """
 r"""
 Initialization module for mathematical expansion operations.
@@ -1921,6 +2472,7 @@ from .operations import (
     sub,
     iterate,
     is_vector,
+    LinearAlgebra,
     ThreadManager
 )
 
@@ -1931,11 +2483,12 @@ __all__ = [
     'sub',
     'iterate',
     'is_vector',
+    'LinearAlgebra',
     'ThreadManager'
 ]
 """
 
-# GPT\Modle\Remember_Turingpattern_NN\operations.py:
+# GPT\Model\Remember_Turingpattern_NN\operations.py:
 """
 import sys
 from pathlib import Path
@@ -1951,17 +2504,18 @@ sys.path.append(udir)
 from convolutional import conv, pool
 from Vector import Vector
 from mathexpand import add, sub, mul, div
+from random import uniform
 
 def neurons_generator(model:str, width:int = 3, height: int = 3):
     preset = {
-        "any": [[lambda x, parameter, nn: sigmoid(x + parameter) * (x + parameter)]],
-        "cnn": [[lambda x, parameter, nn: conv(x, parameter)],[lambda x, parameter, nn: pool(x)]],
-        "vector": [[lambda x, parameter, nn: Vector([sigmoid(i) for i in x.components])]]
+        "any": [[lambda x, parameter, nn, index: sigmoid(x + parameter) * (x + parameter)]],
+        "cnn": [[lambda x, parameter, nn, index: conv(x, parameter)],[lambda x, parameter, nn, index: pool(x)]],
+        "vector": [[lambda x, parameter, nn, index: Vector([sigmoid(i) for i in x.components])]]
     }
 
     return [i*height for i in preset[model]] * width
 
-def weights_brush(res:int = 0, width:int = 3, height: int = 3):
+def weights_brush(weight: float = 0.5, random: float = 0.25, res:int = 0, width: int = 3, height: int = 3):
     if res < 0: raise(ValueError(res))
     if res == 0:
         weights = {}
@@ -1969,18 +2523,18 @@ def weights_brush(res:int = 0, width:int = 3, height: int = 3):
             for i_n in range(height):
                 weights[(i_l, i_n)] = {}
                 for j_n in range(height):
-                    weights[(i_l, i_n)][(i_l+1, j_n)] = 0.1
+                    weights[(i_l, i_n)][(i_l+1, j_n)] = add(weight, uniform(-random, random))
     else:
         weights = {}
         for i_l in range(width-1):
             for i_n in range(height):
                 weights[(i_l, i_n)] = {}
                 for j_n in range(height):
-                    weights[(i_l, i_n)][(i_l+1, j_n)] = 0.1
+                    weights[(i_l, i_n)][(i_l+1, j_n)] = add(weight, uniform(-random, random))
                 if i_l % res == res-1 and i_l + res < width:
                     for res_n in range(height):
                         weights[(i_l, i_n)][(i_l+res, res_n)] = 1.0
-    return [weights, [[0.1]*width]*height]
+    return [weights, [[add(weight, uniform(-random, random)) for _ in range(height)] for _ in range(width)]]
 
 def tg_brush(width:int = 3, height: int = 3, tg_types: int = 4):
     return [[[0.0 for _ in range(tg_types)] for _ in range(width)] for _ in range(height)]
@@ -1992,11 +2546,14 @@ def tg_graph_brush(tg_types: int = 4):
     return [[0.0 for _ in range(tg_types + 1)] for _ in range(tg_types + 1)]
 
 if __name__ == "__main__":
-    rtn = RTN(neurons_generator("any"), weights_brush(), tg_brush(), sr_graph_brush(), tg_graph_brush())
-    rtn.forward([1.0,1.0,1.0])
+    rtn = RTN(neurons_generator("any"), weights_brush(1.0, 2), tg_brush(), sr_graph_brush(), tg_graph_brush())
+    rtn.tg = [[[uniform(-1.0, 1.0) for _ in j] for j in i] for i in rtn.tg]
+    rtn.sr_graph = [[[uniform(0.0, 1.0) for _ in j] for j in i] for i in rtn.sr_graph]
+    rtn.tg_graph = [[uniform(-1.0, 1.0) for _ in i] for i in rtn.tg_graph]
+    while True: print(rtn.forward([1.0,0.0,0.0]))
 """
 
-# GPT\Modle\Remember_Turingpattern_NN\RTN.py:
+# GPT\Model\Remember_Turingpattern_NN\RTN.py:
 """
 import sys
 from pathlib import Path
@@ -2010,8 +2567,8 @@ def sigmoid(x):
     e = 13580623/4996032
     try:
         return div(1, add(1, e**mul(x,-1)))
-    except:
-        return abs(x)/x
+    except:     
+        return div(abs(x),x)
 
 class RTN:
     __slots__ = ('neurons', 'weights', 'tg', 'sr_graph', 'tg_graph')
@@ -2030,6 +2587,8 @@ class RTN:
         tg_ans = self.tg_updata()
         self.tg = [[[add(self.tg[i][j][k], tg_ans[i][j][k]) for k in range(len(self.tg[i][j]))] for j in range(len(self.tg[i]))] for i in range(len(self.tg))]
 
+        self.tg = [[[sigmoid(k) for k in j] for j in i] for i in self.tg]
+
         return nn_ans[-1]
 
     def nn_dynamics(self, inputs) -> list[list]:
@@ -2037,7 +2596,7 @@ class RTN:
         inputs = [inputs[i] if i < len(inputs) else 0.0 for i in range(len(self.neurons[0]))]
         answer = [[0.0 for _ in self.neurons[i]] for i in range(len(self.neurons))]
 
-        answer[0] = [add(self.neurons[0][i](inputs[i], self.weights[1][0][i], self), self.tg_dynamics(None, (0, i, len(self.tg[0][i])-1))) for i in range(len(inputs))]
+        answer[0] = [add(self.neurons[0][i](inputs[i], self.weights[1][0][i], self, (0,i)), self.tg_dynamics(None, (0, i, len(self.tg[0][i])-1))) for i in range(len(inputs))]
         for i in range(1, len(self.neurons)):
             for j in range(len(self.neurons[i])):
                 cnt = 0
@@ -2047,7 +2606,7 @@ class RTN:
                             cnt = add(cnt, mul(answer[i-k][l], self.weights[0][(i-k, l)][(i, j)]))
                         except:
                             pass
-                answer[i][j] = add(self.neurons[i][j](cnt, self.weights[1][i][j], self), self.tg_dynamics(None, (i, j, len(self.tg[i][j])-1)))
+                answer[i][j] = add(self.neurons[i][j](cnt, self.weights[1][i][j], self, (i,j)), self.tg_dynamics(None, (i, j, len(self.tg[i][j])-1)))
         return answer
     
     def tg_dynamics(self, start: tuple | None, end: tuple):
@@ -2081,7 +2640,7 @@ class RTN:
         return [[[self.tg_dynamics(None, (i, j, k)) for k in range(len(self.tg[i][j]))] for j in range(len(self.tg[i]))] for i in range(len(self.tg))]
 
 if __name__ == "__main__":
-    rtn = RTN([[lambda x, parameter, nn: x, lambda x, parameter, nn: x, lambda x, parameter, nn: x], [lambda x, parameter, nn: x, lambda x, parameter, nn: x,lambda x, parameter, nn: x]], 
+    rtn = RTN([[lambda x, parameter, nn, index: x, lambda x, parameter, nn, index: x, lambda x, parameter, nn, index: x], [lambda x, parameter, nn, index: x, lambda x, parameter, nn, index: x,lambda x, parameter, nn, index: x]], 
               [{(0,0):{(1,0): 0.5, (1,1): 1.2, (1,2): -1.0}, (0,1):{(1,0): 0.0, (1,1): 1.8, (1,2): -0.2}, (0,2):{(1,0): 1.0, (1,1): 0.5, (1,2): -1.2}}, [[1.0, 1.0, 1.0], [1.0, 1.0, 1.0]]],
               [[[0.0 for _ in range(4)], [0.0 for _ in range(4)], [0.0 for _ in range(4)]], [[0.0 for _ in range(4)], [0.0 for _ in range(4)], [0.0 for _ in range(4)]]],
               [[[1.0] + [0.0 for _ in range(3)], [0.0] + [0.0 for _ in range(3)], [0.0] + [0.0 for _ in range(3)]], [[0.0] + [0.0 for _ in range(3)], [0.0] + [0.0 for _ in range(3)], [0.0] + [0.0 for _ in range(3)]]],
@@ -2089,11 +2648,10 @@ if __name__ == "__main__":
               )
     for i in range(100):
         ans = rtn.forward([1.0,-1.0,1])
-        rtn.tg = [[[sigmoid(k) for k in j] for j in i] for i in rtn.tg]
         print(ans)
 """
 
-# GPT\Modle\Remember_Turingpattern_NN\__init__.py:
+# GPT\Model\Remember_Turingpattern_NN\__init__.py:
 """
 from .RTN import RTN, sigmoid
 from .operations import neurons_generator, weights_brush, tg_brush, sr_graph_brush, tg_graph_brush
@@ -2101,8 +2659,9 @@ from .operations import neurons_generator, weights_brush, tg_brush, sr_graph_bru
 __all__ = ['RTN', 'sigmoid', 'neurons_generator', 'weights_brush', 'tg_brush', 'sr_graph_brush', 'tg_graph_brush']
 """
 
-# GPT\Modle\Vector\operations.py:
+# GPT\Model\Vector\operations.py:
 """
+import math
 from .vector import Vector
 from fraction import fraction
 from typing import Union
@@ -2172,12 +2731,43 @@ def compare(v1: Vector, v2: Vector) -> Union[float, fraction]:
         for comp in abs_diff.components:
             result *= comp
         return result
+
+def magnitude(v: Vector) -> Union[float, fraction]:
+    squared_sum = sum(x*x for x in v.components)
+    
+    if all(isinstance(x, fraction) for x in v.components):
+        return math.sqrt(float(squared_sum))
+    else:
+        return math.sqrt(squared_sum)
+
+def normalize(v: Vector) -> Vector:
+    if all(x == 0 for x in v.components):
+        return v
+    
+    mag = magnitude(v)
+    
+    if all(isinstance(x, fraction) for x in v.components):
+        normalized_components = [x / mag for x in v.components]
+    else:
+        normalized_components = [x / mag for x in v.components]
+    
+    return Vector(normalized_components)
+
+def is_unit_vector(v: Vector, tolerance: float = 1e-10) -> bool:
+    mag = magnitude(v)
+    return abs(mag - 1.0) < tolerance
 """
 
-# GPT\Modle\Vector\vector.py:
+# GPT\Model\Vector\vector.py:
 """
 import math
 from typing import List, Union
+import sys
+from pathlib import Path
+
+udir = str(Path(__file__).parent.parent)
+sys.path.append(udir)
+
 from fraction import fraction
 
 class Vector:
@@ -2292,6 +2882,9 @@ class Vector:
     def __rmul__(self, scalar: float) -> 'Vector':
         return self.__mul__(scalar)
     
+    def __abs__(self) -> 'Vector':
+        return Vector([abs(x) for x in self.components])
+    
     def __truediv__(self, scalar: Union[float, fraction]) -> 'Vector':
         if isinstance(scalar, (int, float, fraction)):
             if scalar == 0 or (isinstance(scalar, fraction) and scalar.value == 0):
@@ -2316,7 +2909,7 @@ class Vector:
     def VECTORFLAG(): pass
 """
 
-# GPT\Modle\Vector\__init__.py:
+# GPT\Model\Vector\__init__.py:
 """
 r"""
 Initialization module for vector operations.
@@ -2332,7 +2925,8 @@ from .operations import (
     dot,
     cross,
     abs_vector,
-    compare
+    compare,
+    normalize
 )
 
 __all__ = [
@@ -2344,7 +2938,8 @@ __all__ = [
     'dot',
     'cross',
     'abs_vector',
-    'compare'
+    'compare',
+    'normalize'
 ]
 """
 
@@ -2357,6 +2952,7 @@ import wave
 import struct
 import math
 import os
+from time import time
 
 class synthesizer:
     def __init__(self):
@@ -2374,7 +2970,7 @@ class synthesizer:
                 wav.setframerate(sample_rate)
                 
                 for i in range(int(duration * sample_rate)):
-                    print(f"\rLoading {["—", "/", "|", "\\"][int(i/1000)%4]} {int(i / duration / sample_rate * 100)+1}%", end="      ")
+                    print(f"\rLoading {[".   ", "..  ", "... ", "...."][int(time()*4)%4]} {int(i / duration / sample_rate * 100)+1}%", end="      ")
                     t = i / sample_rate
                     value = func(t)
                     value = math.tanh(value)
@@ -2716,10 +3312,10 @@ if __name__ == "__main__":
     T = 4
 
     
-    p.add_key("b", morph_key([1.0,1.0,0.5,0.0], 0.0, 1.0))
+    p.add_key("b", morph_key([0.1,0.1,0.5,0.0], 0.0, 1.0))
     p.add_key("a", morph_key([1.0,1.0,1.5,0.75], 0.0, 1.0))
 
-    f = lambda t: p.gate(*p.get_key(p.syllable("b","a", t%2, 2)).speak())(t) * p.s.envelope_adsr(t%2, 2)
+    f = lambda t: p.gate(*p.get_key(p.syllable("b","a", (min((t*2)%4, 2)), 2)).speak())(t) * p.s.envelope_adsr(t%2, 2)
 
     p.s.play_func(f, T)
 """
@@ -2736,8 +3332,8 @@ __all__ = ["synthesizer", "parrot", "morph_key"]
 import tkinter as tk
 
 class ColorPalette:
-    def __init__(self):
-        self.colors = [
+    def __init__(self, palette=None, map=None):
+        self.colors = palette or [
             "#000000", "#FFFFFF", "#811AFF", "#3BFFAD", "#0000FF", "#65CCFF", "#7298FF", "#00FFFF",
             "#111111", "#222222", "#333333", "#444444", "#555555", "#666666", "#777777", "#888888",
             "#1E90FF", "#87CEEB", "#4682B4", "#5F9EA0", "#2E8B57", "#3CB371", "#20B2AA", "#48D1CC",
@@ -2745,7 +3341,7 @@ class ColorPalette:
             "#1E90FF", "#87CEEB", "#4682B4", "#5F9EA0", "#2E8B57", "#3CB371", "#20B2AA", "#48D1CC"
         ]
         
-        self.default_map = {
+        self.default_map = map or {
             "background": 0,
             "text": 1,
             "border": 1,
@@ -3485,26 +4081,51 @@ import tuidisplay as tui
 """
 import sys
 from pathlib import Path
+from random import uniform
 
 udir = str(Path(__file__).parent.parent)
 sys.path.append(udir)
 
-from GPT.Modle.Remember_Turingpattern_NN import RTN, neurons_generator, weights_brush, tg_brush, sr_graph_brush, tg_graph_brush
-from GPT.Modle.CCATransformer import CCATransformer, Const
-from GPT.Modle.Vector import Vector
+from GPT.Model.Remember_Turingpattern_NN import RTN, neurons_generator, weights_brush, tg_brush, sr_graph_brush, tg_graph_brush
+from GPT.Model.CCATransformer import CCATransformer, Const, get_meaning_of_tokens_at_, think_about_next_token_at_, NewCCATransformer
+from GPT.Model.mathexpand import add, sub, mul, div, iterate
+from GPT.Model.Vector import Vector
+from GPT.Data.splitToken import ChineseTokenizer
 
-cat = CCATransformer(
-        {
-            "苹果": {
-                Vector([1,0,0,0]): Vector([1,1,1,1]),
-                Vector([0,0,1,0]): Vector([2,2,2,2])
-            },
-            "香蕉": {
-                Vector([0,1,0,0]): Vector([2,2,2,2])
-            }
-        },
-        temperature=Const.E
-    )
+text = """
+从去年起，仿佛听得有人说我是仇猫的。那根据自然是在我的那一篇《兔和猫》；这是自画招供，当然无话可说，——但倒也毫不介意。
+"""
+
+ct = ChineseTokenizer()
+ct.load_model("model")
+
+Texts = ct.tokenize(text)
+
+print(Texts)
+
+cat = NewCCATransformer(Texts)
+
+height, width, tg_types = 5, 7, 9
+neurons = [i*height for i in [[lambda x, parameter, nn, index: get_meaning_of_tokens_at_(cat, add(x, nn.tg[index[0]][index[1]][0]), tokens)[-1]]]] * width
+
+tokens = [Texts[1]]
+
+rtn = RTN(
+    neurons,
+    weights_brush(Vector([1.0, 1.0, 1.0, 1.0]), width=width, height=height),
+    [[[Vector([uniform(-1.0, 1.0) for _ in range(4)]) for _ in range(tg_types)] for _ in range(height)] for _ in range(width)],
+    sr_graph_brush(width=height, height=width, tg_types=tg_types),
+    [[uniform(-1.0, 1.0) for _ in range(tg_types + 1)] for _ in range(tg_types + 1)]
+)
+
+while True:
+    n = rtn.forward([Vector([0.0]*4)])
+    bigQ = iterate(add, n)
+
+    next_token = think_about_next_token_at_(cat, tokens, bigQ, 5)
+
+    tokens.append(next_token)
+    print(tokens)
 """
 
 # test\loading_string.py:
@@ -3517,4 +4138,154 @@ while True:
     i = (i+1)%8
     print(f"\rLoading... {loading[i]}", end="")
     time.sleep(0.1)
+"""
+
+# test\prtest.py:
+"""
+import sys
+from pathlib import Path
+from random import uniform
+
+udir = str(Path(__file__).parent.parent)
+sys.path.append(udir)
+
+from Outputio.parrot import *
+
+# 中文音素表设计 - 基于鹦鹉合成器参数
+class ChinesePhonemeTable:
+    def __init__(self, n_segments=4):
+        self.n = n_segments
+        
+    def get_phonemes(self):
+        """返回所有中文音素"""
+        phonemes = {}
+        
+        # ========== 单元音 ==========
+        # 开口元音 - 口腔开放，面积大
+        phonemes['a'] = morph_key([2.0, 1.8, 1.5, 1.2], 0.0, 1.0)  # 啊
+        phonemes['o'] = morph_key([1.0, 0.8, 1.2, 1.5], 0.0, 1.0)  # 哦 - 圆唇
+        phonemes['e'] = morph_key([1.2, 1.0, 0.8, 1.0], 0.0, 1.0)  # 鹅 - 中部略窄
+        phonemes['i'] = morph_key([0.3, 0.2, 0.4, 0.8], 0.0, 1.0)  # 衣 - 前部狭窄
+        phonemes['u'] = morph_key([0.8, 1.2, 0.6, 0.3], 0.0, 1.0)  # 乌 - 后部狭窄，圆唇
+        phonemes['ü'] = morph_key([0.3, 0.4, 0.5, 0.6], 0.0, 1.0)  # 迂 - i和u的混合
+        
+        # ========== 复合元音 ==========
+        phonemes['ai'] = morph_key([1.8, 1.4, 0.8, 0.4], 0.0, 1.0)  # 爱 - a到i的过渡形态
+        phonemes['ei'] = morph_key([1.2, 1.0, 0.6, 0.3], 0.0, 1.0)  # 诶 - e到i
+        phonemes['ao'] = morph_key([1.8, 1.5, 1.2, 0.9], 0.0, 1.0)  # 奥 - a到o
+        phonemes['ou'] = morph_key([1.0, 1.2, 0.8, 0.4], 0.0, 1.0)  # 欧 - o到u
+        phonemes['ia'] = morph_key([0.4, 0.8, 1.4, 1.6], 0.0, 1.0)  # 呀 - i到a
+        phonemes['ie'] = morph_key([0.3, 0.5, 0.9, 1.1], 0.0, 1.0)  # 耶 - i到e
+        phonemes['ua'] = morph_key([0.6, 1.0, 1.5, 1.3], 0.0, 1.0)  # 哇 - u到a
+        phonemes['uo'] = morph_key([0.7, 0.9, 1.2, 1.0], 0.0, 1.0)  # 我 - u到o
+        phonemes['üe'] = morph_key([0.4, 0.6, 1.0, 1.2], 0.0, 1.0)  # 约 - ü到e
+        
+        # ========== 三合元音 ==========
+        phonemes['iao'] = morph_key([0.4, 1.2, 1.4, 0.8], 0.0, 1.0)  # 要 - i-a-o
+        phonemes['iou'] = morph_key([0.4, 1.0, 0.8, 0.3], 0.0, 1.0)  # 有 - i-o-u
+        phonemes['uai'] = morph_key([0.7, 1.4, 0.8, 0.3], 0.0, 1.0)  # 外 - u-a-i
+        phonemes['uei'] = morph_key([0.6, 1.2, 0.6, 0.2], 0.0, 1.0)  # 为 - u-e-i
+        
+        # ========== 鼻音韵母 ==========
+        # 前鼻音 - 轻度鼻腔耦合
+        phonemes['an'] = morph_key([1.8, 1.4, 1.0, 0.6], 0.3, 1.0)  # 安
+        phonemes['en'] = morph_key([1.2, 0.9, 0.6, 0.4], 0.3, 1.0)  # 恩
+        phonemes['in'] = morph_key([0.3, 0.3, 0.4, 0.5], 0.4, 1.0)  # 因
+        phonemes['un'] = morph_key([0.8, 1.0, 0.7, 0.5], 0.3, 1.0)  # 温
+        phonemes['ün'] = morph_key([0.4, 0.5, 0.6, 0.7], 0.4, 1.0)  # 晕
+        
+        # 后鼻音 - 较强鼻腔耦合
+        phonemes['ang'] = morph_key([1.8, 1.4, 1.2, 0.8], 0.6, 1.0)  # 昂
+        phonemes['eng'] = morph_key([1.2, 1.0, 0.8, 0.6], 0.6, 1.0)  # 鞥
+        phonemes['ing'] = morph_key([0.3, 0.4, 0.5, 0.6], 0.7, 1.0)  # 英
+        phonemes['ong'] = morph_key([0.7, 1.2, 1.0, 0.7], 0.5, 1.0)  # 翁
+        
+        # ========== 塞音 (爆破音) ==========
+        # 不送气清音 - 完全闭塞后爆破
+        phonemes['b'] = morph_key([0.0, 0.0, 0.5, 1.0], 0.0, 1.0)   # 波 - 双唇爆破
+        phonemes['d'] = morph_key([0.2, 0.0, 0.0, 0.8], 0.0, 1.0)   # 得 - 舌尖爆破
+        phonemes['g'] = morph_key([0.8, 0.0, 0.0, 0.6], 0.0, 1.0)   # 哥 - 舌根爆破
+        
+        # 送气清音 - 爆破后有气流
+        phonemes['p'] = morph_key([0.0, 0.0, 0.4, 0.9], 0.0, 0.8)   # 坡 - 送气较强
+        phonemes['t'] = morph_key([0.2, 0.0, 0.0, 0.7], 0.0, 0.8)   # 特 - 送气较强
+        phonemes['k'] = morph_key([0.8, 0.0, 0.0, 0.5], 0.0, 0.8)   # 科 - 送气较强
+        
+        # ========== 塞擦音 ==========
+        # 不送气塞擦音
+        phonemes['z'] = morph_key([0.1, 0.0, 0.3, 0.8], 0.0, 0.7)   # 资 - 舌尖前
+        phonemes['zh'] = morph_key([0.2, 0.0, 0.2, 0.7], 0.0, 0.7)  # 知 - 舌尖后
+        phonemes['j'] = morph_key([0.3, 0.0, 0.1, 0.6], 0.0, 0.7)   # 基 - 舌面
+        
+        # 送气塞擦音
+        phonemes['c'] = morph_key([0.1, 0.0, 0.2, 0.7], 0.0, 0.6)   # 雌 - 送气
+        phonemes['ch'] = morph_key([0.2, 0.0, 0.1, 0.6], 0.0, 0.6)  # 吃 - 送气
+        phonemes['q'] = morph_key([0.3, 0.0, 0.0, 0.5], 0.0, 0.6)   # 七 - 送气
+        
+        # ========== 擦音 ==========
+        # 清擦音 - 声道狭窄，产生湍流
+        phonemes['f'] = morph_key([0.0, 0.3, 0.5, 0.9], 0.0, 0.0)   # 佛 - 唇齿摩擦
+        phonemes['s'] = morph_key([0.1, 0.2, 0.4, 0.8], 0.0, 0.0)   # 思 - 舌尖前
+        phonemes['sh'] = morph_key([0.2, 0.2, 0.3, 0.7], 0.0, 0.0)  # 师 - 舌尖后
+        phonemes['x'] = morph_key([0.3, 0.3, 0.2, 0.6], 0.0, 0.0)   # 西 - 舌面
+        phonemes['h'] = morph_key([0.9, 0.7, 0.4, 0.2], 0.0, 0.0)   # 喝 - 喉部摩擦
+        
+        # 浊擦音 - 声带振动
+        phonemes['r'] = morph_key([0.4, 0.3, 0.2, 0.5], 0.0, 0.9)   # 日 - 卷舌浊擦
+        
+        # ========== 鼻音 ==========
+        phonemes['m'] = morph_key([0.0, 0.0, 0.4, 0.8], 0.9, 1.0)   # 摸 - 双唇鼻音
+        phonemes['n'] = morph_key([0.2, 0.0, 0.2, 0.7], 0.9, 1.0)   # 讷 - 舌尖鼻音
+        phonemes['ng'] = morph_key([0.8, 0.5, 0.3, 0.2], 0.8, 1.0)  # 嗯 - 舌根鼻音
+        
+        # ========== 边音 ==========
+        phonemes['l'] = morph_key([0.3, 0.6, 0.5, 0.7], 0.0, 1.0)   # 勒 - 舌尖边音
+        
+        return phonemes
+    
+    def get_example_words(self):
+        """返回示例词语的音素序列"""
+        examples = {
+            '妈妈': ['m', 'a', 'm', 'a'],
+            '爸爸': ['b', 'a', 'b', 'a'],
+            '中国': ['zh', 'ong', 'g', 'uo'],
+            '你好': ['n', 'i', 'h', 'ao'],
+            '老师': ['l', 'ao', 'sh', 'i'],
+            '学习': ['x', 'üe', 'x', 'i'],
+            '电脑': ['d', 'ian', 'n', 'ao'],
+            '手机': ['sh', 'ou', 'j', 'i'],
+            '天气': ['t', 'ian', 'q', 'i'],
+            '音乐': ['y', 'in', 'y', 'üe'],
+        }
+        return examples
+
+# 在鹦鹉合成器中使用
+if __name__ == "__main__":
+    p = parrot(12, 4)  # 15cm声道长度，4个分段
+    
+    # 加载音素表
+    pt = ChinesePhonemeTable()
+    phonemes = pt.get_phonemes()
+    
+    # 注册所有音素
+    for name, key in phonemes.items():
+        p.add_key(name, key)
+    
+    def say_miao(t):
+        duration_total = 2.0
+        duration_per = 1.0
+        
+        if t < duration_per:
+            return p.gate(*p.get_key(p.syllable("m", "iao", t, duration_per)).speak())(t) * \
+                   p.s.envelope_adsr(t, duration_per, 0.05, 0.1, 0.8, 0.1)
+        else:
+            t2 = t - duration_per
+            if t2 < duration_per:
+                return p.gate(*p.get_key(p.syllable("m", "iao", t2, duration_per)).speak())(t) * \
+                       p.s.envelope_adsr(t2, duration_per, 0.05, 0.1, 0.7, 0.1)
+            else:
+                return 0.0
+    
+    print("播放'喵喵'")
+    p.s.play_func(say_miao, 2.0)  # 明确指定2秒时长
 """

@@ -243,7 +243,81 @@ def iterate(func: callable, items: list) -> Any:
         return func(items[0], items[1])
     else:
         return func(items[0], iterate(func, items[1:]))
+
+class LinearAlgebra:
+    def __init__(self):
+        pass
+
+    def is_matrix(self, obj):
+        if not obj or not is_list_like(obj):
+            return False
+        if not all(isinstance(row, list) for row in obj):
+            return False
+        col_count = len(obj[0])
+        if not all(len(row) == col_count for row in obj):
+            return False
+        return True
     
+    def dim(self, obj):
+        if is_vector(obj):
+            return (obj.dimension,)
+        elif self.is_matrix(obj):
+            return (len(obj), len(obj[0]))
+        else:
+            raise ValueError("obj must be Vector or Matrix")
+        
+    def mul(self, a, b):
+        dim_a = self.dim(a)
+        dim_b = self.dim(b)
+        
+        if len(dim_a) == 1 and len(dim_b) == 1:
+            if dim_a[0] != dim_b[0]:
+                raise ValueError("Vector dimensions must match for dot product")
+            a_comp = a.components if is_vector(a) else a
+            b_comp = b.components if is_vector(b) else b
+            return sum(mul(ai, bi) for ai, bi in zip(a_comp, b_comp))
+        
+        elif len(dim_a) == 2 and len(dim_b) == 2:
+            if dim_a[1] != dim_b[0]:
+                raise ValueError(f"Matrix dimensions incompatible: {dim_a} and {dim_b}")
+            result = []
+            for i in range(dim_a[0]):
+                row = []
+                for j in range(dim_b[1]):
+                    val = 0
+                    for k in range(dim_a[1]):
+                        val = add(val, mul(a[i][k], b[k][j]))
+                    row.append(val)
+                result.append(row)
+            return result
+        
+        elif len(dim_a) == 2 and len(dim_b) == 1:
+            if dim_a[1] != dim_b[0]:
+                raise ValueError("Matrix and vector dimensions incompatible")
+            result = []
+            b_comp = b.components if is_vector(b) else b
+            for i in range(dim_a[0]):
+                val = 0
+                for k in range(dim_a[1]):
+                    val = add(val, mul(a[i][k], b_comp[k]))
+                result.append(val)
+            return Vector(result) if is_vector(b) else result
+        
+        elif len(dim_a) == 1 and len(dim_b) == 2:
+            if dim_a[0] != dim_b[0]:
+                raise ValueError("Vector and matrix dimensions incompatible")
+            result = []
+            a_comp = a.components if is_vector(a) else a
+            for j in range(dim_b[1]):
+                val = 0
+                for k in range(dim_a[0]):
+                    val = add(val, mul(a_comp[k], b[k][j]))
+                result.append(val)
+            return Vector(result) if is_vector(a) else result
+        
+        else:
+            raise ValueError("Unsupported operand types")
+
 class ThreadManager:
     def __init__(self):
         self._threads = []
@@ -278,29 +352,5 @@ class ThreadManager:
         return [i for i in results]
 
 if __name__ == '__main__':
-    from fraction import fraction
-    
-    print(is_vector(Vector([1,2,3])))
-    print(is_vector(6))
-
-    print("Nested list with vectors and fractions:")
-    vec_list1 = [Vector([fraction(1, 1), fraction(2, 1)]), Vector([3, 4])]
-    vec_list2 = [Vector([2, 3]), Vector([fraction(4, 1), fraction(5, 1)])]
-    print(mul(vec_list1, vec_list2))
-    print(add(vec_list1, fraction(1, 1)))
-    print(mul(vec_list1, 2))
-    
-    print("Mixed nested structures with fractions:")
-    mixed1 = [Vector([1, fraction(2, 1)]), [Vector([3, 4]), Vector([5, 6])]]
-    mixed2 = [2, [fraction(3, 1), 4]]
-    print(mul(mixed1, mixed2))
-    
-    print("Deep nesting with fractions:")
-    deep1 = [[Vector([1, 2]), Vector([fraction(3, 1), 4])], [Vector([5, 6])]]
-    deep2 = [[2, fraction(3, 1)], [4]]
-    print(add(deep1, deep2))
-    
-    print("Pure fraction operations:")
-    print(add(fraction(1, 2), fraction(1, 3)))
-    print(mul(fraction(2, 3), 1.5))
-    print(div(fraction(3, 4), 0.25))
+    la = LinearAlgebra()
+    print(la.mul(Vector([1.0,0.0]), [[0.0,1.0],[1.0,0.0]]))

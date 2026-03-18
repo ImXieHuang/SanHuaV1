@@ -30,6 +30,8 @@ class RTN:
         tg_ans = self.tg_updata()
         self.tg = [[[add(self.tg[i][j][k], tg_ans[i][j][k]) for k in range(len(self.tg[i][j]))] for j in range(len(self.tg[i]))] for i in range(len(self.tg))]
 
+        self.tg = [[[sigmoid(k) for k in j] for j in i] for i in self.tg]
+
         return nn_ans[-1]
 
     def nn_dynamics(self, inputs) -> list[list]:
@@ -89,5 +91,4 @@ if __name__ == "__main__":
               )
     for i in range(100):
         ans = rtn.forward([1.0,-1.0,1])
-        rtn.tg = [[[sigmoid(k) for k in j] for j in i] for i in rtn.tg]
         print(ans)

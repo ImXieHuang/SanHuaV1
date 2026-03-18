@@ -31,18 +31,18 @@ def weights_brush(weight: float = 0.5, random: float = 0.25, res:int = 0, width:
             for i_n in range(height):
                 weights[(i_l, i_n)] = {}
                 for j_n in range(height):
-                    weights[(i_l, i_n)][(i_l+1, j_n)] = weight + uniform(-random, random)
+                    weights[(i_l, i_n)][(i_l+1, j_n)] = add(weight, uniform(-random, random))
     else:
         weights = {}
         for i_l in range(width-1):
             for i_n in range(height):
                 weights[(i_l, i_n)] = {}
                 for j_n in range(height):
-                    weights[(i_l, i_n)][(i_l+1, j_n)] = weight + uniform(-random, random)
+                    weights[(i_l, i_n)][(i_l+1, j_n)] = add(weight, uniform(-random, random))
                 if i_l % res == res-1 and i_l + res < width:
                     for res_n in range(height):
                         weights[(i_l, i_n)][(i_l+res, res_n)] = 1.0
-    return [weights, [[weight + uniform(-random, random) for _ in range(width)] for _ in range(height)]]
+    return [weights, [[add(weight, uniform(-random, random)) for _ in range(height)] for _ in range(width)]]
 
 def tg_brush(width:int = 3, height: int = 3, tg_types: int = 4):
     return [[[0.0 for _ in range(tg_types)] for _ in range(width)] for _ in range(height)]
