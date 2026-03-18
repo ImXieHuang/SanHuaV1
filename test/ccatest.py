@@ -5,10 +5,10 @@ from random import uniform
 udir = str(Path(__file__).parent.parent)
 sys.path.append(udir)
 
-from GPT.Modle.Remember_Turingpattern_NN import RTN, neurons_generator, weights_brush, tg_brush, sr_graph_brush, tg_graph_brush
-from GPT.Modle.CCATransformer import CCATransformer, Const, get_meaning_of_tokens_at_, think_about_next_token_at_, NewCCATransformer
-from GPT.Modle.mathexpand import add, sub, mul, div, iterate
-from GPT.Modle.Vector import Vector
+from GPT.Model.Remember_Turingpattern_NN import RTN, neurons_generator, weights_brush, tg_brush, sr_graph_brush, tg_graph_brush
+from GPT.Model.CCATransformer import CCATransformer, Const, get_meaning_of_tokens_at_, think_about_next_token_at_, NewCCATransformer
+from GPT.Model.mathexpand import add, sub, mul, div, iterate
+from GPT.Model.Vector import Vector
 from GPT.Data.splitToken import ChineseTokenizer
 
 text = """
@@ -24,21 +24,21 @@ print(Texts)
 
 cat = NewCCATransformer(Texts)
 
-height, width, tg_types = 3, 3, 4
-neurons = [i*height for i in [[lambda x, parameter, nn, index: get_meaning_of_tokens_at_(cat, add(x, Vector(nn.tg[index[0]][index[1]][:4])), tokens)[-1]]]] * width
+height, width, tg_types = 5, 7, 9
+neurons = [i*height for i in [[lambda x, parameter, nn, index: get_meaning_of_tokens_at_(cat, add(x, nn.tg[index[0]][index[1]][0]), tokens)[-1]]]] * width
 
 tokens = [Texts[1]]
 
 rtn = RTN(
     neurons,
-    weights_brush(Vector([1.0, 1.0, 1.0, 1.0])),
-    [[[uniform(-1.0, 1.0) for _ in range(tg_types)] for _ in range(width)] for _ in range(height)],
-    sr_graph_brush(),
+    weights_brush(Vector([1.0, 1.0, 1.0, 1.0]), width=width, height=height),
+    [[[Vector([uniform(-1.0, 1.0) for _ in range(4)]) for _ in range(tg_types)] for _ in range(height)] for _ in range(width)],
+    sr_graph_brush(width=height, height=width, tg_types=tg_types),
     [[uniform(-1.0, 1.0) for _ in range(tg_types + 1)] for _ in range(tg_types + 1)]
 )
 
 while True:
-    n = rtn.nn_dynamics([Vector([0.0]*4)]*3)[-1]
+    n = rtn.forward([Vector([0.0]*4)])
     bigQ = iterate(add, n)
 
     next_token = think_about_next_token_at_(cat, tokens, bigQ, 5)

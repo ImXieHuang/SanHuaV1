@@ -10,6 +10,7 @@ from .operations import (
     sub,
     iterate,
     is_vector,
+    LinearAlgebra,
     ThreadManager
 )
 
@@ -20,5 +21,6 @@ __all__ = [
     'sub',
     'iterate',
     'is_vector',
+    'LinearAlgebra',
     'ThreadManager'
 ]

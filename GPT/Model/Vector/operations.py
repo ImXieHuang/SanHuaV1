@@ -1,3 +1,4 @@
+import math
 from .vector import Vector
 from fraction import fraction
 from typing import Union
@@ -67,3 +68,28 @@ def compare(v1: Vector, v2: Vector) -> Union[float, fraction]:
         for comp in abs_diff.components:
             result *= comp
         return result
+
+def magnitude(v: Vector) -> Union[float, fraction]:
+    squared_sum = sum(x*x for x in v.components)
+    
+    if all(isinstance(x, fraction) for x in v.components):
+        return math.sqrt(float(squared_sum))
+    else:
+        return math.sqrt(squared_sum)
+
+def normalize(v: Vector) -> Vector:
+    if all(x == 0 for x in v.components):
+        return v
+    
+    mag = magnitude(v)
+    
+    if all(isinstance(x, fraction) for x in v.components):
+        normalized_components = [x / mag for x in v.components]
+    else:
+        normalized_components = [x / mag for x in v.components]
+    
+    return Vector(normalized_components)
+
+def is_unit_vector(v: Vector, tolerance: float = 1e-10) -> bool:
+    mag = magnitude(v)
+    return abs(mag - 1.0) < tolerance

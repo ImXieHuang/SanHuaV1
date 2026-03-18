@@ -15,13 +15,13 @@ from Vector.vector import Vector
 from fraction import fraction
 import mathexpand as mexp
 
-def NewCCATransformer(Texts: Union[list[str],str]) -> CCA.CCATransformer:
+def NewCCATransformer(Texts: Union[list[str],str], dim: int = 8) -> CCA.CCATransformer:
     if not isinstance(Texts, list):
-        return {Texts: {Vector([0.0,0.0,0.0,0.0]): Vector([random.uniform(-1,1),random.uniform(-1,1),random.uniform(-1,1),random.uniform(-1,1)])}}
+        return {Texts: {Vector([random.uniform(-1,1) for _ in range(dim)]): Vector([random.uniform(-1,1) for _ in range(dim)])}}
     
     database = {}
     for i in Texts:
-        database[i] = {Vector([0.0,0.0,0.0,0.0]): Vector([random.uniform(-1,1),random.uniform(-1,1),random.uniform(-1,1),random.uniform(-1,1)])}
+        database[i] = {Vector([random.uniform(-1,1) for _ in range(dim)]): Vector([random.uniform(-1,1) for _ in range(dim)])}
     return CCA.CCATransformer(database, CCA.Const.E)
 
 def FusionCCATransformer(CAT1: CCA.CCATransformer, CAT2: CCA.CCATransformer) -> CCA.CCATransformer:
@@ -59,7 +59,7 @@ def get_meaning_of_tokens_for_(CAT: CCA.CCATransformer, tokens: list[str]) -> li
         sum_exp = sum(exp_row)
         influence_graph[i] = [val / sum_exp for val in exp_row]
     
-    bigQ_graph = [[Vector([0.0,0.0,0.0,0.0]) for _ in range(len(tokens))] for _ in range(len(tokens))]
+    bigQ_graph = [[Vector([0.0] * CAT.dim) for _ in range(len(tokens))] for _ in range(len(tokens))]
 
     for i in range(len(tokens)):
         for j in range(i+1):
@@ -69,7 +69,7 @@ def get_meaning_of_tokens_for_(CAT: CCA.CCATransformer, tokens: list[str]) -> li
                 vector_list = []
                 for k in range(j):
                     components = []
-                    for l in range(4):
+                    for l in range(CAT.dim):
                         influence_val = influence_graph[i][k]
                         if isinstance(influence_val, fraction):
                             influence_val = influence_val.value
@@ -80,18 +80,18 @@ def get_meaning_of_tokens_for_(CAT: CCA.CCATransformer, tokens: list[str]) -> li
                     vector_list.append(Vector(components))
                 
                 if not vector_list:
-                    big_Q = Vector([0.0, 0.0, 0.0, 0.0])
+                    big_Q = Vector([0.0] * CAT.dim)
                 else:
                     big_Q = mexp.iterate(mexp.add, vector_list)
                 
                 if not isinstance(big_Q, Vector):
                     if isinstance(big_Q, (int, float)):
-                        big_Q = Vector([0.0, 0.0, 0.0, 0.0])
+                        big_Q = Vector([0.0] * CAT.dim)
                     else:
                         try:
-                            big_Q = Vector([float(big_Q)] * 4)
+                            big_Q = Vector([float(big_Q)] * CAT.dim)
                         except:
-                            big_Q = Vector([0.0, 0.0, 0.0, 0.0])
+                            big_Q = Vector([0.0] * CAT.dim)
                 
                 bigQ_graph[i][j] = CAT.get_value_for_(tokens[j], big_Q)
     
@@ -107,18 +107,18 @@ def get_meaning_of_tokens_for_(CAT: CCA.CCATransformer, tokens: list[str]) -> li
                 vector_list.append(mexp.mul(bigQ_graph[i][j], influence_val))
         
         if not vector_list:
-            meaning_vector = Vector([0.0, 0.0, 0.0, 0.0])
+            meaning_vector = Vector([0.0] * CAT.dim)
         else:
             meaning_vector = mexp.iterate(mexp.add, vector_list)
         
         if not isinstance(meaning_vector, Vector):
             if isinstance(meaning_vector, (int, float)):
-                meaning_vector = Vector([0.0, 0.0, 0.0, 0.0])
+                meaning_vector = Vector([0.0] * CAT.dim)
             else:
                 try:
-                    meaning_vector = Vector([float(meaning_vector)] * 4)
+                    meaning_vector = Vector([float(meaning_vector)] * CAT.dim)
                 except:
-                    meaning_vector = Vector([0.0, 0.0, 0.0, 0.0])
+                    meaning_vector = Vector([0.0] * CAT.dim)
         
         meaning_vectors.append(meaning_vector)
     
@@ -141,7 +141,7 @@ def get_meaning_of_tokens_at_(CAT: CCA.CCATransformer, AtQ: Vector, tokens: list
         sum_exp = sum(exp_row)
         influence_graph[i] = [val / sum_exp for val in exp_row]
     
-    bigQ_graph = [[Vector([0.0,0.0,0.0,0.0]) for _ in range(len(tokens))] for _ in range(len(tokens))]
+    bigQ_graph = [[Vector([0.0] * CAT.dim) for _ in range(len(tokens))] for _ in range(len(tokens))]
 
     for i in range(len(tokens)):
         cnt_n = [0.0 for _ in range(i+1)]
@@ -153,7 +153,7 @@ def get_meaning_of_tokens_at_(CAT: CCA.CCATransformer, AtQ: Vector, tokens: list
                 vector_list = []
                 for k in range(j):
                     components = []
-                    for l in range(4):
+                    for l in range(CAT.dim):
                         influence_val = influence_graph[i][k]
                         if isinstance(influence_val, fraction):
                             influence_val = influence_val.value
@@ -164,20 +164,20 @@ def get_meaning_of_tokens_at_(CAT: CCA.CCATransformer, AtQ: Vector, tokens: list
                     vector_list.append(Vector(components))
                 
                 if not vector_list:
-                    big_Q = Vector([0.0, 0.0, 0.0, 0.0])
+                    big_Q = Vector([0.0] * CAT.dim)
                 else:
                     big_Q = mexp.iterate(mexp.add, vector_list)
                 
                 if not hasattr(big_Q, 'VECTORFLAG'):
                     if isinstance(big_Q, (int, float)):
-                        big_Q = Vector([0.0, 0.0, 0.0, 0.0])
+                        big_Q = Vector([0.0] * CAT.dim)
                     elif isinstance(big_Q, list):
                         big_Q = Vector([big_Q])
                     else:
                         try:
-                            big_Q = Vector([float(big_Q)] * 4)
+                            big_Q = Vector([float(big_Q)] * CAT.dim)
                         except:
-                            big_Q = Vector([0.0, 0.0, 0.0, 0.0])
+                            big_Q = Vector([0.0] * CAT.dim)
                 
                 bigQ_graph[i][j] = CAT.get_value_for_(tokens[j], big_Q)
 
@@ -199,18 +199,18 @@ def get_meaning_of_tokens_at_(CAT: CCA.CCATransformer, AtQ: Vector, tokens: list
                 vector_list.append(mexp.mul(bigQ_graph[i][j], influence_val))
         
         if not vector_list:
-            meaning_vector = Vector([0.0, 0.0, 0.0, 0.0])
+            meaning_vector = Vector([0.0] * CAT.dim)
         else:
             meaning_vector = mexp.iterate(mexp.add, vector_list)
         
         if not isinstance(meaning_vector, Vector):
             if isinstance(meaning_vector, (int, float)):
-                meaning_vector = Vector([0.0, 0.0, 0.0, 0.0])
+                meaning_vector = Vector([0.0] * CAT.dim)
             else:
                 try:
-                    meaning_vector = Vector([float(meaning_vector)] * 4)
+                    meaning_vector = Vector([float(meaning_vector)] * CAT.dim)
                 except:
-                    meaning_vector = Vector([0.0, 0.0, 0.0, 0.0])
+                    meaning_vector = Vector([0.0] * CAT.dim)
         
         meaning_vectors.append(meaning_vector)
     
@@ -236,14 +236,14 @@ def get_meaning_of_sentence_for_(CAT: CCA.CCATransformer, tokens: list[str]) -> 
     for i in range(len(influence_graph)):
         tokens_influence[i] = sum([influence_graph[i][j] for j in range(len(influence_graph))])
     
-    sentence_meaning = Vector([0.0, 0.0, 0.0, 0.0])
+    sentence_meaning = Vector([0.0] * CAT.dim)
 
-    cnt_n = Vector([0.0, 0.0, 0.0, 0.0])
+    cnt_n = Vector([0.0] * CAT.dim)
     cnt_m = 0.0
 
     for i in range(len(tokens)):
         weight = tokens_influence[i]
-        weight_vec = [weight for _ in range(4)]
+        weight_vec = [weight for _ in range(CAT.dim)]
         weighted_val = mexp.mul(weight_vec, tokens_meaning[i].components)
         cnt_n = mexp.add(cnt_n, Vector(weighted_val))
         cnt_m += weight
@@ -270,14 +270,14 @@ def get_meaning_of_sentence_at_(CAT: CCA.CCATransformer, AtQ: Vector, tokens: li
     for i in range(len(influence_graph)):
         tokens_influence[i] = sum([influence_graph[i][j] for j in range(len(influence_graph))])
     
-    sentence_meaning = Vector([0.0, 0.0, 0.0, 0.0])
+    sentence_meaning = Vector([0.0] * CAT.dim)
 
-    cnt_n = Vector([0.0, 0.0, 0.0, 0.0])
+    cnt_n = Vector([0.0] * CAT.dim)
     cnt_m = 0.0
 
     for i in range(len(tokens)):
         weight = tokens_influence[i]
-        weight_vec = [weight for _ in range(4)]
+        weight_vec = [weight for _ in range(CAT.dim)]
         weighted_val = mexp.mul(weight_vec, tokens_meaning[i].components)
         cnt_n = mexp.add(cnt_n, Vector(weighted_val))
         cnt_m += weight
@@ -288,7 +288,7 @@ def get_meaning_of_sentence_at_(CAT: CCA.CCATransformer, AtQ: Vector, tokens: li
 
 def think_about_next_token_for_(CAT: CCA.CCATransformer, tokens: list[str], T: float = CCA.Const.E.value) -> str:
     sentence_meaning = get_meaning_of_sentence_for_(CAT, tokens)
-    cnt_n = Vector([0.0, 0.0, 0.0, 0.0])
+    cnt_n = Vector([0.0] * CAT.dim)
     cnt_m = 0.0
     for token in CAT.get_tokens():
         dot_val = vector.dot(get_meaning_of_tokens_for_(CAT, tokens + [token])[-1], sentence_meaning)
@@ -298,12 +298,12 @@ def think_about_next_token_for_(CAT: CCA.CCATransformer, tokens: list[str], T: f
         cnt_m += weight
     
     if cnt_m == 0:
-        next_token = Vector([0.0, 0.0, 0.0, 0.0])
+        next_token = Vector([0.0] * CAT.dim)
     else:
         next_token = mexp.div(cnt_n, cnt_m)
 
     next_token = next_token.components
-    for i in range(4):
+    for i in range(CAT.dim):
         random_val = random.uniform(-T, T)
         next_token[i] += ((abs(random_val) ** CCA.Const.E.value) * random_val) / (abs(random_val) * (CCA.Const.E.value ** CCA.Const.E.value))
 
@@ -313,7 +313,7 @@ def think_about_next_token_for_(CAT: CCA.CCATransformer, tokens: list[str], T: f
 
 def think_about_next_token_at_(CAT: CCA.CCATransformer, tokens: list[str], AtQ: Vector, T: float = CCA.Const.E.value) -> str:
     sentence_meaning = get_meaning_of_sentence_at_(CAT, AtQ, tokens)
-    cnt_n = Vector([0.0, 0.0, 0.0, 0.0])
+    cnt_n = Vector([0.0] * CAT.dim)
     cnt_m = 0.0
     for token in CAT.get_tokens():
         dot_val = vector.dot(get_meaning_of_tokens_at_(CAT, AtQ, tokens + [token])[-1], sentence_meaning)
@@ -323,12 +323,12 @@ def think_about_next_token_at_(CAT: CCA.CCATransformer, tokens: list[str], AtQ: 
         cnt_m += weight
     
     if cnt_m == 0:
-        next_token = Vector([0.0, 0.0, 0.0, 0.0])
+        next_token = Vector([0.0] * CAT.dim)
     else:
         next_token = mexp.div(cnt_n, cnt_m)
 
     next_token = next_token.components
-    for i in range(4):
+    for i in range(CAT.dim):
         random_val = random.uniform(-T, T)
         next_token[i] += ((abs(random_val) ** CCA.Const.E.value) * random_val) / (abs(random_val) * (CCA.Const.E.value ** CCA.Const.E.value))
 
@@ -343,22 +343,28 @@ def get_complate_for_(CAT: CCA.CCATransformer, tokens: list[str]):
 
 if __name__ == "__main__":
     import random
-    CAT = CCA.CCATransformer({"好吃":{Vector([1.0,1.0,0.0,0.0]): Vector([0.0, 0.0, 1.0, 1.0])},
-                             "饺子":{Vector([0.0, 0.0, 1.0, 1.0]): Vector([1.0,1.0,0.0,0.0])},
-                             "包子":{Vector([0.0, 0.5, 0.7, 1.0]): Vector([1.0,1.0,0.0,0.0])}},
-                            )
+    CAT = NewCCATransformer(["苹果","好吃","香蕉"])
 
     start_tokens = [random.choice(CAT.get_tokens())] + [random.choice(CAT.get_tokens())] + [random.choice(CAT.get_tokens())]
     print(f"Start token: {start_tokens}")
 
     i = 0
-    C = 10.0
+    C = 2.5
 
     while get_complate_for_(CAT, start_tokens) < C:
         next_token = think_about_next_token_for_(CAT, start_tokens)
         start_tokens.append(next_token)
         print(f"No. {i+4} token: {next_token}", f"complate: {get_complate_for_(CAT, start_tokens)}")
         i += 1
-        C /= 2
+    print("Generated token sequence:")
+    print(start_tokens)
+
+    start_tokens = start_tokens[:3]
+
+    while get_complate_for_(CAT, start_tokens) < C:
+        next_token = think_about_next_token_at_(CAT, start_tokens, CAT.get_value_for_("苹果", CAT.get_query_for_("苹果")))
+        start_tokens.append(next_token)
+        print(f"No. {i+4} token: {next_token}", f"complate: {get_complate_for_(CAT, start_tokens)}")
+        i += 1
     print("Generated token sequence:")
     print(start_tokens)

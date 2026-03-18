@@ -19,9 +19,10 @@ class Const():
     INF = float('inf')
 
 class CCATransformer():
-    def __init__(self, database: Dict[str, Dict[Vector, Vector]], temperature: fraction = fraction(1, 1)):
+    def __init__(self, database: Dict[str, Dict[Vector, Vector]], temperature: fraction = fraction(1, 1), dim = 8):
         self.database = database
         self.temperature = temperature
+        self.dim = dim
         
         self._validate_database()
     
@@ -34,17 +35,13 @@ class CCATransformer():
             for query_vec, value_vec in query_dict.items():
                 if not hasattr(query_vec, "VECTORFLAG"):
                     raise TypeError("The type of the Query must be Vector.")
-                elif query_vec.dimension != 4:
-                    raise ValueError("The dimension of the Query must be 4.")
                 if not hasattr(value_vec, "VECTORFLAG"):
                     raise TypeError("The type of the Val must be Vector.")
-                elif value_vec.dimension != 4:
-                    raise ValueError("The dimension of the Val must be 4.")
 
     def get_key_for_(self, token: str):
         if token not in self.database:
             raise KeyError(f"token '{token}' not found in database")
-        return div(sum([v for v in self.database[token].values()], Vector([0.0, 0.0, 0.0, 0.0])), len(list(self.database[token].values())))
+        return div(sum([v for v in self.database[token].values()], Vector([0.0] * self.dim)), len(list(self.database[token].values())))
     
     def get_value_for_(self, token: str, big_Q: Vector):
         if token not in self.database:
@@ -104,7 +101,7 @@ class CCATransformer():
 
         delat_graph = [(Value - list(injection.values())[i]) * influence_graph[i] for i in range(len(list(injection.values())))]
 
-        injection = [influence_graph[i] + delat_graph[i] for i in range(len(influence_graph))]
+        injection = [influence_graph[i] * delat_graph[i] for i in range(len(influence_graph))]
 
         self.database[token] = injection
 
@@ -114,9 +111,9 @@ class CCATransformer():
         
         query_dict = self.database[token]
         if not query_dict:
-            return Vector([0.0, 0.0, 0.0, 0.0])
+            return Vector([0.0] * self.dim)
         
-        cnt_n = Vector([fraction(0, 1), fraction(0, 1), fraction(0, 1), fraction(0, 1)])
+        cnt_n = Vector([fraction(0, 1)] * self.dim)
         cnt_m = fraction(0, 1)
 
         for i in query_dict:
@@ -124,7 +121,7 @@ class CCATransformer():
             exponent = div(dot_val, T)
             
             weight = const.value ** exponent.value
-            weight_vec = [weight for _ in range(4)]
+            weight_vec = [weight for _ in range(self.dim)]
             weighted_val = mul(weight_vec, query_dict[i].components)
             cnt_n = add(cnt_n, Vector(weighted_val))
             cnt_m = add(cnt_m, weight)
@@ -141,17 +138,17 @@ class CCATransformer():
         
         query_dict = self.database[token]
         if not query_dict:
-            return Vector([0.0, 0.0, 0.0, 0.0])
+            return Vector([0.0] * self.dim)
         
-        cnt_n = Vector([fraction(0, 1), fraction(0, 1), fraction(0, 1), fraction(0, 1)])
+        cnt_n = Vector([fraction(0, 1)] * self.dim)
         cnt_m = fraction(0, 1)
 
         for i in query_dict:
-            dot_val = dot(mul(sub(Val, query_dict[i]), sub(Val, query_dict[i])), Vector([1.0, 1.0, 1.0, 1.0]))
+            dot_val = dot(mul(sub(Val, query_dict[i]), sub(Val, query_dict[i])), Vector([1.0] * self.dim))
             exponent = div(dot_val, T)
             
             weight = const.value ** exponent
-            weight_vec = [weight for _ in range(4)]
+            weight_vec = [weight for _ in range(self.dim)]
             weighted_val = mul(weight_vec, i.components)
             cnt_n = add(cnt_n, Vector(weighted_val))
             cnt_m = add(cnt_m, weight)
@@ -191,11 +188,11 @@ if __name__ == "__main__":
     cat = CCATransformer(
         {
             "苹果": {
-                Vector([1,0,0,0]): Vector([1,1,1,1]),
-                Vector([0,0,1,0]): Vector([2,2,2,2])
+                Vector([1,0,0,0,1,0,0,0]): Vector([1,1,1,1,1,1,1,1]),
+                Vector([0,0,1,0,0,0,1,0]): Vector([2,2,2,2,2,2,2,2])
             },
             "香蕉": {
-                Vector([0,1,0,0]): Vector([2,2,2,2])
+                Vector([0,1,0,0,0,1,0,0]): Vector([2,2,2,2,2,2,2,2])
             }
         },
         temperature=Const.E
@@ -211,4 +208,4 @@ if __name__ == "__main__":
     print(f"Values for '香蕉': {cat.get_value_for_('香蕉', big_Q)}")
     print(f"Query for '香蕉': {cat.get_query_for_('香蕉')}")
 
-    print(f"\nBest token for Vector([1.5,1.5,1.5,1.5]): {cat.query_best_token_for_(Vector([1.5,1.5,1.5,1.5]), big_Q)}")
+    print(f"\nBest token for Vector([1.5]*8): {cat.query_best_token_for_(Vector([1.5]*8), big_Q)}")
