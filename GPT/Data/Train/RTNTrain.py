@@ -332,21 +332,27 @@ class RTN_Trainer:
 
             Lam = div(Lam, Lambdacnt) if Lambdacnt > 0 else 0.0
             
-            for ip, op, target_pid in zip(inputs, outputs, target_pids):
-                print(f"Training {ip} -> {op} with target PID {target_pid}")
+            if len(inputs) != 1 or len(outputs) != 1 or len(target_pids) != 1:
+                raise ValueError("This trainer only accepts one pair of input-output data")
+            
+            ip = inputs[0]
+            op = outputs[0]
+            target_pid = target_pids[0]
+            
+            print(f"Training single pair: {ip} -> {op} with target PID {target_pid}")
 
-                for i in range(len(rtn.sr_graph)):
-                    for j in range(len(rtn.sr_graph[i])):
-                        for k in range(len(rtn.sr_graph[i][j])):
-                            if uniform(0.0,1.0) >= dorpout:
-                                gradient = self.sr_graph_loss_gradient((i, j, k), ip, op, target_pid, samplinglossfunction, lambda x, y: add(staticlossfunction(x, y), Lam), rtn, maxt, sample_rate)
-                                rtn.sr_graph[i][j][k] = sub(rtn.sr_graph[i][j][k], min(max(-maxdw, mul(r, gradient)), maxdw))
-                
-                for i in range(len(rtn.tg_graph)):
-                    for j in range(len(rtn.tg_graph[i])):
+            for i in range(len(rtn.sr_graph)):
+                for j in range(len(rtn.sr_graph[i])):
+                    for k in range(len(rtn.sr_graph[i][j])):
                         if uniform(0.0,1.0) >= dorpout:
-                            gradient = self.tg_graph_loss_gradient(i, j, ip, op, target_pid, samplinglossfunction, lambda x, y: add(staticlossfunction(x, y), Lam), rtn, maxt, sample_rate)
-                            rtn.tg_graph[i][j] = sub(rtn.tg_graph[i][j], min(max(-maxdw, mul(r, gradient)), maxdw))
+                            gradient = self.sr_graph_loss_gradient((i, j, k), ip, op, target_pid, samplinglossfunction, lambda x, y: add(staticlossfunction(x, y), Lam), rtn, maxt, sample_rate)
+                            rtn.sr_graph[i][j][k] = sub(rtn.sr_graph[i][j][k], min(max(-maxdw, mul(r, gradient)), maxdw))
+            
+            for i in range(len(rtn.tg_graph)):
+                for j in range(len(rtn.tg_graph[i])):
+                    if uniform(0.0,1.0) >= dorpout:
+                        gradient = self.tg_graph_loss_gradient(i, j, ip, op, target_pid, samplinglossfunction, lambda x, y: add(staticlossfunction(x, y), Lam), rtn, maxt, sample_rate)
+                        rtn.tg_graph[i][j] = sub(rtn.tg_graph[i][j], min(max(-maxdw, mul(r, gradient)), maxdw))
 
         except Exception as error:
             rtn.tg = original_tg
@@ -442,7 +448,7 @@ if __name__ == "__main__":
             print(y)
 
     elif ipt == "3":
-        print("# sampling trainer start\n")
+        print("# sampling trainer (single pair) start\n")
 
         t = RTN_Trainer()
         rtn = RTN(neurons_generator('any'),
@@ -452,11 +458,11 @@ if __name__ == "__main__":
                 tg_graph_brush()
                 )
         
-        ip = [[2*i+1,0,0] for i in range(4)]+[[0,2*i+1,0] for i in range(4)]+[[0,0,2*i+1] for i in range(4)]
-        op = [[0,0,2*i+1] for i in range(4)]+[[0,0,0] for _ in range(8)]
-        tp = [[0.1, 0.01, 0.05] for _ in range(len(ip))]
+        ip = [[1, 0, 0]]
+        op = [[0, 0, 1]]
+        tp = [[0.1, 0.01, 0.05]]
         
-        print("data:")
+        print("data (single pair):")
         for i,j,p in zip(ip, op, tp):
             print(f"{i} -> {j}  target PID: {p}")
         
@@ -496,16 +502,16 @@ if __name__ == "__main__":
         print(f"{sample_rate = }\n")
         
         print("pre-training test:")
-        for i, o in zip(ip[:3], op[:3]):
+        for i, o in zip(ip, op):
             sampling = t.rtn_sample(rtn, i, maxt, sample_rate)
             output_val = sampling[-1][0] if sampling and sampling[-1] else 0
             target_val = o[0] if o else 0
             print(f"input {i} -> output {output_val:.6f}, target {target_val}")
         
-        print("\nstarting training...\n")
+        print("\nstarting training on single pair...\n")
         
         for epoch in range(5):
-            print(f"## turn {epoch+1}")
+            print(f"## epoch {epoch+1}")
             
             result = t.rtn_sampling_trainer(
                 ip, op, tp,
@@ -521,33 +527,33 @@ if __name__ == "__main__":
                 print(f"training error: {result}")
                 break
             
-            total_error = 0.0
-            for i, o in zip(ip, op):
-                sampling = t.rtn_sample(rtn, i, maxt, sample_rate)
-                if sampling and sampling[-1]:
-                    error = static_loss(sampling[-1], o)
-                    total_error = add(total_error, error)
-            
-            test_input = [1, 0, 0]
+            test_input = ip[0]
             test_output = rtn.nn_dynamics(test_input)[-1]
             test_val = test_output[0] if test_output else 0
+            target_val = op[0][0] if op[0] else 0
             
-            print(f"{total_error = }, {r = }")
-            print(f"{rtn.nn_dynamics([1, 0, 0])[-1] = }\n")
+            error = static_loss(test_output, op[0]) if test_output else 0
+            
+            print(f"error = {error:.6f}, target = {target_val}, output = {test_val:.6f}")
         
-        print("training completed!\n")
+        print("\ntraining completed!\n")
         
-        print("test data:")
-        for i in range(5):
-            test_input = [i, 0, 0]
-            test_output = rtn.nn_dynamics(test_input)[-1]
-            test_val = test_output[0] if test_output else 0
-            print(f"[{i},0,0] -> {test_val}")
+        print("test on trained pair:")
+        test_input = ip[0]
+        test_output = rtn.nn_dynamics(test_input)[-1]
+        test_val = test_output[0] if test_output else 0
+        target_val = op[0][0] if op[0] else 0
+        print(f"[{test_input[0]},0,0] -> {test_val:.6f} (target: {target_val})")
         
-        print("\nfitted PID parameters for each input:")
-        for i in ip[:3]:
-            sampling = t.rtn_sample(rtn, i, maxt, sample_rate)
-            pid_params = t.fitting_pid_for_(sampling)
-            print(f"input {i} -> PID: {pid_params}")
+        print("\nfitted PID parameters:")
+        sampling = t.rtn_sample(rtn, ip[0], maxt, sample_rate)
+        pid_params = t.fitting_pid_for_(sampling)
+        print(f"input {ip[0]} -> PID: {pid_params[0] if pid_params else 'N/A'}")
+        
+        print("\ntest on new input (should not be trained):")
+        new_input = [2, 0, 0]
+        new_output = rtn.nn_dynamics(new_input)[-1]
+        new_val = new_output[0] if new_output else 0
+        print(f"[2,0,0] -> {new_val:.6f}")
 
     else: print(None)
