@@ -79,7 +79,7 @@ class CCATransformer():
 
         for i in injection:
             dot_val = fraction(int(dot(i, Query) * 1000), 1000)
-            exponent = div(dot_val, T)
+            exponent = div(dot_val, mul(T, self.dim))
             
             exp_sub_max = sub(exponent, maxn)
             e_pow = const ** (exp_sub_max.value)
@@ -118,7 +118,7 @@ class CCATransformer():
 
         for i in query_dict:
             dot_val = fraction(int(dot(i, Query) * 1000), 1000)
-            exponent = div(dot_val, T)
+            exponent = div(dot_val, mul(T, self.dim))
             
             weight = const.value ** exponent.value
             weight_vec = [weight for _ in range(self.dim)]
@@ -145,7 +145,7 @@ class CCATransformer():
 
         for i in query_dict:
             dot_val = dot(mul(sub(Val, query_dict[i]), sub(Val, query_dict[i])), Vector([1.0] * self.dim))
-            exponent = div(dot_val, T)
+            exponent = div(dot_val, mul(T, self.dim))
             
             weight = const.value ** exponent
             weight_vec = [weight for _ in range(self.dim)]

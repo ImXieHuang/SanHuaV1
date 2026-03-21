@@ -46,11 +46,13 @@ def FusionCCATransformer(CAT1: CCA.CCATransformer, CAT2: CCA.CCATransformer) -> 
 
 def get_meaning_of_tokens_for_(CAT: CCA.CCATransformer, tokens: list[str]) -> list[Vector]:
     influence_graph = [[0.0 for _ in range(len(tokens))] for _ in range(len(tokens))]
-    for i,j in zip(range(len(tokens)), range(len(tokens))):
-        influence_graph[i][j] = vector.dot(CAT.get_query_for_(tokens[i]), CAT.get_key_for_(tokens[j]))
+    for i in range(len(tokens)):
+        for j in range(len(tokens)):
+            influence_graph[i][j] = vector.dot(CAT.get_query_for_(tokens[i]), CAT.get_key_for_(tokens[j]))
     
-    for i,j in zip(range(len(tokens)), range(len(tokens))):
-        if j >= i: influence_graph[i][j] = -float('inf')
+    for i in range(len(tokens)):
+        for j in range(len(tokens)):
+            if j >= i: influence_graph[i][j] = -float('inf')
 
     for i in range(len(tokens)):
         row = influence_graph[i]
@@ -128,11 +130,13 @@ def get_meaning_of_tokens_for_(CAT: CCA.CCATransformer, tokens: list[str]) -> li
 
 def get_meaning_of_tokens_at_(CAT: CCA.CCATransformer, AtQ: Vector, tokens: list[str], T: fraction = fraction(3, 2), const: fraction = CCA.Const.E) -> list[Vector]:
     influence_graph = [[0.0 for _ in range(len(tokens))] for _ in range(len(tokens))]
-    for i,j in zip(range(len(tokens)), range(len(tokens))):
-        influence_graph[i][j] = vector.dot(CAT.get_query_for_(tokens[i]), CAT.get_key_for_(tokens[j]))
+    for i in range(len(tokens)):
+        for j in range(len(tokens)):
+            influence_graph[i][j] = vector.dot(CAT.get_query_for_(tokens[i]), CAT.get_key_for_(tokens[j]))
     
-    for i,j in zip(range(len(tokens)), range(len(tokens))):
-        if j >= i: influence_graph[i][j] = -float('inf')
+    for i in range(len(tokens)):
+        for j in range(len(tokens)):
+            if j >= i: influence_graph[i][j] = -float('inf')
 
     for i in range(len(tokens)):
         row = influence_graph[i]
@@ -343,13 +347,13 @@ def get_complate_for_(CAT: CCA.CCATransformer, tokens: list[str]):
 
 if __name__ == "__main__":
     import random
-    CAT = NewCCATransformer(["苹果","好吃","香蕉"])
+    CAT = NewCCATransformer(["苹果","好吃","香蕉","橘子","甜","酸","水果"])
 
     start_tokens = [random.choice(CAT.get_tokens())] + [random.choice(CAT.get_tokens())] + [random.choice(CAT.get_tokens())]
     print(f"Start token: {start_tokens}")
 
     i = 0
-    C = 2.5
+    C = 1.0
 
     while get_complate_for_(CAT, start_tokens) < C:
         next_token = think_about_next_token_for_(CAT, start_tokens)
@@ -359,7 +363,9 @@ if __name__ == "__main__":
     print("Generated token sequence:")
     print(start_tokens)
 
+    print("with AtQ")
     start_tokens = start_tokens[:3]
+    i = 0
 
     while get_complate_for_(CAT, start_tokens) < C:
         next_token = think_about_next_token_at_(CAT, start_tokens, CAT.get_value_for_("苹果", CAT.get_query_for_("苹果")))

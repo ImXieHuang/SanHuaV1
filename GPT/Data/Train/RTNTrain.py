@@ -57,7 +57,7 @@ class RTN_Trainer:
                 ret[i][k] = function(i, k, l)
         return ret
     
-    def static_trainer(self, inputs: list[list], outputs: list[list], lossfunction: callable, lambdafunction: callable, r: float, maxdw: float, dorpout: float, rtn: RTN):
+    def static_trainer(self, inputs: list[list], outputs: list[list], lossfunction: callable, lambdafunction: callable, r: float, maxdw: float, dropout: float, rtn: RTN):
         original_tg = rtn.tg
         original_weights = rtn.weights
         try:
@@ -80,10 +80,10 @@ class RTN_Trainer:
             def Pgradfunction(index, _, weight):
                 return self.parameter_loss_gradient(index, ip, lambda x: lossfunction(x, op) + Lam, rtn)
             def Witeration(start, end, weight):
-                if uniform(0.0,1.0) < dorpout: return
+                if uniform(0.0,1.0) < dropout: return
                 rtn.weights[0][start][end] = sub(rtn.weights[0][start][end], min(max(-maxdw, mul(r, wg[start][end])), maxdw))
             def Piteration(index, _, weight):
-                if uniform(0.0,1.0) < dorpout: return
+                if uniform(0.0,1.0) < dropout: return
                 rtn.weights[1][index[0]][index[1]] = sub(rtn.weights[1][index[0]][index[1]], min(max(-maxdw, mul(r, pg[index][_])), maxdw))
         
             for ip,op in zip(inputs, outputs):
@@ -311,7 +311,7 @@ class RTN_Trainer:
 
         return div(div(sub(add_loss, sub_loss), 2), self.dx)
 
-    def rtn_sampling_trainer(self, inputs: list[list], outputs: list[list], target_pids: list[list], samplinglossfunction: callable, staticlossfunction: callable, lambdafunction: callable, r: float, maxdw: float, dorpout: float, rtn: RTN, maxt: int = 30, sample_rate: int = 5):
+    def rtn_sampling_trainer(self, inputs: list[list], outputs: list[list], target_pids: list[list], samplinglossfunction: callable, staticlossfunction: callable, lambdafunction: callable, r: float, maxdw: float, dropout: float, rtn: RTN, maxt: int = 30, sample_rate: int = 5):
         original_tg = rtn.tg
         original_sr_graph = rtn.sr_graph
         original_tg_graph = rtn.tg_graph
@@ -344,13 +344,13 @@ class RTN_Trainer:
             for i in range(len(rtn.sr_graph)):
                 for j in range(len(rtn.sr_graph[i])):
                     for k in range(len(rtn.sr_graph[i][j])):
-                        if uniform(0.0,1.0) >= dorpout:
+                        if uniform(0.0,1.0) >= dropout:
                             gradient = self.sr_graph_loss_gradient((i, j, k), ip, op, target_pid, samplinglossfunction, lambda x, y: add(staticlossfunction(x, y), Lam), rtn, maxt, sample_rate)
                             rtn.sr_graph[i][j][k] = sub(rtn.sr_graph[i][j][k], min(max(-maxdw, mul(r, gradient)), maxdw))
             
             for i in range(len(rtn.tg_graph)):
                 for j in range(len(rtn.tg_graph[i])):
-                    if uniform(0.0,1.0) >= dorpout:
+                    if uniform(0.0,1.0) >= dropout:
                         gradient = self.tg_graph_loss_gradient(i, j, ip, op, target_pid, samplinglossfunction, lambda x, y: add(staticlossfunction(x, y), Lam), rtn, maxt, sample_rate)
                         rtn.tg_graph[i][j] = sub(rtn.tg_graph[i][j], min(max(-maxdw, mul(r, gradient)), maxdw))
 
@@ -397,17 +397,24 @@ if __name__ == "__main__":
                 diff = sub(o, t)
                 loss = add(loss, mul(diff, diff))
             return loss
+        
         def lambda_loss(weight):
             return mul(mul(r, 0.01), mul(weight, weight))
 
         r = 0.03
+        maxdw = 0.05
+        dropout = 0.2
+        
+        print(f"\n{r = }")
+        print(f"{maxdw = }")
+        print(f"{dropout = }")
 
         print(f"\n{r = }\n")
 
-        for cnt in range(10):
-            print(f"## turn {cnt+1}")
+        for epoch in range(10):
+            print(f"## epoch {epoch+1}")
 
-            print(t.static_trainer(ip, op, static_loss, lambda_loss, r, 0.05, 0.2, rtn))
+            print(t.static_trainer(ip, op, static_loss, lambda_loss, r, maxdw, dropout, rtn))
 
             error = 0.0
             for i, o in zip(ip, op):
