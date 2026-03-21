@@ -5,13 +5,21 @@ udir = str(Path(__file__).parent.parent)
 sys.path.append(udir)
 
 from mathexpand import mul, add, div, iterate
+from Vector import Vector
 
 def sigmoid(x):
     e = 13580623/4996032
+    
+    if hasattr(x, 'VECTORFLAG'):
+        return Vector([sigmoid(comp) for comp in x.components])
+    
+    if isinstance(x, (list, tuple)):
+        return [sigmoid(item) for item in x]
+    
     try:
-        return div(1, add(1, e**mul(x,-1)))
-    except:     
-        return div(abs(x),x)
+        return 1 / (1 + e ** (-x))
+    except (OverflowError, TypeError):
+        return 1.0 if x > 0 else 0.0
 
 class RTN:
     __slots__ = ('neurons', 'weights', 'tg', 'sr_graph', 'tg_graph')

@@ -2,7 +2,6 @@ class fraction:
     def __init__(self, numerator: int, denominator: int):
         self.numerator = numerator
         self.denominator = denominator
-        self.value = self.numerator / self.denominator
         
         def verify():
             if not isinstance(self.numerator, int):
@@ -13,6 +12,8 @@ class fraction:
                 raise ValueError("Denominator cannot be zero.")
         
         verify()
+        
+        self.value = self.numerator / self.denominator
     
     def __add__(self, other):
         if isinstance(other, (int, float)):

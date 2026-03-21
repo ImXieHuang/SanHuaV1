@@ -1,6 +1,6 @@
 import sys
 from pathlib import Path
-from math import tanh
+from typing import Any
 try:
     from .RTN import RTN, sigmoid
 except:
@@ -23,7 +23,7 @@ def neurons_generator(model:str, width:int = 3, height: int = 3):
 
     return [i*height for i in preset[model]] * width
 
-def weights_brush(weight: float = 0.5, random: float = 0.25, res:int = 0, width: int = 3, height: int = 3):
+def weights_brush(weight: Any = 0.5, random: Any = 0.25, res:int = 0, width: int = 3, height: int = 3):
     if res < 0: raise(ValueError(res))
     if res == 0:
         weights = {}

@@ -144,4 +144,87 @@ class Vector:
         else:
             raise TypeError(f"Unsupported type for division: {type(scalar)}")
     
+    def __pow__(self, other: Union[int, float, fraction, 'Vector']) -> Union['Vector', List]:
+        if isinstance(other, (int, float, fraction)):
+            result_components = []
+            for x in self.components:
+                if isinstance(x, fraction) or isinstance(other, fraction):
+                    if not isinstance(x, fraction):
+                        x = fraction(int(x * 1000), 1000)
+                    if not isinstance(other, fraction):
+                        other_frac = fraction(int(other * 1000), 1000)
+                    else:
+                        other_frac = other
+                    
+                    if isinstance(other_frac, fraction) and other_frac.denominator != 1:
+                        result_components.append(float(x) ** float(other_frac))
+                    else:
+                        if other_frac.denominator == 1:
+                            exp = int(other_frac.value)
+                            if isinstance(x, fraction):
+                                result_components.append(x ** exp)
+                            else:
+                                result_components.append(fraction(x.value ** exp, 1))
+                        else:
+                            result_components.append(float(x) ** float(other_frac))
+                else:
+                    result_components.append(x ** other)
+            
+            if any(isinstance(c, fraction) for c in result_components):
+                result_components = [c if isinstance(c, fraction) else 
+                                    fraction(int(c * 1000), 1000) for c in result_components]
+            
+            return Vector(result_components)
+        
+        elif isinstance(other, Vector):
+            if self.dimension != other.dimension:
+                raise ValueError("Vectors must have the same dimension for element-wise power")
+            
+            result_components = []
+            for a, b in zip(self.components, other.components):
+                if isinstance(a, fraction) or isinstance(b, fraction):
+                    if not isinstance(a, fraction):
+                        a = fraction(int(a * 1000), 1000)
+                    if not isinstance(b, fraction):
+                        b_frac = fraction(int(b * 1000), 1000)
+                    else:
+                        b_frac = b
+                    
+                    if b_frac.denominator == 1:
+                        exp = int(b_frac.value)
+                        if isinstance(a, fraction):
+                            result_components.append(a ** exp)
+                        else:
+                            result_components.append(fraction(a.value ** exp, 1))
+                    else:
+                        result_components.append(float(a) ** float(b_frac))
+                else:
+                    result_components.append(a ** b)
+            
+            return Vector(result_components)
+        
+        else:
+            raise TypeError(f"Unsupported type for power operation: {type(other)}")
+    
+    def __rpow__(self, other: Union[int, float, fraction]) -> List:
+        if isinstance(other, (int, float, fraction)):
+            result_components = []
+            for x in self.components:
+                if isinstance(x, fraction) or isinstance(other, fraction):
+                    if not isinstance(other, fraction):
+                        other_frac = fraction(int(other * 1000), 1000)
+                    else:
+                        other_frac = other
+                    
+                    if not isinstance(x, fraction):
+                        x = fraction(int(x * 1000), 1000)
+                    
+                    result_components.append(float(other_frac) ** float(x))
+                else:
+                    result_components.append(other ** x)
+            
+            return result_components
+        else:
+            raise TypeError(f"Unsupported type for right power operation: {type(other)}")
+    
     def VECTORFLAG(): pass

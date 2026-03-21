@@ -16,6 +16,7 @@ Project file tree:
     │   │       │   ├── __init__.cpython-313.pyc
     │   │       │   └── splitToken.cpython-313.pyc
     │   │       ├── models
+    │   │       │   ├── model.pkl
     │   │       │   ├── model.zip
     │   │       │   └── model_info.json
     │   │       ├── __init__.py
@@ -1980,7 +1981,6 @@ class fraction:
     def __init__(self, numerator: int, denominator: int):
         self.numerator = numerator
         self.denominator = denominator
-        self.value = self.numerator / self.denominator
         
         def verify():
             if not isinstance(self.numerator, int):
@@ -1991,6 +1991,8 @@ class fraction:
                 raise ValueError("Denominator cannot be zero.")
         
         verify()
+        
+        self.value = self.numerator / self.denominator
     
     def __add__(self, other):
         if isinstance(other, (int, float)):
@@ -2511,7 +2513,7 @@ __all__ = [
 """
 import sys
 from pathlib import Path
-from math import tanh
+from typing import Any
 try:
     from .RTN import RTN, sigmoid
 except:
@@ -2534,7 +2536,7 @@ def neurons_generator(model:str, width:int = 3, height: int = 3):
 
     return [i*height for i in preset[model]] * width
 
-def weights_brush(weight: float = 0.5, random: float = 0.25, res:int = 0, width: int = 3, height: int = 3):
+def weights_brush(weight: Any = 0.5, random: Any = 0.25, res:int = 0, width: int = 3, height: int = 3):
     if res < 0: raise(ValueError(res))
     if res == 0:
         weights = {}
@@ -2581,13 +2583,21 @@ udir = str(Path(__file__).parent.parent)
 sys.path.append(udir)
 
 from mathexpand import mul, add, div, iterate
+from Vector import Vector
 
 def sigmoid(x):
     e = 13580623/4996032
+    
+    if hasattr(x, 'VECTORFLAG'):
+        return Vector([sigmoid(comp) for comp in x.components])
+    
+    if isinstance(x, (list, tuple)):
+        return [sigmoid(item) for item in x]
+    
     try:
-        return div(1, add(1, e**mul(x,-1)))
-    except:     
-        return div(abs(x),x)
+        return 1 / (1 + e ** (-x))
+    except (OverflowError, TypeError):
+        return 1.0 if x > 0 else 0.0
 
 class RTN:
     __slots__ = ('neurons', 'weights', 'tg', 'sr_graph', 'tg_graph')
@@ -2924,6 +2934,89 @@ class Vector:
             return Vector(result_components)
         else:
             raise TypeError(f"Unsupported type for division: {type(scalar)}")
+    
+    def __pow__(self, other: Union[int, float, fraction, 'Vector']) -> Union['Vector', List]:
+        if isinstance(other, (int, float, fraction)):
+            result_components = []
+            for x in self.components:
+                if isinstance(x, fraction) or isinstance(other, fraction):
+                    if not isinstance(x, fraction):
+                        x = fraction(int(x * 1000), 1000)
+                    if not isinstance(other, fraction):
+                        other_frac = fraction(int(other * 1000), 1000)
+                    else:
+                        other_frac = other
+                    
+                    if isinstance(other_frac, fraction) and other_frac.denominator != 1:
+                        result_components.append(float(x) ** float(other_frac))
+                    else:
+                        if other_frac.denominator == 1:
+                            exp = int(other_frac.value)
+                            if isinstance(x, fraction):
+                                result_components.append(x ** exp)
+                            else:
+                                result_components.append(fraction(x.value ** exp, 1))
+                        else:
+                            result_components.append(float(x) ** float(other_frac))
+                else:
+                    result_components.append(x ** other)
+            
+            if any(isinstance(c, fraction) for c in result_components):
+                result_components = [c if isinstance(c, fraction) else 
+                                    fraction(int(c * 1000), 1000) for c in result_components]
+            
+            return Vector(result_components)
+        
+        elif isinstance(other, Vector):
+            if self.dimension != other.dimension:
+                raise ValueError("Vectors must have the same dimension for element-wise power")
+            
+            result_components = []
+            for a, b in zip(self.components, other.components):
+                if isinstance(a, fraction) or isinstance(b, fraction):
+                    if not isinstance(a, fraction):
+                        a = fraction(int(a * 1000), 1000)
+                    if not isinstance(b, fraction):
+                        b_frac = fraction(int(b * 1000), 1000)
+                    else:
+                        b_frac = b
+                    
+                    if b_frac.denominator == 1:
+                        exp = int(b_frac.value)
+                        if isinstance(a, fraction):
+                            result_components.append(a ** exp)
+                        else:
+                            result_components.append(fraction(a.value ** exp, 1))
+                    else:
+                        result_components.append(float(a) ** float(b_frac))
+                else:
+                    result_components.append(a ** b)
+            
+            return Vector(result_components)
+        
+        else:
+            raise TypeError(f"Unsupported type for power operation: {type(other)}")
+    
+    def __rpow__(self, other: Union[int, float, fraction]) -> List:
+        if isinstance(other, (int, float, fraction)):
+            result_components = []
+            for x in self.components:
+                if isinstance(x, fraction) or isinstance(other, fraction):
+                    if not isinstance(other, fraction):
+                        other_frac = fraction(int(other * 1000), 1000)
+                    else:
+                        other_frac = other
+                    
+                    if not isinstance(x, fraction):
+                        x = fraction(int(x * 1000), 1000)
+                    
+                    result_components.append(float(other_frac) ** float(x))
+                else:
+                    result_components.append(other ** x)
+            
+            return result_components
+        else:
+            raise TypeError(f"Unsupported type for right power operation: {type(other)}")
     
     def VECTORFLAG(): pass
 """
