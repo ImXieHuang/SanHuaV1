@@ -1,4 +1,4 @@
-from .CCA import Const, CCATransformer
+from .CCAT import Const, CCATransformer
 from .operations import (
     NewCCATransformer,
     FusionCCATransformer,

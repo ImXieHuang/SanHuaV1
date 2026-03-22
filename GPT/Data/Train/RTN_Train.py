@@ -4,6 +4,7 @@ from random import uniform
 import json
 import pickle
 from datetime import datetime
+from typing import Any
 
 udir = str(Path(__file__).parent.parent.parent)
 sys.path.append(udir)
@@ -11,22 +12,8 @@ sys.path.append(udir)
 from Model.Remember_Turingpattern_NN import RTN, neurons_generator, weights_brush, tg_brush, sr_graph_brush, tg_graph_brush
 from Model.mathexpand import add, sub, mul, div
 
-import sys
-from pathlib import Path
-from typing import Callable
-from random import uniform
-import json
-import pickle
-from datetime import datetime
-
-udir = str(Path(__file__).parent.parent.parent)
-sys.path.append(udir)
-
-from Model.Remember_Turingpattern_NN import RTN, neurons_generator, weights_brush, tg_brush, sr_graph_brush, tg_graph_brush
-from Model.mathexpand import add, sub, mul, div, iterate
-
 class RTN_Trainer:
-    def __init__(self, dx = None, maxpid_i = None):
+    def __init__(self, dx: Any = None, maxpid_i: Any = None):
         self.dx = dx or 1e-5
         self.pid_i = 0.0
         self.pid_d = 0.0

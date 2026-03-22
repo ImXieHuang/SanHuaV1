@@ -103,7 +103,7 @@ def main():
     else:
         output_filename = "Attachment\\EngineeringDocument.txt"
     
-    filtered_dirs = ['.git', 'Attachment']
+    filtered_dirs = ['.git', '.notes', 'Attachment']
     if len(sys.argv) > 3:
         filtered_dirs = sys.argv[3].split(',')
     

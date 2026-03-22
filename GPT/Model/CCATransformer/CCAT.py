@@ -185,7 +185,7 @@ if __name__ == "__main__":
     print(f"const e: {Const.E.value}")
     print(f"const pi: {Const.Pi.value}\n")
     
-    cat = CCATransformer(
+    ccat = CCATransformer(
         {
             "苹果": {
                 Vector([1,0,0,0,1,0,0,0]): Vector([1,1,1,1,1,1,1,1]),
@@ -198,14 +198,14 @@ if __name__ == "__main__":
         temperature=Const.E
     )
 
-    big_Q = cat.get_query_for_("苹果")
+    big_Q = ccat.get_query_for_("苹果")
     print(f"big_Q for '苹果': {big_Q} \n")
 
-    print(f"Keys for '苹果': {cat.get_key_for_('苹果')}")
-    print(f"Values for '苹果': {cat.get_value_for_('苹果', big_Q)}")
-    print(f"Query for '苹果': {cat.get_query_for_('苹果')}")
-    print(f"Keys for '香蕉': {cat.get_key_for_('香蕉')}")
-    print(f"Values for '香蕉': {cat.get_value_for_('香蕉', big_Q)}")
-    print(f"Query for '香蕉': {cat.get_query_for_('香蕉')}")
+    print(f"Keys for '苹果': {ccat.get_key_for_('苹果')}")
+    print(f"Values for '苹果': {ccat.get_value_for_('苹果', big_Q)}")
+    print(f"Query for '苹果': {ccat.get_query_for_('苹果')}")
+    print(f"Keys for '香蕉': {ccat.get_key_for_('香蕉')}")
+    print(f"Values for '香蕉': {ccat.get_value_for_('香蕉', big_Q)}")
+    print(f"Query for '香蕉': {ccat.get_query_for_('香蕉')}")
 
-    print(f"\nBest token for Vector([1.5]*8): {cat.query_best_token_for_(Vector([1.5]*8), big_Q)}")
+    print(f"\nBest token for Vector([1.5]*8): {ccat.query_best_token_for_(Vector([1.5]*8), big_Q)}")

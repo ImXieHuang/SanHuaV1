@@ -22,10 +22,10 @@ Texts = ct.tokenize(text)
 
 print(Texts)
 
-cat = NewCCATransformer(Texts)
+ccat = NewCCATransformer(Texts)
 
 height, width, tg_types = 5, 7, 9
-neurons = [i*height for i in [[lambda x, parameter, nn, index: get_meaning_of_tokens_at_(cat, add(x, nn.tg[index[0]][index[1]][0]), tokens)[-1]]]] * width
+neurons = [i*height for i in [[lambda x, parameter, nn, index: get_meaning_of_tokens_at_(ccat, add(x, nn.tg[index[0]][index[1]][0]), tokens)[-1]]]] * width
 
 tokens = [Texts[1]]
 
@@ -41,7 +41,7 @@ while True:
     n = rtn.forward([Vector([0.0]*4)])
     bigQ = iterate(add, n)
 
-    next_token = think_about_next_token_at_(cat, tokens, bigQ, 5)
+    next_token = think_about_next_token_at_(ccat, tokens, bigQ, 5)
 
     tokens.append(next_token)
     print(tokens)
