@@ -11,9 +11,9 @@ Project file tree:
     │   │   │   └── 训练文本3(GPT生成作文).txt
     │   │   ├── Train
     │   │   │   ├── models
-    │   │   │   │   ├── trained_model_dynamic.pkl
+    │   │   │   │   ├── trained_model_dynamic.zip
     │   │   │   │   ├── trained_model_dynamic_info.json
-    │   │   │   │   └── training_pair.pkl
+    │   │   │   │   └── training_pair.zip
     │   │   │   └── RTNTrain.py
     │   │   └── splitToken
     │   │       ├── __pycache__
