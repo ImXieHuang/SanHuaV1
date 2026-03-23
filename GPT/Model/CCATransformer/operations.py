@@ -22,7 +22,7 @@ def NewCCATransformer(Texts: Union[list[str],str], dim: int = 8) -> CCAT.CCATran
     database = {}
     for i in Texts:
         database[i] = {Vector([random.uniform(-1,1) for _ in range(dim)]): Vector([random.uniform(-1,1) for _ in range(dim)])}
-    return CCAT.CCATransformer(database, CCAT.Const.E)
+    return CCAT.CCATransformer(database, CCAT.Const.E, dim)
 
 def FusionCCATransformer(CAT1: CCAT.CCATransformer, CAT2: CCAT.CCATransformer) -> CCAT.CCATransformer:
     FusionDatabsase = {}
