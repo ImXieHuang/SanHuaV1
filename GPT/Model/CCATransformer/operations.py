@@ -132,8 +132,7 @@ def get_meaning_of_tokens_at_(ccat: CCAT.CCATransformer, AtQ: Vector, tokens: li
     influence_graph = [[0.0 for _ in range(len(tokens))] for _ in range(len(tokens))]
     for i in range(len(tokens)):
         for j in range(len(tokens)):
-            influence_graph[i][j] = mexp.mul(vector.dot(ccat.get_query_for_(tokens[i]), ccat.get_key_for_(tokens[j]))，vector.dot(ccat.get_query_for_(tokens[i]), AtQ))
-    
+            influence_graph[i][j] = mexp.mul(vector.dot(ccat.get_query_for_(tokens[i]), ccat.get_key_for_(tokens[j])), vector.dot(ccat.get_query_for_(tokens[i]), AtQ))
     for i in range(len(tokens)):
         for j in range(len(tokens)):
             if j >= i: influence_graph[i][j] = -float('inf')
