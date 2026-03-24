@@ -5,6 +5,7 @@ import json
 import pickle
 from collections import defaultdict
 from datetime import datetime
+from typing import List
 
 class ChineseTokenizer:
     def __init__(self, max_token_len=6, min_freq_factor=50):
@@ -227,7 +228,7 @@ class ChineseTokenizer:
         print(f"Vocabulary: {len(self.tokens)} tokens")
         return True
     
-    def load_list_as_model(self, tokens:list[str]):
+    def load_list_as_model(self, tokens:List[str]):
         self.tokens = self.tokens | set(tokens)
         return True
     

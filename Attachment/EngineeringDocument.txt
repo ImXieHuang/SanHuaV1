@@ -184,6 +184,7 @@ import json
 import pickle
 from collections import defaultdict
 from datetime import datetime
+from typing import List
 
 class ChineseTokenizer:
     def __init__(self, max_token_len=6, min_freq_factor=50):
@@ -406,7 +407,7 @@ class ChineseTokenizer:
         print(f"Vocabulary: {len(self.tokens)} tokens")
         return True
     
-    def load_list_as_model(self, tokens:list[str]):
+    def load_list_as_model(self, tokens:List[str]):
         self.tokens = self.tokens | set(tokens)
         return True
     
@@ -642,7 +643,7 @@ from random import uniform
 import json
 import pickle
 from datetime import datetime
-from typing import Any
+from typing import Any, List
 
 udir = str(Path(__file__).parent.parent.parent)
 sys.path.append(udir)
@@ -704,7 +705,7 @@ class RTN_Trainer:
                 ret[i][k] = function(i, k, l)
         return ret
     
-    def static_trainer(self, inputs: list[list], outputs: list[list], lossfunction: callable, lambdafunction: callable, r: float, maxdw: float, dropout: float, rtn: RTN):
+    def static_trainer(self, inputs: List[List], outputs: List[List], lossfunction: callable, lambdafunction: callable, r: float, maxdw: float, dropout: float, rtn: RTN):
         original_tg = rtn.tg
         original_weights = rtn.weights
         try:
@@ -871,7 +872,7 @@ class RTN_Trainer:
 
         return div(div(sub(add_loss, sub_loss), 2), self.dx)
 
-    def rtn_sampling_trainer(self, inputs: list[list], outputs: list[list], target_pids: list[list], samplinglossfunction: callable, staticlossfunction: callable, lambdafunction: callable, r: float, maxdw: float, dropout: float, rtn: RTN, maxt: int = 30, sample_rate: int = 5):
+    def rtn_sampling_trainer(self, inputs: List[List], outputs: List[List], target_pids: List[List], samplinglossfunction: callable, staticlossfunction: callable, lambdafunction: callable, r: float, maxdw: float, dropout: float, rtn: RTN, maxt: int = 30, sample_rate: int = 5):
         original_tg = rtn.tg
         original_sr_graph = rtn.sr_graph
         original_tg_graph = rtn.tg_graph
@@ -1829,7 +1830,7 @@ try:
 except:
     import CCAT
 import random
-from typing import Union
+from typing import Union, List
 import sys
 from pathlib import Path
 
@@ -1841,14 +1842,14 @@ from Vector.vector import Vector
 from fraction import fraction
 import mathexpand as mexp
 
-def NewCCATransformer(Texts: Union[list[str],str], dim: int = 8) -> CCAT.CCATransformer:
+def NewCCATransformer(Texts: Union[List[str],str], dim: int = 8) -> CCAT.CCATransformer:
     if not isinstance(Texts, list):
         return {Texts: {Vector([random.uniform(-1,1) for _ in range(dim)]): Vector([random.uniform(-1,1) for _ in range(dim)])}}
     
     database = {}
     for i in Texts:
         database[i] = {Vector([random.uniform(-1,1) for _ in range(dim)]): Vector([random.uniform(-1,1) for _ in range(dim)])}
-    return CCAT.CCATransformer(database, CCAT.Const.E)
+    return CCAT.CCATransformer(database, CCAT.Const.E, dim)
 
 def FusionCCATransformer(CAT1: CCAT.CCATransformer, CAT2: CCAT.CCATransformer) -> CCAT.CCATransformer:
     FusionDatabsase = {}
@@ -1870,7 +1871,7 @@ def FusionCCATransformer(CAT1: CCAT.CCATransformer, CAT2: CCAT.CCATransformer) -
             FusionDatabsase[i] = CAT2.database[i]
     return CCAT.CCATransformer(FusionDatabsase, CAT1.temperature/2 + CAT2.temperature/2)
 
-def get_meaning_of_tokens_for_(ccat: CCAT.CCATransformer, tokens: list[str]) -> list[Vector]:
+def get_meaning_of_tokens_for_(ccat: CCAT.CCATransformer, tokens: List[str]) -> List[Vector]:
     influence_graph = [[0.0 for _ in range(len(tokens))] for _ in range(len(tokens))]
     for i in range(len(tokens)):
         for j in range(len(tokens)):
@@ -1954,7 +1955,7 @@ def get_meaning_of_tokens_for_(ccat: CCAT.CCATransformer, tokens: list[str]) -> 
 
     return meaning_vectors
 
-def get_meaning_of_tokens_at_(ccat: CCAT.CCATransformer, AtQ: Vector, tokens: list[str]) -> list[Vector]:
+def get_meaning_of_tokens_at_(ccat: CCAT.CCATransformer, AtQ: Vector, tokens: List[str]) -> List[Vector]:
     influence_graph = [[0.0 for _ in range(len(tokens))] for _ in range(len(tokens))]
     for i in range(len(tokens)):
         for j in range(len(tokens)):
@@ -2037,7 +2038,7 @@ def get_meaning_of_tokens_at_(ccat: CCAT.CCATransformer, AtQ: Vector, tokens: li
     
     return meaning_vectors
 
-def get_meaning_of_sentence_for_(ccat: CCAT.CCATransformer, tokens: list[str]) -> Vector:
+def get_meaning_of_sentence_for_(ccat: CCAT.CCATransformer, tokens: List[str]) -> Vector:
     tokens_meaning = get_meaning_of_tokens_for_(ccat, tokens)
 
     influence_graph = [[0.0 for _ in range(len(tokens))] for _ in range(len(tokens))]
@@ -2071,7 +2072,7 @@ def get_meaning_of_sentence_for_(ccat: CCAT.CCATransformer, tokens: list[str]) -
     sentence_meaning = Vector([r.value for r in result])
     return sentence_meaning
 
-def get_meaning_of_sentence_at_(ccat: CCAT.CCATransformer, AtQ: Vector, tokens: list[str]) -> Vector:
+def get_meaning_of_sentence_at_(ccat: CCAT.CCATransformer, AtQ: Vector, tokens: List[str]) -> Vector:
     tokens_meaning = get_meaning_of_tokens_at_(ccat, AtQ, tokens)
 
     influence_graph = [[0.0 for _ in range(len(tokens))] for _ in range(len(tokens))]
@@ -2105,7 +2106,7 @@ def get_meaning_of_sentence_at_(ccat: CCAT.CCATransformer, AtQ: Vector, tokens: 
     sentence_meaning = Vector([r.value for r in result])
     return sentence_meaning
 
-def think_about_next_token_for_(ccat: CCAT.CCATransformer, tokens: list[str], T: float = CCAT.Const.E.value) -> str:
+def think_about_next_token_for_(ccat: CCAT.CCATransformer, tokens: List[str], T: float = CCAT.Const.E.value) -> str:
     sentence_meaning = get_meaning_of_sentence_for_(ccat, tokens)
     cnt_n = Vector([0.0] * ccat.dim)
     cnt_m = 0.0
@@ -2130,7 +2131,7 @@ def think_about_next_token_for_(ccat: CCAT.CCATransformer, tokens: list[str], T:
     
     return ccat.query_best_token_for_(next_token, sentence_meaning)
 
-def think_about_next_token_at_(ccat: CCAT.CCATransformer, tokens: list[str], AtQ: Vector, T: float = CCAT.Const.E.value) -> str:
+def think_about_next_token_at_(ccat: CCAT.CCATransformer, tokens: List[str], AtQ: Vector, T: float = CCAT.Const.E.value) -> str:
     sentence_meaning = get_meaning_of_sentence_at_(ccat, AtQ, tokens)
     cnt_n = Vector([0.0] * ccat.dim)
     cnt_m = 0.0
@@ -2155,7 +2156,7 @@ def think_about_next_token_at_(ccat: CCAT.CCATransformer, tokens: list[str], AtQ
     
     return ccat.query_best_token_for_(next_token, sentence_meaning)
 
-def get_complate_for_(ccat: CCAT.CCATransformer, tokens: list[str]):
+def get_complate_for_(ccat: CCAT.CCATransformer, tokens: List[str]):
     sentence_meaning = get_meaning_of_sentence_for_(ccat, tokens[1:-1])
     token_meaning = get_meaning_of_tokens_for_(ccat, tokens)[-1]
     return vector.dot(sentence_meaning, token_meaning)
@@ -3016,6 +3017,7 @@ if __name__ == "__main__":
 """
 import sys
 from pathlib import Path
+from typing import List
 
 udir = str(Path(__file__).parent.parent)
 sys.path.append(udir)
@@ -3040,7 +3042,7 @@ def sigmoid(x):
 class RTN:
     __slots__ = ('neurons', 'weights', 'tg', 'sr_graph', 'tg_graph')
 
-    def __init__(self, neurons: list[list[callable]], weights: list[dict[tuple[int] | dict[tuple[int] | float]], list[list]], tg: list[list[list[float]]], sr_graph: list[list[list[float]]] ,tg_graph: list[list[float]]):
+    def __init__(self, neurons: List[List[callable]], weights: List[dict[tuple[int] | dict[tuple[int] | float]], List[List]], tg: List[List[List[float]]], sr_graph: List[List[List[float]]] ,tg_graph: List[List[float]]):
         self.neurons = neurons
         self.weights = weights
         self.tg = [[j + [0.0] for j in i] for i in tg]
@@ -3058,7 +3060,7 @@ class RTN:
 
         return nn_ans[-1]
 
-    def nn_dynamics(self, inputs) -> list[list]:
+    def nn_dynamics(self, inputs) -> List[List]:
         if len(inputs) > len(self.neurons[0]): raise(ValueError(inputs))
         inputs = [inputs[i] if i < len(inputs) else 0.0 for i in range(len(self.neurons[0]))]
         answer = [[0.0 for _ in self.neurons[i]] for i in range(len(self.neurons))]
@@ -3103,7 +3105,7 @@ class RTN:
             ret = add(ret, mul(nsr, self.weights[0][i][index]))
         return add(1, mul(-1, sigmoid(ret)))
     
-    def tg_updata(self) -> list[list[list]]:
+    def tg_updata(self) -> List[List[List]]:
         return [[[self.tg_dynamics(None, (i, j, k)) for k in range(len(self.tg[i][j]))] for j in range(len(self.tg[i]))] for i in range(len(self.tg))]
 
 if __name__ == "__main__":
@@ -4653,7 +4655,7 @@ Texts = ct.tokenize(text)
 
 print(Texts)
 
-ccat = NewCCATransformer(Texts)
+ccat = NewCCATransformer(Texts, 4)
 
 height, width, tg_types = 5, 7, 9
 neurons = [i*height for i in [[lambda x, parameter, nn, index: get_meaning_of_tokens_at_(ccat, add(x, nn.tg[index[0]][index[1]][0]), tokens)[-1]]]] * width

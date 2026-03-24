@@ -3,7 +3,7 @@ try:
 except:
     import CCAT
 import random
-from typing import Union
+from typing import Union, List
 import sys
 from pathlib import Path
 
@@ -15,7 +15,7 @@ from Vector.vector import Vector
 from fraction import fraction
 import mathexpand as mexp
 
-def NewCCATransformer(Texts: Union[list[str],str], dim: int = 8) -> CCAT.CCATransformer:
+def NewCCATransformer(Texts: Union[List[str],str], dim: int = 8) -> CCAT.CCATransformer:
     if not isinstance(Texts, list):
         return {Texts: {Vector([random.uniform(-1,1) for _ in range(dim)]): Vector([random.uniform(-1,1) for _ in range(dim)])}}
     
@@ -44,7 +44,7 @@ def FusionCCATransformer(CAT1: CCAT.CCATransformer, CAT2: CCAT.CCATransformer) -
             FusionDatabsase[i] = CAT2.database[i]
     return CCAT.CCATransformer(FusionDatabsase, CAT1.temperature/2 + CAT2.temperature/2)
 
-def get_meaning_of_tokens_for_(ccat: CCAT.CCATransformer, tokens: list[str]) -> list[Vector]:
+def get_meaning_of_tokens_for_(ccat: CCAT.CCATransformer, tokens: List[str]) -> List[Vector]:
     influence_graph = [[0.0 for _ in range(len(tokens))] for _ in range(len(tokens))]
     for i in range(len(tokens)):
         for j in range(len(tokens)):
@@ -128,7 +128,7 @@ def get_meaning_of_tokens_for_(ccat: CCAT.CCATransformer, tokens: list[str]) -> 
 
     return meaning_vectors
 
-def get_meaning_of_tokens_at_(ccat: CCAT.CCATransformer, AtQ: Vector, tokens: list[str]) -> list[Vector]:
+def get_meaning_of_tokens_at_(ccat: CCAT.CCATransformer, AtQ: Vector, tokens: List[str]) -> List[Vector]:
     influence_graph = [[0.0 for _ in range(len(tokens))] for _ in range(len(tokens))]
     for i in range(len(tokens)):
         for j in range(len(tokens)):
@@ -211,7 +211,7 @@ def get_meaning_of_tokens_at_(ccat: CCAT.CCATransformer, AtQ: Vector, tokens: li
     
     return meaning_vectors
 
-def get_meaning_of_sentence_for_(ccat: CCAT.CCATransformer, tokens: list[str]) -> Vector:
+def get_meaning_of_sentence_for_(ccat: CCAT.CCATransformer, tokens: List[str]) -> Vector:
     tokens_meaning = get_meaning_of_tokens_for_(ccat, tokens)
 
     influence_graph = [[0.0 for _ in range(len(tokens))] for _ in range(len(tokens))]
@@ -245,7 +245,7 @@ def get_meaning_of_sentence_for_(ccat: CCAT.CCATransformer, tokens: list[str]) -
     sentence_meaning = Vector([r.value for r in result])
     return sentence_meaning
 
-def get_meaning_of_sentence_at_(ccat: CCAT.CCATransformer, AtQ: Vector, tokens: list[str]) -> Vector:
+def get_meaning_of_sentence_at_(ccat: CCAT.CCATransformer, AtQ: Vector, tokens: List[str]) -> Vector:
     tokens_meaning = get_meaning_of_tokens_at_(ccat, AtQ, tokens)
 
     influence_graph = [[0.0 for _ in range(len(tokens))] for _ in range(len(tokens))]
@@ -279,7 +279,7 @@ def get_meaning_of_sentence_at_(ccat: CCAT.CCATransformer, AtQ: Vector, tokens: 
     sentence_meaning = Vector([r.value for r in result])
     return sentence_meaning
 
-def think_about_next_token_for_(ccat: CCAT.CCATransformer, tokens: list[str], T: float = CCAT.Const.E.value) -> str:
+def think_about_next_token_for_(ccat: CCAT.CCATransformer, tokens: List[str], T: float = CCAT.Const.E.value) -> str:
     sentence_meaning = get_meaning_of_sentence_for_(ccat, tokens)
     cnt_n = Vector([0.0] * ccat.dim)
     cnt_m = 0.0
@@ -304,7 +304,7 @@ def think_about_next_token_for_(ccat: CCAT.CCATransformer, tokens: list[str], T:
     
     return ccat.query_best_token_for_(next_token, sentence_meaning)
 
-def think_about_next_token_at_(ccat: CCAT.CCATransformer, tokens: list[str], AtQ: Vector, T: float = CCAT.Const.E.value) -> str:
+def think_about_next_token_at_(ccat: CCAT.CCATransformer, tokens: List[str], AtQ: Vector, T: float = CCAT.Const.E.value) -> str:
     sentence_meaning = get_meaning_of_sentence_at_(ccat, AtQ, tokens)
     cnt_n = Vector([0.0] * ccat.dim)
     cnt_m = 0.0
@@ -329,7 +329,7 @@ def think_about_next_token_at_(ccat: CCAT.CCATransformer, tokens: list[str], AtQ
     
     return ccat.query_best_token_for_(next_token, sentence_meaning)
 
-def get_complate_for_(ccat: CCAT.CCATransformer, tokens: list[str]):
+def get_complate_for_(ccat: CCAT.CCATransformer, tokens: List[str]):
     sentence_meaning = get_meaning_of_sentence_for_(ccat, tokens[1:-1])
     token_meaning = get_meaning_of_tokens_for_(ccat, tokens)[-1]
     return vector.dot(sentence_meaning, token_meaning)

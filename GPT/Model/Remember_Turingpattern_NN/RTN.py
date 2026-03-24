@@ -1,5 +1,6 @@
 import sys
 from pathlib import Path
+from typing import List
 
 udir = str(Path(__file__).parent.parent)
 sys.path.append(udir)
@@ -24,7 +25,7 @@ def sigmoid(x):
 class RTN:
     __slots__ = ('neurons', 'weights', 'tg', 'sr_graph', 'tg_graph')
 
-    def __init__(self, neurons: list[list[callable]], weights: list[dict[tuple[int] | dict[tuple[int] | float]], list[list]], tg: list[list[list[float]]], sr_graph: list[list[list[float]]] ,tg_graph: list[list[float]]):
+    def __init__(self, neurons: List[List[callable]], weights: List[dict[tuple[int] | dict[tuple[int] | float]], List[List]], tg: List[List[List[float]]], sr_graph: List[List[List[float]]] ,tg_graph: List[List[float]]):
         self.neurons = neurons
         self.weights = weights
         self.tg = [[j + [0.0] for j in i] for i in tg]
@@ -42,7 +43,7 @@ class RTN:
 
         return nn_ans[-1]
 
-    def nn_dynamics(self, inputs) -> list[list]:
+    def nn_dynamics(self, inputs) -> List[List]:
         if len(inputs) > len(self.neurons[0]): raise(ValueError(inputs))
         inputs = [inputs[i] if i < len(inputs) else 0.0 for i in range(len(self.neurons[0]))]
         answer = [[0.0 for _ in self.neurons[i]] for i in range(len(self.neurons))]
@@ -87,7 +88,7 @@ class RTN:
             ret = add(ret, mul(nsr, self.weights[0][i][index]))
         return add(1, mul(-1, sigmoid(ret)))
     
-    def tg_updata(self) -> list[list[list]]:
+    def tg_updata(self) -> List[List[List]]:
         return [[[self.tg_dynamics(None, (i, j, k)) for k in range(len(self.tg[i][j]))] for j in range(len(self.tg[i]))] for i in range(len(self.tg))]
 
 if __name__ == "__main__":

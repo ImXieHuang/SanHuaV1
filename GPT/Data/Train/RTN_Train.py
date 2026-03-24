@@ -4,7 +4,7 @@ from random import uniform
 import json
 import pickle
 from datetime import datetime
-from typing import Any
+from typing import Any, List
 
 udir = str(Path(__file__).parent.parent.parent)
 sys.path.append(udir)
@@ -66,7 +66,7 @@ class RTN_Trainer:
                 ret[i][k] = function(i, k, l)
         return ret
     
-    def static_trainer(self, inputs: list[list], outputs: list[list], lossfunction: callable, lambdafunction: callable, r: float, maxdw: float, dropout: float, rtn: RTN):
+    def static_trainer(self, inputs: List[List], outputs: List[List], lossfunction: callable, lambdafunction: callable, r: float, maxdw: float, dropout: float, rtn: RTN):
         original_tg = rtn.tg
         original_weights = rtn.weights
         try:
@@ -233,7 +233,7 @@ class RTN_Trainer:
 
         return div(div(sub(add_loss, sub_loss), 2), self.dx)
 
-    def rtn_sampling_trainer(self, inputs: list[list], outputs: list[list], target_pids: list[list], samplinglossfunction: callable, staticlossfunction: callable, lambdafunction: callable, r: float, maxdw: float, dropout: float, rtn: RTN, maxt: int = 30, sample_rate: int = 5):
+    def rtn_sampling_trainer(self, inputs: List[List], outputs: List[List], target_pids: List[List], samplinglossfunction: callable, staticlossfunction: callable, lambdafunction: callable, r: float, maxdw: float, dropout: float, rtn: RTN, maxt: int = 30, sample_rate: int = 5):
         original_tg = rtn.tg
         original_sr_graph = rtn.sr_graph
         original_tg_graph = rtn.tg_graph
