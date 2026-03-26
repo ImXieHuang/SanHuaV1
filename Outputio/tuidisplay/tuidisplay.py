@@ -1,6 +1,7 @@
 import os
 import tkinter as tk
 from tkinter import font
+from Outputio.tuidisplay.ttf_renderer import TTFRenderer
 
 class ColorPalette:
     def __init__(self, palette=None, map=None):
@@ -446,42 +447,18 @@ class TUIDisplay:
         self.active_input_box = None
         self.variables = {}
         self.global_key_actions = {}
+        self.char_images = {}
+        self.ttf_renderer = TTFRenderer(self.font_path)
         
         self.setup_display()
         self.init_screen_content()
         self.draw_screen()
     
+    def load_char_images(self):
+        self.char_images = self.ttf_renderer.char_images
+    
     def load_custom_font(self):
-        try:
-            if not os.path.exists(self.font_path):
-                print(f"Font file not found: {self.font_path}")
-                return None
-            
-            font_size = max(8, self.cell_height // 2)
-            
-            try:
-                custom_font = font.Font(
-                    root=self.root,
-                    size=font_size,
-                    weight="bold"
-                )
-                custom_font.config(family="JetBrains Mono")
-                return custom_font
-            except:
-                try:
-                    custom_font = font.Font(
-                        root=self.root,
-                        size=font_size,
-                        weight="bold"
-                    )
-                    custom_font.config(family="Courier New")
-                    return custom_font
-                except:
-                    return None
-                
-        except Exception as e:
-            print(f"Error loading font: {e}")
-            return None
+        return None
 
     def setup_display(self):
         self.root.title("TUI Display")
