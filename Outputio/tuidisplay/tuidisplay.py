@@ -1,4 +1,6 @@
+import os
 import tkinter as tk
+from tkinter import font
 
 class ColorPalette:
     def __init__(self, palette=None, map=None):
@@ -448,6 +450,38 @@ class TUIDisplay:
         self.setup_display()
         self.init_screen_content()
         self.draw_screen()
+    
+    def load_custom_font(self):
+        try:
+            if not os.path.exists(self.font_path):
+                print(f"Font file not found: {self.font_path}")
+                return None
+            
+            font_size = max(8, self.cell_height // 2)
+            
+            try:
+                custom_font = font.Font(
+                    root=self.root,
+                    size=font_size,
+                    weight="bold"
+                )
+                custom_font.config(family="JetBrains Mono")
+                return custom_font
+            except:
+                try:
+                    custom_font = font.Font(
+                        root=self.root,
+                        size=font_size,
+                        weight="bold"
+                    )
+                    custom_font.config(family="Courier New")
+                    return custom_font
+                except:
+                    return None
+                
+        except Exception as e:
+            print(f"Error loading font: {e}")
+            return None
 
     def setup_display(self):
         self.root.title("TUI Display")
@@ -458,6 +492,9 @@ class TUIDisplay:
         self.cell_height = screen_height // self.screen_height
         self.canvas = tk.Canvas(self.root, bg=self.palette.get_color("background"), highlightthickness=0)
         self.canvas.pack(fill=tk.BOTH, expand=True)
+        
+        self.custom_font = self.load_custom_font()
+        
         self.root.bind('<Key>', self.handle_keypress)
         self.root.bind('<Button-1>', self.handle_click)
 
@@ -619,11 +656,28 @@ class TUIDisplay:
         self.canvas.create_rectangle(x1, y1, x2, y2, 
                                    fill=cell_data["bg_color"], 
                                    outline=cell_data["bg_color"])
-        self.canvas.create_text(x1 + self.cell_width//2, 
-                              y1 + self.cell_height//2,
-                              text=cell_data["char"],
-                              fill=cell_data["color"],
-                              font=("JetBrains Mono", self.cell_height//2, "bold"))
+        
+        try:
+            if self.custom_font:
+                self.canvas.create_text(x1 + self.cell_width//2, 
+                                      y1 + self.cell_height//2,
+                                      text=cell_data["char"],
+                                      fill=cell_data["color"],
+                                      font=self.custom_font)
+            else:
+                font_size = max(8, self.cell_height // 2)
+                self.canvas.create_text(x1 + self.cell_width//2, 
+                                      y1 + self.cell_height//2,
+                                      text=cell_data["char"],
+                                      fill=cell_data["color"],
+                                      font=("Courier", font_size, "bold"))
+        except Exception as e:
+            font_size = max(8, self.cell_height // 2)
+            self.canvas.create_text(x1 + self.cell_width//2, 
+                                  y1 + self.cell_height//2,
+                                  text=cell_data["char"],
+                                  fill=cell_data["color"],
+                                  font=("Courier", font_size))
 
     def fast_redraw(self):
         self.canvas.delete("all")

@@ -4,7 +4,7 @@ from Outputio.tuidisplay import TUIDisplay, TopBar, TextBox, InputBox, Button, C
 
 def main():
     root = tk.Tk()
-    font_path = Path("Outputio/fonts/JetBrainsMono-Bold.ttf")
+    font_path = Path(__file__).parent / "Outputio" / "fonts" / "JetBrainsMono-Bold.ttf"
     
     if font_path.exists():
         palette = ColorPalette()
