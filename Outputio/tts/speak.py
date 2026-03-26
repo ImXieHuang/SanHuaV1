@@ -5,8 +5,8 @@ from random import uniform
 udir = str(Path(__file__).parent.parent)
 sys.path.append(udir)
 
-from Outputio.parrot import *
-from Outputio.pinyin import *
+from parrot import *
+from pinyin import *
 
 class speak:
     def __init__(self):
