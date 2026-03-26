@@ -86,18 +86,30 @@ Project file tree:
     │   │   │   └── parrot.cpython-313.pyc
     │   │   ├── __init__.py
     │   │   └── parrot.py
+    │   ├── pinyin
+    │   │   ├── __pycache__
+    │   │   │   ├── PinyinManager.cpython-313.pyc
+    │   │   │   └── __init__.cpython-313.pyc
+    │   │   ├── PinyinManager.py
+    │   │   ├── __init__.py
+    │   │   ├── pinyin.json
+    │   │   ├── pinyin.txt
+    │   │   └── pinyin_LICENSE
     │   ├── tuidisplay
     │   │   ├── __pycache__
     │   │   │   ├── __init__.cpython-313.pyc
+    │   │   │   ├── ttf_renderer.cpython-313.pyc
     │   │   │   └── tuidisplay.cpython-313.pyc
     │   │   ├── __init__.py
+    │   │   ├── ttf_renderer.py
     │   │   └── tuidisplay.py
     │   └── tuimodel
     │       └── model.py
     ├── test
     │   ├── ccatest.py
     │   ├── loading_string.py
-    │   └── prtest.py
+    │   ├── prtest.py
+    │   └── speak.py
     ├── LICENSE
     ├── README.md
     └── main.py
@@ -114,7 +126,7 @@ from Outputio.tuidisplay import TUIDisplay, TopBar, TextBox, InputBox, Button, C
 
 def main():
     root = tk.Tk()
-    font_path = Path("Outputio/fonts/JetBrainsMono-Bold.ttf")
+    font_path = Path(__file__).parent / "Outputio" / "fonts" / "JetBrainsMono-Bold.ttf"
     
     if font_path.exists():
         palette = ColorPalette()
@@ -3879,9 +3891,251 @@ from .parrot import synthesizer, parrot, morph_key
 __all__ = ["synthesizer", "parrot", "morph_key"]
 """
 
+# Outputio\pinyin\PinyinManager.py:
+"""
+import json
+
+class PinyinManager:
+    def __init__(self):
+        self.INITIALS = ['zh', 'ch', 'sh', 'b', 'p', 'm', 'f', 'd', 't', 'n', 'l',
+                        'g', 'k', 'h', 'j', 'q', 'x', 'r', 'z', 'c', 's', 'y', 'w']
+        self.pinyin = []
+
+
+    def extract_initial_final(self, pinyin):
+        tone_marks = {'ā': 'a', 'á': 'a', 'ǎ': 'a', 'à': 'a',
+                    'ē': 'e', 'é': 'e', 'ě': 'e', 'è': 'e',
+                    'ī': 'i', 'í': 'i', 'ǐ': 'i', 'ì': 'i',
+                    'ō': 'o', 'ó': 'o', 'ǒ': 'o', 'ò': 'o',
+                    'ū': 'u', 'ú': 'u', 'ǔ': 'u', 'ù': 'u',
+                    'ǖ': 'ü', 'ǘ': 'ü', 'ǚ': 'ü', 'ǜ': 'ü',
+                    'ü': 'ü', 'ń': 'n', 'ň': 'n', 'ǹ': 'n', 'ḿ': 'm'}
+        
+        pure = ''.join(tone_marks.get(c, c) for c in pinyin)
+        
+        if not pure:
+            return ('', '')
+        
+        if len(pure) == 1 or pure[0] not in 'bcdfghjklmnpqrstwxyz':
+            return ('', pure)
+        
+        initial = ''
+        for i in self.INITIALS:
+            if pure.startswith(i):
+                initial = i
+                break
+        
+        final = pure[len(initial):] if initial else pure
+        return (initial, final)
+
+
+    def parse_pinyin_line(self, line):
+        line = line.strip()
+        if not line or line.startswith('#'):
+            return None
+        
+        if '#' in line:
+            line = line.split('#')[0].strip()
+        
+        if not line or not line.startswith('U+'):
+            return None
+        
+        parts = line.split(':', 1)
+        if len(parts) != 2:
+            return None
+        
+        code_point = parts[0].strip()
+        pinyin_part = parts[1].strip()
+        
+        try:
+            char = chr(int(code_point[2:], 16))
+        except (ValueError, OverflowError):
+            return None
+        
+        pinyins = [p.strip() for p in pinyin_part.split(',') if p.strip()]
+        
+        return (char, pinyins)
+
+    def process(self):
+        input_file = "\\".join(__file__.split("\\")[:-1])+'\\pinyin.txt'
+        output_file = "\\".join(__file__.split("\\")[:-1])+'\\pinyin.json'
+        
+        result = []
+        
+        with open(input_file, 'r', encoding='utf-8') as f:
+            for line in f:
+                parsed = self.parse_pinyin_line(line)
+                if not parsed:
+                    continue
+                
+                char, pinyins = parsed
+                char_result = {
+                    'char': char,
+                    'readings': []
+                }
+                
+                for pinyin in pinyins:
+                    initial, final = self.extract_initial_final(pinyin)
+                    char_result['readings'].append({
+                        'pinyin': pinyin,
+                        'initial': initial,
+                        'final': final
+                    })
+                
+                result.append(char_result)
+        
+        with open(output_file, 'w', encoding='utf-8') as f:
+            json.dump(result, f, ensure_ascii=False, indent=2)
+        
+        print(f" - Processing completed! Total {len(result)} Chinese characters, saved to {output_file}")
+
+    def loadpinyin(self):
+        file = "\\".join(__file__.split("\\")[:-1])+'\\pinyin.json'
+        with open(file, 'r', encoding='utf-8') as f:
+            self.pinyin = json.load(f)
+        return self.pinyin
+
+    def callpinyin(self, char):
+        for i in self.pinyin:
+            if i["char"] == char:
+                break
+        else:
+            return "[hangup]"
+        return (i["readings"][0]["initial"], i["readings"][0]["final"])
+
+    def callstring(self, string):
+        readings = []
+        for i in string:
+            for j in self.pinyin:
+                if j["char"] == i:
+                    break
+            else:
+                if len(readings) >= 1 and readings[-1] != "[hangup]":
+                    readings.append("[hangup]")
+                continue
+            readings.append((j["readings"][0]["initial"], j["readings"][0]["final"]))
+        
+        return readings
+
+if __name__ == '__main__':
+    pm = PinyinManager()
+    pm.process()
+
+    pm.loadpinyin()
+    print(pm.callstring('你好！...你叫什么名字？'))
+"""
+
+# Outputio\pinyin\__init__.py:
+"""
+from .PinyinManager import PinyinManager
+
+__all__ = ["PinyinManager"]
+"""
+
+# Outputio\tuidisplay\ttf_renderer.py:
+"""
+import struct
+import tkinter as tk
+
+class TTFRenderer:
+    def __init__(self, font_path):
+        self.font_path = font_path
+        self.char_images = {}
+        self.cell_width = 8
+        self.cell_height = 16
+        self.load_font()
+    
+    def load_font(self):
+        with open(self.font_path, 'rb') as f:
+            self.data = f.read()
+        
+        self.numTables = struct.unpack('>H', self.data[4:6])[0]
+        
+        self.tables = {}
+        for i in range(self.numTables):
+            offset = 12 + i * 16
+            tag = self.data[offset:offset+4].decode('ascii')
+            table_offset = struct.unpack('>I', self.data[offset+8:offset+12])[0]
+            table_length = struct.unpack('>I', self.data[offset+12:offset+16])[0]
+            self.tables[tag] = (table_offset, table_length)
+        
+        self.cmap = self.parse_cmap()
+        
+        self.loca = self.parse_loca()
+        self.glyf_offset = self.tables['glyf'][0]
+        
+        for i in range(32, 127):
+            self.char_images[chr(i)] = self.render_char(chr(i))
+    
+    def parse_cmap(self):
+        offset, length = self.tables['cmap']
+        cmap_data = self.data[offset:offset+length]
+        numTables = struct.unpack('>H', cmap_data[2:4])[0]
+        for i in range(numTables):
+            platform = struct.unpack('>H', cmap_data[4 + i*8:4 + i*8+2])[0]
+            encoding = struct.unpack('>H', cmap_data[4 + i*8+2:4 + i*8+4])[0]
+            if platform == 3 and encoding == 1:
+                sub_offset = struct.unpack('>I', cmap_data[4 + i*8+4:4 + i*8+8])[0]
+                return self.parse_cmap_subtable(cmap_data[sub_offset:])
+        return {}
+    
+    def parse_cmap_subtable(self, sub_data):
+        format = struct.unpack('>H', sub_data[0:2])[0]
+        if format == 4:
+            length = struct.unpack('>H', sub_data[2:4])[0]
+            segCount = struct.unpack('>H', sub_data[6:8])[0] // 2
+            endCodes = [struct.unpack('>H', sub_data[14 + i*2:16 + i*2])[0] for i in range(segCount)]
+            startCodes = [struct.unpack('>H', sub_data[16 + segCount*2 + i*2:18 + segCount*2 + i*2])[0] for i in range(segCount)]
+            idDeltas = [struct.unpack('>H', sub_data[16 + segCount*4 + i*2:18 + segCount*4 + i*2])[0] for i in range(segCount)]
+            idRangeOffsets = [struct.unpack('>H', sub_data[16 + segCount*6 + i*2:18 + segCount*6 + i*2])[0] for i in range(segCount)]
+            
+            cmap = {}
+            for seg in range(segCount):
+                for code in range(startCodes[seg], endCodes[seg] + 1):
+                    if idRangeOffsets[seg] == 0:
+                        glyph_index = (code + idDeltas[seg]) % 65536
+                    else:
+                        glyph_index = 0
+                    cmap[code] = glyph_index
+            return cmap
+        return {}
+    
+    def parse_loca(self):
+        offset, length = self.tables['loca']
+        loca_data = self.data[offset:offset+length]
+        numGlyphs = self.tables['maxp'][1] // 2
+        loca = []
+        for i in range(numGlyphs + 1):
+            loca.append(struct.unpack('>H', loca_data[i*2:(i+1)*2])[0] * 2)
+        return loca
+    
+    def render_char(self, char):
+        code = ord(char)
+        glyph_index = self.cmap.get(code, 0)
+        if glyph_index >= len(self.loca) - 1:
+            glyph_index = 0
+        
+        glyph_offset = self.glyf_offset + self.loca[glyph_index]
+        glyph_length = self.loca[glyph_index + 1] - self.loca[glyph_index]
+        glyph_data = self.data[glyph_offset:glyph_offset + glyph_length]
+        
+        img = tk.PhotoImage(width=self.cell_width, height=self.cell_height)
+        pixels = ["#FFFFFF"] * (self.cell_width * self.cell_height)
+        if glyph_length > 0:
+            pixels[self.cell_width * (self.cell_height // 2) + self.cell_width // 2] = "#000000"
+        img.put(" ".join(pixels))
+        return img
+    
+    def get_char_image(self, char):
+        return self.char_images.get(char, self.char_images.get(' ', None))
+"""
+
 # Outputio\tuidisplay\tuidisplay.py:
 """
+import os
 import tkinter as tk
+from tkinter import font
+from Outputio.tuidisplay.ttf_renderer import TTFRenderer
 
 class ColorPalette:
     def __init__(self, palette=None, map=None):
@@ -4327,10 +4581,18 @@ class TUIDisplay:
         self.active_input_box = None
         self.variables = {}
         self.global_key_actions = {}
+        self.char_images = {}
+        self.ttf_renderer = TTFRenderer(self.font_path)
         
         self.setup_display()
         self.init_screen_content()
         self.draw_screen()
+    
+    def load_char_images(self):
+        self.char_images = self.ttf_renderer.char_images
+    
+    def load_custom_font(self):
+        return None
 
     def setup_display(self):
         self.root.title("TUI Display")
@@ -4341,6 +4603,9 @@ class TUIDisplay:
         self.cell_height = screen_height // self.screen_height
         self.canvas = tk.Canvas(self.root, bg=self.palette.get_color("background"), highlightthickness=0)
         self.canvas.pack(fill=tk.BOTH, expand=True)
+        
+        self.custom_font = self.load_custom_font()
+        
         self.root.bind('<Key>', self.handle_keypress)
         self.root.bind('<Button-1>', self.handle_click)
 
@@ -4502,11 +4767,28 @@ class TUIDisplay:
         self.canvas.create_rectangle(x1, y1, x2, y2, 
                                    fill=cell_data["bg_color"], 
                                    outline=cell_data["bg_color"])
-        self.canvas.create_text(x1 + self.cell_width//2, 
-                              y1 + self.cell_height//2,
-                              text=cell_data["char"],
-                              fill=cell_data["color"],
-                              font=("JetBrains Mono", self.cell_height//2, "bold"))
+        
+        try:
+            if self.custom_font:
+                self.canvas.create_text(x1 + self.cell_width//2, 
+                                      y1 + self.cell_height//2,
+                                      text=cell_data["char"],
+                                      fill=cell_data["color"],
+                                      font=self.custom_font)
+            else:
+                font_size = max(8, self.cell_height // 2)
+                self.canvas.create_text(x1 + self.cell_width//2, 
+                                      y1 + self.cell_height//2,
+                                      text=cell_data["char"],
+                                      fill=cell_data["color"],
+                                      font=("Courier", font_size, "bold"))
+        except Exception as e:
+            font_size = max(8, self.cell_height // 2)
+            self.canvas.create_text(x1 + self.cell_width//2, 
+                                  y1 + self.cell_height//2,
+                                  text=cell_data["char"],
+                                  fill=cell_data["color"],
+                                  font=("Courier", font_size))
 
     def fast_redraw(self):
         self.canvas.delete("all")
@@ -4840,4 +5122,155 @@ if __name__ == "__main__":
     
     print("播放'喵喵'")
     p.s.play_func(say_miao, 2.0)  # 明确指定2秒时长
+"""
+
+# test\speak.py:
+"""
+import sys
+from pathlib import Path
+from random import uniform
+
+udir = str(Path(__file__).parent.parent)
+sys.path.append(udir)
+
+from Outputio.parrot import *
+from Outputio.pinyin import *
+
+class speak:
+    def __init__(self):
+        self.phonemes = self.get_phonemes()
+        self.pm = PinyinManager()
+
+    def get_phonemes(self):
+        phonemes = {}
+        
+        phonemes['a'] = morph_key([2.0, 1.9, 1.8, 1.7, 1.6, 1.5, 1.4, 1.3, 1.2, 1.1, 1.0, 0.9, 0.8, 0.7, 0.6, 0.5, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 1.9, 2.0], 0.0, 1.0)
+        phonemes['o'] = morph_key([1.0, 1.0, 1.0, 1.0, 1.0, 0.9, 0.9, 0.9, 0.9, 0.8, 0.8, 0.8, 0.8, 0.9, 0.9, 1.0, 1.0, 1.1, 1.1, 1.2, 1.2, 1.3, 1.3, 1.4, 1.4, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5], 0.0, 1.0)
+        phonemes['e'] = morph_key([1.2, 1.2, 1.2, 1.2, 1.1, 1.1, 1.1, 1.0, 1.0, 1.0, 0.9, 0.9, 0.9, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.9, 0.9, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0], 0.0, 1.0)
+        phonemes['i'] = morph_key([0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.3, 0.3, 0.4, 0.4, 0.5, 0.5, 0.6, 0.6, 0.7, 0.7, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8], 0.0, 1.0)
+        phonemes['u'] = morph_key([0.8, 0.8, 0.9, 0.9, 1.0, 1.0, 1.1, 1.1, 1.2, 1.2, 1.2, 1.2, 1.1, 1.1, 1.0, 1.0, 0.9, 0.9, 0.8, 0.8, 0.7, 0.7, 0.6, 0.6, 0.5, 0.5, 0.4, 0.4, 0.3, 0.3, 0.3, 0.3], 0.0, 1.0)
+        phonemes['ü'] = morph_key([0.3, 0.3, 0.3, 0.3, 0.3, 0.4, 0.4, 0.4, 0.4, 0.5, 0.5, 0.5, 0.5, 0.6, 0.6, 0.6, 0.6, 0.7, 0.7, 0.7, 0.7, 0.8, 0.8, 0.8, 0.8, 0.7, 0.7, 0.6, 0.6, 0.5, 0.5, 0.4], 0.0, 1.0)
+        phonemes['ê'] = morph_key([0.5, 0.5, 0.6, 0.6, 0.7, 0.7, 0.8, 0.8, 0.9, 0.9, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0], 0.0, 1.0)
+        phonemes['er'] = morph_key([0.6, 0.6, 0.7, 0.7, 0.8, 0.8, 0.9, 0.9, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9], 0.0, 1.0)
+        phonemes['ai'] = morph_key([1.8, 1.8, 1.7, 1.6, 1.5, 1.4, 1.3, 1.2, 1.1, 1.0, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4], 0.0, 1.0)
+        phonemes['ei'] = morph_key([1.2, 1.2, 1.2, 1.1, 1.1, 1.0, 1.0, 0.9, 0.9, 0.8, 0.8, 0.7, 0.7, 0.6, 0.5, 0.4, 0.4, 0.4, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3], 0.0, 1.0)
+        phonemes['ao'] = morph_key([1.8, 1.8, 1.7, 1.7, 1.6, 1.6, 1.5, 1.5, 1.4, 1.4, 1.3, 1.3, 1.2, 1.2, 1.1, 1.1, 1.0, 1.0, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9], 0.0, 1.0)
+        phonemes['ou'] = morph_key([1.0, 1.0, 1.0, 1.1, 1.1, 1.2, 1.2, 1.2, 1.2, 1.2, 1.1, 1.1, 1.0, 1.0, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4], 0.0, 1.0)
+        phonemes['ia'] = morph_key([0.4, 0.4, 0.4, 0.4, 0.5, 0.5, 0.6, 0.6, 0.7, 0.7, 0.8, 0.8, 0.9, 1.0, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 1.9, 2.0, 2.0, 2.0, 1.9, 1.8, 1.7, 1.6, 1.5, 1.4], 0.0, 1.0)
+        phonemes['ie'] = morph_key([0.3, 0.3, 0.4, 0.4, 0.5, 0.5, 0.6, 0.6, 0.7, 0.7, 0.8, 0.8, 0.9, 0.9, 1.0, 1.0, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1], 0.0, 1.0)
+        phonemes['ua'] = morph_key([0.6, 0.6, 0.7, 0.7, 0.8, 0.8, 0.9, 0.9, 1.0, 1.0, 1.1, 1.2, 1.3, 1.4, 1.5, 1.5, 1.5, 1.5, 1.4, 1.4, 1.3, 1.3, 1.2, 1.2, 1.1, 1.1, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0], 0.0, 1.0)
+        phonemes['uo'] = morph_key([0.7, 0.7, 0.8, 0.8, 0.9, 0.9, 1.0, 1.0, 1.1, 1.1, 1.2, 1.2, 1.2, 1.2, 1.1, 1.1, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0], 0.0, 1.0)
+        phonemes['üe'] = morph_key([0.4, 0.4, 0.5, 0.5, 0.6, 0.6, 0.7, 0.7, 0.8, 0.8, 0.9, 0.9, 1.0, 1.0, 1.1, 1.1, 1.2, 1.2, 1.2, 1.2, 1.2, 1.2, 1.2, 1.2, 1.2, 1.2, 1.2, 1.2, 1.2, 1.2, 1.2, 1.2], 0.0, 1.0)
+        phonemes['iu'] = morph_key([0.4, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.0, 1.0, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3], 0.0, 1.0)
+        phonemes['iao'] = morph_key([0.4, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1, 1.2, 1.3, 1.4, 1.5, 1.5, 1.4, 1.3, 1.2, 1.1, 1.0, 0.9, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8], 0.0, 1.0)
+        phonemes['iou'] = morph_key([0.4, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.0, 1.0, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3], 0.0, 1.0)
+        phonemes['uai'] = morph_key([0.7, 0.7, 0.8, 0.9, 1.0, 1.1, 1.2, 1.3, 1.4, 1.4, 1.3, 1.2, 1.1, 1.0, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3], 0.0, 1.0)
+        phonemes['uei'] = morph_key([0.6, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1, 1.2, 1.2, 1.2, 1.1, 1.0, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2], 0.0, 1.0)
+        phonemes['an'] = morph_key([1.8, 1.8, 1.7, 1.6, 1.5, 1.4, 1.3, 1.2, 1.1, 1.0, 0.9, 0.8, 0.7, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6], 0.3, 1.0)
+        phonemes['en'] = morph_key([1.2, 1.2, 1.1, 1.0, 0.9, 0.8, 0.7, 0.6, 0.6, 0.6, 0.5, 0.5, 0.5, 0.5, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4], 0.3, 1.0)
+        phonemes['in'] = morph_key([0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.4, 0.4, 0.4, 0.4, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5], 0.4, 1.0)
+        phonemes['un'] = morph_key([0.8, 0.8, 0.9, 0.9, 1.0, 1.0, 1.0, 1.0, 0.9, 0.9, 0.8, 0.8, 0.7, 0.7, 0.6, 0.6, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5], 0.3, 1.0)
+        phonemes['ün'] = morph_key([0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.5, 0.5, 0.5, 0.5, 0.6, 0.6, 0.6, 0.6, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7], 0.4, 1.0)
+        phonemes['ian'] = morph_key([0.3, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1, 1.2, 1.2, 1.2, 1.1, 1.0, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9], 0.3, 1.0)
+        phonemes['uan'] = morph_key([0.6, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1, 1.2, 1.2, 1.2, 1.1, 1.0, 0.9, 0.8, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7], 0.3, 1.0)
+        phonemes['üan'] = morph_key([0.4, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.0, 1.0, 1.0, 0.9, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8], 0.4, 1.0)
+        phonemes['ang'] = morph_key([1.8, 1.8, 1.7, 1.6, 1.5, 1.4, 1.3, 1.2, 1.2, 1.2, 1.2, 1.2, 1.2, 1.2, 1.2, 1.2, 1.2, 1.2, 1.2, 1.2, 1.2, 1.2, 1.2, 1.2, 1.2, 1.2, 1.2, 1.2, 1.2, 1.2, 1.2, 1.2], 0.6, 1.0)
+        phonemes['eng'] = morph_key([1.2, 1.2, 1.1, 1.0, 0.9, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8], 0.6, 1.0)
+        phonemes['ing'] = morph_key([0.3, 0.3, 0.3, 0.3, 0.4, 0.4, 0.4, 0.4, 0.5, 0.5, 0.5, 0.5, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6], 0.7, 1.0)
+        phonemes['ong'] = morph_key([0.7, 0.7, 0.8, 0.9, 1.0, 1.1, 1.2, 1.2, 1.2, 1.1, 1.0, 0.9, 0.8, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7], 0.5, 1.0)
+        phonemes['iang'] = morph_key([0.4, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1, 1.2, 1.3, 1.4, 1.4, 1.4, 1.4, 1.3, 1.2, 1.1, 1.0, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9], 0.6, 1.0)
+        phonemes['uang'] = morph_key([0.6, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1, 1.2, 1.3, 1.3, 1.3, 1.2, 1.1, 1.0, 0.9, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8], 0.6, 1.0)
+        phonemes['iong'] = morph_key([0.4, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1, 1.1, 1.0, 0.9, 0.8, 0.7, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6], 0.5, 1.0)
+        phonemes['ueng'] = morph_key([0.9, 0.9, 1.0, 1.1, 1.2, 1.3, 1.3, 1.3, 1.2, 1.1, 1.0, 0.9, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8], 0.5, 1.0)
+        phonemes['b'] = morph_key([0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0], 0.0, 1.0)
+        phonemes['p'] = morph_key([0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9], 0.0, 0.0)
+        phonemes['m'] = morph_key([0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8], 0.9, 1.0)
+        phonemes['f'] = morph_key([0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.5, 0.6, 0.6, 0.7, 0.7, 0.8, 0.8, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9], 0.0, 0.0)
+        phonemes['d'] = morph_key([0.2, 0.2, 0.1, 0.1, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8], 0.0, 1.0)
+        phonemes['t'] = morph_key([0.2, 0.2, 0.1, 0.1, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7], 0.0, 0.0)
+        phonemes['n'] = morph_key([0.2, 0.2, 0.1, 0.1, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.1, 0.1, 0.2, 0.2, 0.3, 0.3, 0.4, 0.4, 0.5, 0.5, 0.6, 0.6, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7], 0.9, 1.0)
+        phonemes['l'] = morph_key([0.3, 0.3, 0.4, 0.4, 0.5, 0.5, 0.6, 0.6, 0.6, 0.6, 0.5, 0.5, 0.5, 0.5, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7], 0.0, 1.0)
+        phonemes['g'] = morph_key([0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6], 0.0, 1.0)
+        phonemes['k'] = morph_key([0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5], 0.0, 0.0)
+        phonemes['h'] = morph_key([0.9, 0.9, 0.8, 0.8, 0.7, 0.7, 0.6, 0.6, 0.5, 0.5, 0.4, 0.4, 0.3, 0.3, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2], 0.0, 0.0)
+        phonemes['j'] = morph_key([0.3, 0.3, 0.3, 0.3, 0.2, 0.2, 0.1, 0.1, 0.0, 0.0, 0.0, 0.0, 0.1, 0.1, 0.2, 0.2, 0.3, 0.3, 0.4, 0.4, 0.5, 0.5, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6], 0.0, 1.0)
+        phonemes['q'] = morph_key([0.3, 0.3, 0.3, 0.3, 0.2, 0.2, 0.1, 0.1, 0.0, 0.0, 0.0, 0.0, 0.1, 0.1, 0.2, 0.2, 0.3, 0.3, 0.4, 0.4, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5], 0.0, 0.0)
+        phonemes['x'] = morph_key([0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2], 0.0, 0.0)
+        phonemes['zh'] = morph_key([0.2, 0.2, 0.2, 0.1, 0.1, 0.1, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.1, 0.1, 0.2, 0.2, 0.3, 0.3, 0.4, 0.4, 0.5, 0.5, 0.6, 0.6, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7], 0.0, 1.0)
+        phonemes['ch'] = morph_key([0.2, 0.2, 0.2, 0.1, 0.1, 0.1, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.1, 0.1, 0.2, 0.2, 0.3, 0.3, 0.4, 0.4, 0.5, 0.5, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6], 0.0, 0.0)
+        phonemes['sh'] = morph_key([0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3], 0.0, 0.0)
+        phonemes['r'] = morph_key([0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.3, 0.3, 0.3, 0.3, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.3, 0.3, 0.3, 0.3, 0.4, 0.4, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5], 0.0, 1.0)
+        phonemes['z'] = morph_key([0.1, 0.1, 0.1, 0.1, 0.1, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.1, 0.2, 0.3, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8], 0.0, 1.0)
+        phonemes['c'] = morph_key([0.1, 0.1, 0.1, 0.1, 0.1, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.1, 0.2, 0.3, 0.3, 0.4, 0.5, 0.6, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7], 0.0, 0.0)
+        phonemes['s'] = morph_key([0.1, 0.1, 0.1, 0.1, 0.2, 0.2, 0.2, 0.2, 0.3, 0.3, 0.3, 0.3, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4], 0.0, 0.0)
+        phonemes['y'] = morph_key([0.2, 0.2, 0.2, 0.2, 0.2, 0.1, 0.1, 0.1, 0.1, 0.1, 0.2, 0.2, 0.3, 0.3, 0.4, 0.4, 0.5, 0.5, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6], 0.0, 1.0)
+        phonemes['w'] = morph_key([0.6, 0.6, 0.7, 0.7, 0.8, 0.8, 0.7, 0.7, 0.6, 0.6, 0.5, 0.5, 0.4, 0.4, 0.3, 0.3, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2], 0.0, 1.0)
+        phonemes['ng'] = morph_key([0.8, 0.8, 0.7, 0.7, 0.6, 0.6, 0.5, 0.5, 0.4, 0.4, 0.3, 0.3, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2], 0.9, 1.0)
+        
+        return phonemes
+
+    def callmorph(self, string):
+        self.pm.loadpinyin()
+        phonemes = self.pm.callstring(string)
+        output = []
+        
+        for i in phonemes:
+            if i != "[hangup]":
+                if i[0] != "":
+                    output.append((self.phonemes[i[0]], self.phonemes[i[1]]))
+                else:
+                    output.append((self.phonemes[i[1]], self.phonemes[i[1]]))
+            else:
+                output.append("[hangup]")
+
+        return output
+    
+    def tts(self, text):
+        p = parrot(12, 32, 0.33)
+        
+        for name, key in self.phonemes.items():
+            if name is not None:
+                p.add_key(name, key)
+        
+        ms = self.callmorph(text)
+        
+        duration_per_phoneme = 0.25
+        total_duration = len(ms) * duration_per_phoneme
+        
+        def speak_text(t):
+            if t >= total_duration:
+                return 0.0
+            
+            idx = int(t / duration_per_phoneme)
+            if idx >= len(ms):
+                return 0.0
+            
+            t_local = t - idx * duration_per_phoneme
+            if ms[idx] != "[hangup]":
+                key1, key2 = ms[idx]
+                
+                ratio = t_local / duration_per_phoneme
+                
+                areas1, nasal1, voiced1 = key1
+                areas2, nasal2, voiced2 = key2
+                
+                areas = [areas1[i] * (1 - ratio) + areas2[i] * ratio for i in range(4)]
+                nasal = nasal1 * (1 - ratio) + nasal2 * ratio
+                voiced = voiced1 * (1 - ratio) + voiced2 * ratio
+                
+                p.get_key(morph_key(areas, nasal, voiced))
+            
+                return p.gate(*p.speak())(t) * p.s.envelope_adsr(t_local, duration_per_phoneme, 0.05, 0.1, 0.8, 0.1)
+            
+            return 0
+
+        print(f"play: {text}")
+        p.s.play_func(speak_text, total_duration)
+
+if __name__ == "__main__":
+    s = speak()
+    p = parrot(12, 8)
+    text = "我爱北京天安门，天安门上太阳升。伟大领袖毛主席，指引我们向前进。我爱北京天安门，天安门上太阳升。伟大领袖毛主席，指引我们向前进。"
+
+    s.tts(text)
 """
