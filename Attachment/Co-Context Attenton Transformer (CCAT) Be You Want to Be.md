@@ -79,7 +79,7 @@ graph BT
     subgraph SL [spread layer]
         M; N; O
     end
-    subgraph CL [connectionism layer<br />#40;one of neurons: MlutiHead#41;]
+    subgraph CL [connectionism layer<br />#40;one of neurons: MultiHead#41;]
         SM; E; I; J; K
     end
 
@@ -94,10 +94,10 @@ graph BT
 
 ## 3.1 Inference Operation
 
-During inference, CCAT employs a **softequery** mechanism. Given an input query vector (Que), we retrieve the corresponding Val by attending over its keys:
+During inference, CCAT employs a **softquery** mechanism. Given an input query vector (Que), we retrieve the corresponding Val by attending over its keys:
 
 $$
-\text{Output} = \sum_{i} \text{softmax}\left( \frac{\text{Que} \cdot \vec{K}_i}{T\sqrt{d}} \right) \vec{V}_i
+\text{Output} = \sum_{i} \operatorname{softmax}\left( \frac{\text{Que} \cdot \vec{K}_i}{T \sqrt{d}} \right) \vec{V}_i
 $$
 
 #### Where:
@@ -107,11 +107,11 @@ $$
 - **$T$**: Temperature parameter controlling attention sharpness.
 - **$Output$**: The resulting context-aware vector.
 
-And CCAT also employs a **desoftequery** mechanism. Given an input Value vector (Val), we retrieve the corresponding Que by attending over its Values:
+And CCAT also employs a **desoftquery** mechanism. Given an input Value vector (Val), we retrieve the corresponding Que by attending over its Values:
 
 $$
-\text{Output} = \sum_{i} \text{softmax}\left( \frac{\text{Val} \cdot 
-\vec{V}_i}{T\sqrt{d}} \right) \vec{K}_i
+\text{Output} = \sum_{i} \operatorname{softmax}\left( \frac{\text{Val} \cdot 
+\vec{V}_i}{T \sqrt{d}} \right) \vec{K}_i
 $$
 
 #### Where:
@@ -330,8 +330,8 @@ The dimensionality reduction from traditional approaches to CCAT yields signific
 | Approach | Typical Dimensions | Operations per Token |
 | - | - | - |
 | Standard Transformer | 512-1024 | $O(d^2)$ matrix multiplications |
-| CCAT (theoretical) | ~1.4 | $O(\text{log x})$ semantic lookups |
-| CCAT (practical) | 8 | $O(\text{8 ln x}) ≈ O(32)$ operations |
+| CCAT (theoretical) | ~1.4 | $O(\log x)$ semantic lookups |
+| CCAT (practical) | 8 | $O(8 \ln x) ≈ O(32)$ operations |
 
 This represents a 64-128x reduction in dimensional complexity compared to standard approaches, validating CCAT's core design principle: attention should operate in semantic space, not embedding space.
 
@@ -346,13 +346,13 @@ Define two operators:
 **softquery operator** $\mathcal{Q}: \mathbb{R}^n \times \mathcal{T} \to \mathbb{R}^n$:
 
 $$
-\mathcal{Q}(Q; t) = \sum_{i=1}^{k_t} \text{softmax}\left( \frac{Q \cdot K_i^{(t)}}{T} \right) V_i^{(t)}
+\mathcal{Q}(Q; t) = \sum_{i=1}^{k_t} \operatorname{softmax}\left( \frac{Q \cdot K_i^{(t)}}{T} \right) V_i^{(t)}
 $$
 
 **desoftquery operator** $\mathcal{Q}^*: \mathbb{R}^n \times \mathcal{T} \to \mathbb{R}^n$:
 
 $$
-\mathcal{Q}^*(V; t) = \sum_{i=1}^{k_t} \text{softmax}\left( \frac{V \cdot V_i^{(t)}}{T} \right) K_i^{(t)}
+\mathcal{Q}^*(V; t) = \sum_{i=1}^{k_t} \operatorname{softmax}\left( \frac{V \cdot V_i^{(t)}}{T} \right) K_i^{(t)}
 $$
 
 ### B.2 Theorem 1: Adjoint Relationship
@@ -370,7 +370,7 @@ $$
 > \langle x, y \rangle_t = \sum_{i=1}^{k_t} \alpha_i^{(t)}(x) \cdot \alpha_i^{(t)}(y) \cdot (x \cdot K_i^{(t)})(y \cdot V_i^{(t)})
 > $$
 >
-> with $\alpha_i^{(t)}(x) = \text{softmax}\left( \frac{x \cdot K_i^{(t)}}{T} \right)$.
+> with $\alpha_i^{(t)}(x) = \operatorname{softmax}\left( \frac{x \cdot K_i^{(t)}}{T} \right)$.
 
 *Proof:*
 
@@ -530,7 +530,7 @@ The fixed point conditions $Q = \mathcal{Q}^*(V; t)$ and $V = \mathcal{Q}(Q; t)$
 > where $I(\cdot; \cdot)$ denotes mutual information. Moreover, the temperature parameter $T$ controls the information bottleneck through the relation:
 >
 > $$
-> I_T(Q; V) = H(Q) - \frac{1}{T}\mathbb{E}[\log \text{softmax}(Q \cdot K / T)] + \text{constant}
+> I_T(Q; V) = H(Q) - \frac{1}{T}\mathbb{E}[\log \operatorname{softmax}(Q \cdot K / T)] + \text{constant}
 > $$
 
 *Proof:*
@@ -540,28 +540,28 @@ Mutual information is symmetric by definition: $I(Q; V) = I(V; Q) = H(Q) - H(Q|V
 The interesting part is the dependence on $T$. From the definition of the softquery operation, we have:
 
 $$
-P(V|Q) = \sum_i \text{softmax}\left( \frac{Q \cdot K_i}{T} \right) \delta(V - V_i)
+P(V|Q) = \sum_i \operatorname{softmax}\left( \frac{Q \cdot K_i}{T} \right) \delta(V - V_i)
 $$
 
 Thus, the conditional entropy is:
 
 $$
-H(V|Q) = -\mathbb{E}_{Q}\left[ \sum_i \text{softmax}\left( \frac{Q \cdot K_i}{T} \right) \log \text{softmax}\left( \frac{Q \cdot K_i}{T} \right) \right]
+H(V|Q) = -\mathbb{E}_{Q}\left[ \sum_i \operatorname{softmax}\left( \frac{Q \cdot K_i}{T} \right) \log \operatorname{softmax}\left( \frac{Q \cdot K_i}{T} \right) \right]
 $$
 
-Similarly, by the duality established in Theorem C.1:
+Similarly, by the duality established in Theorem B.1:
 
 $$
-P(Q|V) = \sum_i \text{softmax}\left( \frac{V \cdot V_i}{T} \right) \delta(Q - K_i)
+P(Q|V) = \sum_i \operatorname{softmax}\left( \frac{V \cdot V_i}{T} \right) \delta(Q - K_i)
 $$
 
 Therefore:
 
 $$
-I_T(Q; V) = H(V) - H(V|Q) = H(V) + \mathbb{E}_{Q}\left[ \sum_i \text{softmax}\left( \frac{Q \cdot K_i}{T} \right) \log \text{softmax}\left( \frac{Q \cdot K_i}{T} \right) \right]
+I_T(Q; V) = H(V) - H(V|Q) = H(V) + \mathbb{E}_{Q}\left[ \sum_i \operatorname{softmax}\left( \frac{Q \cdot K_i}{T} \right) \log \operatorname{softmax}\left( \frac{Q \cdot K_i}{T} \right) \right]
 $$
 
-By symmetry, this equals $H(Q) + \mathbb{E}_{V}\left[ \sum_i \text{softmax}\left( \frac{V \cdot V_i}{T} \right) \log \text{softmax}\left( \frac{V \cdot V_i}{T} \right) \right]$.
+By symmetry, this equals $H(Q) + \mathbb{E}_{V}\left[ \sum_i \operatorname{softmax}\left( \frac{V \cdot V_i}{T} \right) \log \operatorname{softmax}\left( \frac{V \cdot V_i}{T} \right) \right]$.
 
 As $T \to 0$, the softmax approaches an indicator function, and $I_T(Q; V) \to \min(H(Q), H(V))$ (perfect coupling). As $T \to \infty$, the softmax approaches a uniform distribution, and $I_T(Q; V) \to 0$ (independence). Thus $T$ serves as a true temperature parameter controlling the information flow. $\square$
 
@@ -576,7 +576,7 @@ As $T \to 0$, the softmax approaches an indicator function, and $I_T(Q; V) \to \
 >
 > Similarly, $\mathcal{Q} \circ \mathcal{Q}^*$ projects onto the manifold of admissible values.
 
-*Proof:* This follows directly from the fixed point property in Theorem C.2. The composition yields the unique fixed point when iterated, which is the projection onto the set $\{Q : Q = \mathcal{Q}^*(\mathcal{Q}(Q; t); t)\}$. $\square$
+*Proof:* This follows directly from the fixed point property in Theorem B.2. The composition yields the unique fixed point when iterated, which is the projection onto the set $\{Q : Q = \mathcal{Q}^*(\mathcal{Q}(Q; t); t)\}$. $\square$
 
 ### B.6 Discussion: Semantic Interpretation
 
@@ -598,8 +598,9 @@ The dimensionality reduction proved in Appendix A, combined with this duality, s
 ## Appendix C: Original Glossary
 
 | Term | Translation | Reference |
-|-------|-------|-------|
-| Co-context Attention Transforemr/CCAT | 上下文联合注意力机制 | - |
+|:-------|:-------|-------:|
+| Co-context Attention Transformer/CCAT | 上下文联合注意力机制 | - |
+| AtQ | 注意力焦点 | 2. |
 | Attention Shift Mechanism | 注意力转移机制 | 2. |
 | Que / big Q | 大语境 | 3.1 |
 | Val / big V | 大语境义 | 3.1 |
@@ -614,4 +615,4 @@ The dimensionality reduction proved in Appendix A, combined with this duality, s
 ### about Architecture Lecture:
 > 3Blue1Brown. (n.d.). Home [YouTube channel]. YouTube. Retrieved March 15, 2026, from [Home](https://www.youtube.com/@3blue1brown)
 ### about Information theory:
-> Heaps, H. S. (1978). Information Retrieval: Computational and Theoretical Aspects. Academic Press. [Heaps‘ law, statistics of shared components and temporal patterns from a sample-space-reducing process ](http://arxiv.org/abs/2311.06377)
+> Heaps, H. S. (1978). Information Retrieval: Computational and Theoretical Aspects. Academic Press. [Heaps' law, statistics of shared components and temporal patterns from a sample-space-reducing process ](http://arxiv.org/abs/2311.06377)

@@ -1,6 +1,6 @@
 import sys
 from pathlib import Path
-from typing import Callable
+from typing import List, Callable
 udir = str(Path(__file__).parent.parent.parent)
 sys.path.append(udir)
 
@@ -19,7 +19,7 @@ class CCAT_Trainer:
         models_dir.mkdir(exist_ok=True)
         return models_dir
 
-    def loss_gradient(self, tokens: str, loss: Callable, ccat: CCATransformer):
+    def loss_gradient(self, tokens: List[str], loss: Callable, ccat: CCATransformer):
         original_data = ccat.database
         bigQ = get_meaning_of_sentence_for_(ccat, tokens[:-1])
         data = get_meaning_of_sentence_for_(ccat, tokens)

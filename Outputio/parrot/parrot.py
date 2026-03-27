@@ -257,7 +257,7 @@ class parrot:
             resonances[freq] = amplitude
         return resonances
     
-    def speak(self):
+    def speak(self, pitch: float = 0.0):
         fft_dict = {}
         obstruction_pos = self.check_obstructions()
         avg_area = sum(self.areas) / len(self.areas)
@@ -272,7 +272,7 @@ class parrot:
             if self.nasal_area >= 0.0 and self.is_obstruction_before_velum(obstruction_pos):
                 nasal_resonances = self.tube(self.nasal_length)
                 for freq, amp in nasal_resonances.items():
-                    fft_dict[freq] = amp * self.nasal_coupling * obstruction_pos / 4
+                    fft_dict[freq * 2**(pitch/2)] = amp * self.nasal_coupling * obstruction_pos / 4
                 if noise_intensity > 0:
                     for _ in range(3):
                         noise_freq = random.uniform(2000, 5000)
@@ -288,15 +288,15 @@ class parrot:
             
             for freq, amp in tube_resonances.items():
                 adjusted_amp = amp * (avg_area / 2.0)
-                fft_dict[freq] = adjusted_amp
+                fft_dict[freq * 2**(pitch/2)] = adjusted_amp
             
             if self.nasal_area >= 0.0:
                 nasal_resonances = self.tube(self.nasal_length)
                 for freq, amp in nasal_resonances.items():
                     if freq in fft_dict:
-                        fft_dict[freq] += amp * self.nasal_coupling * 0.5
+                        fft_dict[freq * 2**(pitch/2)] += amp * self.nasal_coupling * 0.5
                     else:
-                        fft_dict[freq] = amp * self.nasal_coupling * 0.5
+                        fft_dict[freq * 2**(pitch/2)] = amp * self.nasal_coupling * 0.5
             
             for harmonic in range(1, 6):
                 freq = base_freq * harmonic
@@ -313,9 +313,9 @@ class parrot:
                         amplitude += fft_dict[existing_freq] * 0.3
                         break
                 if freq in fft_dict:
-                    fft_dict[freq] = max(fft_dict[freq], amplitude)
+                    fft_dict[freq * 2**(pitch/2)] = max(fft_dict[freq * 2**(pitch/2)], amplitude)
                 else:
-                    fft_dict[freq] = amplitude
+                    fft_dict[freq * 2**(pitch/2)] = amplitude
             
             if noise_intensity > 0:
                 for _ in range(int(5 * noise_intensity)):

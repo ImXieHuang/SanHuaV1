@@ -616,14 +616,16 @@ __all__ = ['ChineseTokenizer']
 """
 import sys
 from pathlib import Path
-from typing import Any
+from typing import List, Callable
 udir = str(Path(__file__).parent.parent.parent)
 sys.path.append(udir)
 
-from Model.CCATransformer import CCATransformer, NewCCATransformer, get_meaning_of_tokens_for_, think_about_next_token_for_
+from Model.CCATransformer import CCATransformer, NewCCATransformer, get_meaning_of_sentence_for_, think_about_next_token_for_
+from Model.mathexpand import *
+from Model.Vector import *
 
 class CCAT_Trainer:
-    def __init__(self, dx: Any = None):
+    def __init__(self, dx: float = None):
         self.dx = dx or 1e-5
         self.models_dir = self.get_models_dir()
     
@@ -633,18 +635,21 @@ class CCAT_Trainer:
         models_dir.mkdir(exist_ok=True)
         return models_dir
 
-    def loss_gradient(self, token: str, inputs: list, loss: callable, ccat: CCATransformer):
-        pass
+    def loss_gradient(self, tokens: List[str], loss: Callable, ccat: CCATransformer):
+        original_data = ccat.database
+        bigQ = get_meaning_of_sentence_for_(ccat, tokens[:-1])
+        data = get_meaning_of_sentence_for_(ccat, tokens)
 
-    def up_backward():
-        pass
+        ccat.SoftInjection_to_(tokens[-1], bigQ, add(data, [self.dx for _ in data]))
+        add_loss = loss(get_meaning_of_sentence_for_(ccat, tokens))
+        ccat.database = original_data
+        
+        ccat.SoftInjection_to_(tokens[-1], bigQ, sub(data, [self.dx for _ in data]))
+        sub_loss = loss(get_meaning_of_sentence_for_(ccat, tokens))
+        ccat.database = original_data
 
-    def down_backward():
-        pass
-
-    def sub_backward():
-        pass
-
+        return div(div(sub(add_loss, sub_loss), 2), self.dx)
+    
     def ccat_trainer():
         pass
     
@@ -3773,7 +3778,7 @@ class parrot:
             resonances[freq] = amplitude
         return resonances
     
-    def speak(self):
+    def speak(self, pitch: float = 0.0):
         fft_dict = {}
         obstruction_pos = self.check_obstructions()
         avg_area = sum(self.areas) / len(self.areas)
@@ -3788,7 +3793,7 @@ class parrot:
             if self.nasal_area >= 0.0 and self.is_obstruction_before_velum(obstruction_pos):
                 nasal_resonances = self.tube(self.nasal_length)
                 for freq, amp in nasal_resonances.items():
-                    fft_dict[freq] = amp * self.nasal_coupling * obstruction_pos / 4
+                    fft_dict[freq * 2**(pitch/2)] = amp * self.nasal_coupling * obstruction_pos / 4
                 if noise_intensity > 0:
                     for _ in range(3):
                         noise_freq = random.uniform(2000, 5000)
@@ -3804,15 +3809,15 @@ class parrot:
             
             for freq, amp in tube_resonances.items():
                 adjusted_amp = amp * (avg_area / 2.0)
-                fft_dict[freq] = adjusted_amp
+                fft_dict[freq * 2**(pitch/2)] = adjusted_amp
             
             if self.nasal_area >= 0.0:
                 nasal_resonances = self.tube(self.nasal_length)
                 for freq, amp in nasal_resonances.items():
                     if freq in fft_dict:
-                        fft_dict[freq] += amp * self.nasal_coupling * 0.5
+                        fft_dict[freq * 2**(pitch/2)] += amp * self.nasal_coupling * 0.5
                     else:
-                        fft_dict[freq] = amp * self.nasal_coupling * 0.5
+                        fft_dict[freq * 2**(pitch/2)] = amp * self.nasal_coupling * 0.5
             
             for harmonic in range(1, 6):
                 freq = base_freq * harmonic
@@ -3829,9 +3834,9 @@ class parrot:
                         amplitude += fft_dict[existing_freq] * 0.3
                         break
                 if freq in fft_dict:
-                    fft_dict[freq] = max(fft_dict[freq], amplitude)
+                    fft_dict[freq * 2**(pitch/2)] = max(fft_dict[freq * 2**(pitch/2)], amplitude)
                 else:
-                    fft_dict[freq] = amplitude
+                    fft_dict[freq * 2**(pitch/2)] = amplitude
             
             if noise_intensity > 0:
                 for _ in range(int(5 * noise_intensity)):
