@@ -131,3 +131,5 @@ class fraction:
     
     def __repr__(self):
         return f"fraction({self.numerator}, {self.denominator})"
+    
+    def FRACTYPE(): pass

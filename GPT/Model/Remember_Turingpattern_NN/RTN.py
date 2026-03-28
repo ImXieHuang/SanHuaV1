@@ -1,6 +1,6 @@
 import sys
 from pathlib import Path
-from typing import List
+from typing import List, Union
 
 udir = str(Path(__file__).parent.parent)
 sys.path.append(udir)
@@ -25,7 +25,7 @@ def sigmoid(x):
 class RTN:
     __slots__ = ('neurons', 'weights', 'tg', 'sr_graph', 'tg_graph')
 
-    def __init__(self, neurons: List[List[callable]], weights: List[dict[tuple[int] | dict[tuple[int] | float]], List[List]], tg: List[List[List[float]]], sr_graph: List[List[List[float]]] ,tg_graph: List[List[float]]):
+    def __init__(self, neurons: List[List[callable]], weights: List[Union[dict[tuple[int], dict[tuple[int], float]], List[List]]], tg: List[List[List[float]]], sr_graph: List[List[List[float]]] ,tg_graph: List[List[float]]):
         self.neurons = neurons
         self.weights = weights
         self.tg = [[j + [0.0] for j in i] for i in tg]

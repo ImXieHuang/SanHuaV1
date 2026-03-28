@@ -72,38 +72,49 @@ class CCATransformer():
             raise KeyError(f"token '{token}' not found in database")
         
         injection = self.database[token]
-        influence_graph = [0.0]*len(list(injection.keys()))
+        if not injection:
+            self.database[token] = {Query: Value}
+            return
+        
+        query_list = list(injection.keys())
+        value_list = list(injection.values())
+        
+        influence_graph = []
         maxn = fraction(100, 1)
         minn = fraction(-100, 1)
-        cnt = fraction(0, 1)
-
-        for i in injection:
-            dot_val = fraction(int(dot(i, Query) * 1000), 1000)
+        total_weight = fraction(0, 1)
+        
+        for query_vec in query_list:
+            dot_val = fraction(int(dot(query_vec, Query) * 1000), 1000)
             exponent = div(dot_val, mul(T, self.dim))
             
             exp_sub_max = sub(exponent, maxn)
             e_pow = const ** (exp_sub_max.value)
             denom1 = sub(fraction(1, 1), e_pow)
-            first_term = div(exp_sub_max, denom1)
+            first_term = div(exp_sub_max, denom1) if denom1.value != 0 else exp_sub_max
             exponent = add(first_term, maxn)
             
             exp_add_min = add(exponent, minn)
             e_pow2 = const ** (-exp_add_min.value)
             denom2 = sub(fraction(1, 1), e_pow2)
-            second_term = div(exp_add_min, denom2)
+            second_term = div(exp_add_min, denom2) if denom2.value != 0 else exp_add_min
             exponent = sub(second_term, minn)
             
             weight = const ** exponent.value
-            influence_graph[i] = weight
-            cnt = add(cnt, weight)
-
-        influence_graph = [influence_graph[i] / cnt.value for i in range(len(influence_graph))]
-
-        delat_graph = [(Value - list(injection.values())[i]) * influence_graph[i] for i in range(len(list(injection.values())))]
-
-        injection = [influence_graph[i] * delat_graph[i] for i in range(len(influence_graph))]
-
-        self.database[token] = injection
+            influence_graph.append(weight)
+            total_weight = add(total_weight, weight)
+        
+        if total_weight.value != 0:
+            influence_graph = [div(weight, total_weight) for weight in influence_graph]
+        
+        updated_dict = {}
+        for i, (query_vec, value_vec) in enumerate(zip(query_list, value_list)):
+            delta = mul(sub(Value, value_vec).components, influence_graph[i])
+            new_value = add(value_vec, Vector(delta))
+            updated_dict[query_vec] = new_value
+        
+        updated_dict[Query] = Value
+        self.database[token] = updated_dict
 
     def SoftQuery(self, token: str, Query: Vector, T: fraction = fraction(3, 2), const: fraction = Const.E) -> Vector:
         if token not in self.database:

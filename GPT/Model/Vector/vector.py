@@ -12,7 +12,7 @@ class Vector:
     def __init__(self, components: List[Union[int, float, fraction]]):
         self.components = []
         for x in components:
-            if isinstance(x, fraction):
+            if hasattr(x, "FRACTYPE"):
                 self.components.append(x)
             else:
                 self.components.append(float(x))
