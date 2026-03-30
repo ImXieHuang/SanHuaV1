@@ -1,8 +1,3 @@
-r"""
-Initialization module for mathematical expansion operations.
-This module imports and exposes the main mathematical expansion functions.
-"""
-
 from .operations import (
     mul,
     div,
