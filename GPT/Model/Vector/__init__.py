@@ -1,8 +1,3 @@
-r"""
-Initialization module for vector operations.
-This module imports and exposes the main vector classes and functions.
-"""
-
 from .vector import Vector
 from .operations import (
     add,
