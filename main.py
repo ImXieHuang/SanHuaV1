@@ -42,10 +42,10 @@ def main():
         box = TextBox(img1, text_align="left", x=3, palette=palette)
         app.add_text_box(box)
 
-        inputs = InputBox(width=49, y=10, on_submit=handle_submit)
+        inputs = InputBox(width=45, x=-2, y=10, on_submit=handle_submit)
         app.add_input_box(inputs)
 
-        enter = TextBox("↩", y=10, x=25, palette=ColorPalette(map={"text": 1, "background": 5}))
+        enter = TextBox("[<-]", y=10, x=22, palette=ColorPalette(map={"text": 1, "background": 5}))
         app.add_text_box(enter)
 
         def update():

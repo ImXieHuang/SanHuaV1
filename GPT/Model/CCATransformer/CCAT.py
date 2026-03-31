@@ -62,7 +62,7 @@ class CCATransformer:
         influence_graph = []
         total_weight = 0.0
         for query_vec in query_list:
-            dot_val = int(dot(query_vec, Query) * 1000) / 1000
+            dot_val = dot(query_vec, Query)
             exponent = div(dot_val, mul(self.temperature, self.dim))
             weight = const ** exponent
             influence_graph.append(weight)
@@ -74,8 +74,37 @@ class CCATransformer:
             delta = mul(sub(Value, value_vec).components, influence_graph[i])
             new_value = add(value_vec, Vector(delta))
             updated_dict[query_vec] = new_value
-        updated_dict[Query] = Value
         self.database[token] = updated_dict
+        if Query in self.database[token]:
+            updated_dict[Query] = Value
+        return self.database[token]
+    
+    def SoftInjection_query_to_(self, token: str, Query):
+        if token not in self.database:
+            return
+        
+        token_dict = self.database[token]
+        if not token_dict:
+            return
+        
+        keys = list(token_dict.keys())
+        values = list(token_dict.values())
+        
+        new_dict = {}
+        
+        for key, value in zip(keys, values):
+            diff = sub(key, Query)
+            distance_sq = dot(diff, diff)
+            weight = math.exp(-distance_sq / self.temperature)
+            
+            direction = sub(Query, key)
+            
+            movement = mul(direction, weight)
+            new_key = add(key, movement)
+            
+            new_dict[new_key] = value
+        
+        self.database[token] = new_dict
 
     def SoftQuery(self, token: str, Query: Vector, const: float=Const.E) -> Vector:
         if token not in self.database:
@@ -86,7 +115,7 @@ class CCATransformer:
         cnt_n = Vector([0.0] * self.dim)
         cnt_m = 0.0
         for i in query_dict:
-            dot_val = int(dot(i, Query) * 1000) / 1000
+            dot_val = dot(i, Query)
             exponent = div(dot_val, mul(self.temperature, self.dim))
             weight = const ** exponent
             weight_vec = [weight for _ in range(self.dim)]

@@ -237,6 +237,11 @@ def get_meaning_of_sentence_at_(ccat: CCAT.CCATransformer, AtQ: Vector, tokens: 
     return sentence_meaning
 
 def softmax_choice_next_token_for_(ccat: CCAT.CCATransformer, tokens: List[str]) -> str:
+    tokens_list, probabilities = softmax_choice_next_vector_for_(ccat, tokens)
+    next_token = random.choices(tokens_list, probabilities)[0]
+    return next_token
+
+def softmax_choice_next_vector_for_(ccat: CCAT.CCATransformer, tokens: List[str]) -> str:
     sentence_meaning = get_meaning_of_sentence_for_(ccat, tokens)
     token_P = {}
     cnt = 0.0
@@ -250,10 +255,14 @@ def softmax_choice_next_token_for_(ccat: CCAT.CCATransformer, tokens: List[str])
         token_P[token] = weight / cnt if cnt != 0 else 0.0
     tokens_list = list(token_P.keys())
     probabilities = list(token_P.values())
+    return tokens_list, probabilities
+
+def softmax_choice_next_token_at_(ccat: CCAT.CCATransformer, tokens: List[str], AtQ: Vector) -> str:
+    tokens_list, probabilities = softmax_choice_next_vector_at_(ccat, tokens, AtQ)
     next_token = random.choices(tokens_list, probabilities)[0]
     return next_token
 
-def softmax_choice_next_token_at_(ccat: CCAT.CCATransformer, tokens: List[str], AtQ: Vector) -> str:
+def softmax_choice_next_vector_at_(ccat: CCAT.CCATransformer, tokens: List[str], AtQ: Vector) -> str:
     sentence_meaning = get_meaning_of_sentence_at_(ccat, AtQ, tokens)
     token_P = {}
     cnt = 0.0
@@ -267,13 +276,13 @@ def softmax_choice_next_token_at_(ccat: CCAT.CCATransformer, tokens: List[str], 
         token_P[token] = weight / cnt if cnt != 0 else 0.0
     tokens_list = list(token_P.keys())
     probabilities = list(token_P.values())
-    next_token = random.choices(tokens_list, probabilities)[0]
-    return next_token
+    return tokens_list, probabilities
 
 def get_complate_for_(ccat: CCAT.CCATransformer, tokens: List[str]):
     sentence_meaning = get_meaning_of_sentence_for_(ccat, tokens[1:-1])
     token_meaning = get_meaning_of_tokens_for_(ccat, tokens)[-1]
     return vector.dot(sentence_meaning, token_meaning)
+
 if __name__ == '__main__':
     import random
     ccat = NewCCATransformer(['苹果', '好吃', '香蕉', '橘子', '甜', '酸', '水果'])

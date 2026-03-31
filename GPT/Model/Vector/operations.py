@@ -28,7 +28,7 @@ def dot(v1: Vector, v2: Vector) -> Union[float, float]:
     _validate_vectors(v1, v2)
     result = sum((x * y for x, y in zip(v1.components, v2.components)))
     if all((isinstance(x, float) for x in v1.components)) and all((isinstance(x, float) for x in v2.components)):
-        return int(result * 1000) / 1000
+        return result
     return result
 
 def cross(v1: Vector, v2: Vector) -> Vector:
