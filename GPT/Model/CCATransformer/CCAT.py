@@ -164,4 +164,3 @@ if __name__ == '__main__':
     print(f"Keys for '香蕉': {ccat.get_key_for_('香蕉')}")
     print(f"Values for '香蕉': {ccat.get_value_for_('香蕉', big_Q)}")
     print(f"Query for '香蕉': {ccat.get_query_for_('香蕉')}")
-    print(f'\nBest token for Vector([1.5]*8): {ccat.query_best_token_for_(Vector([1.5] * 8), big_Q)}')
