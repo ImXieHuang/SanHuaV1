@@ -236,47 +236,39 @@ def get_meaning_of_sentence_at_(ccat: CCAT.CCATransformer, AtQ: Vector, tokens: 
     sentence_meaning = Vector([r for r in result])
     return sentence_meaning
 
-def think_about_next_token_for_(ccat: CCAT.CCATransformer, tokens: List[str], T: float=CCAT.Const.E) -> str:
+def softmax_choice_next_token_for_(ccat: CCAT.CCATransformer, tokens: List[str], T: float=CCAT.Const.E) -> str:
     sentence_meaning = get_meaning_of_sentence_for_(ccat, tokens)
-    cnt_n = Vector([0.0] * ccat.dim)
-    cnt_m = 0.0
+    token_P = {}
+    cnt = 0.0
     for token in ccat.get_tokens():
         dot_val = vector.dot(get_meaning_of_tokens_for_(ccat, tokens + [token])[-1], sentence_meaning)
         exponent = dot_val / T
         weight = CCAT.Const.E ** exponent
-        cnt_n = Vector([i for i in mexp.add(cnt_n, mexp.mul(weight, ccat.get_key_for_(token))).components])
-        cnt_m += weight
-    if cnt_m == 0:
-        next_token = Vector([0.0] * ccat.dim)
-    else:
-        next_token = mexp.div(cnt_n, cnt_m)
-    next_token = next_token.components
-    for i in range(ccat.dim):
-        random_val = random.uniform(-T, T)
-        next_token[i] += abs(random_val) ** CCAT.Const.E * random_val / (abs(random_val) * CCAT.Const.E ** CCAT.Const.E)
-    next_token = Vector(next_token)
-    return ccat.query_best_token_for_(next_token, sentence_meaning)
+        token_P[token] = weight
+        cnt += weight
+    for token, weight in token_P.items():
+        token_P[token] = weight / cnt if cnt != 0 else 0.0
+    tokens_list = list(token_P.keys())
+    probabilities = list(token_P.values())
+    next_token = random.choices(tokens_list, probabilities)[0]
+    return next_token
 
-def think_about_next_token_at_(ccat: CCAT.CCATransformer, tokens: List[str], AtQ: Vector, T: float=CCAT.Const.E) -> str:
+def softmax_choice_next_token_at_(ccat: CCAT.CCATransformer, tokens: List[str], AtQ: Vector, T: float=CCAT.Const.E) -> str:
     sentence_meaning = get_meaning_of_sentence_at_(ccat, AtQ, tokens)
-    cnt_n = Vector([0.0] * ccat.dim)
-    cnt_m = 0.0
+    token_P = {}
+    cnt = 0.0
     for token in ccat.get_tokens():
         dot_val = vector.dot(get_meaning_of_tokens_at_(ccat, AtQ, tokens + [token])[-1], sentence_meaning)
         exponent = dot_val / T
         weight = CCAT.Const.E ** exponent
-        cnt_n = Vector([i for i in mexp.add(cnt_n, mexp.mul(weight, ccat.get_key_for_(token))).components])
-        cnt_m += weight
-    if cnt_m == 0:
-        next_token = Vector([0.0] * ccat.dim)
-    else:
-        next_token = mexp.div(cnt_n, cnt_m)
-    next_token = next_token.components
-    for i in range(ccat.dim):
-        random_val = random.uniform(-T, T)
-        next_token[i] += abs(random_val) ** CCAT.Const.E * random_val / (abs(random_val) * CCAT.Const.E ** CCAT.Const.E)
-    next_token = Vector(next_token)
-    return ccat.query_best_token_for_(next_token, sentence_meaning)
+        token_P[token] = weight
+        cnt += weight
+    for token, weight in token_P.items():
+        token_P[token] = weight / cnt if cnt != 0 else 0.0
+    tokens_list = list(token_P.keys())
+    probabilities = list(token_P.values())
+    next_token = random.choices(tokens_list, probabilities)[0]
+    return next_token
 
 def get_complate_for_(ccat: CCAT.CCATransformer, tokens: List[str]):
     sentence_meaning = get_meaning_of_sentence_for_(ccat, tokens[1:-1])
@@ -290,7 +282,7 @@ if __name__ == '__main__':
     i = 0
     C = 1.0
     while get_complate_for_(ccat, start_tokens) < C:
-        next_token = think_about_next_token_for_(ccat, start_tokens)
+        next_token = softmax_choice_next_token_for_(ccat, start_tokens)
         start_tokens.append(next_token)
         print(f'No. {i + 4} token: {next_token}', f'complate: {get_complate_for_(ccat, start_tokens)}')
         i += 1
@@ -300,7 +292,7 @@ if __name__ == '__main__':
     start_tokens = start_tokens[:3]
     i = 0
     while get_complate_for_(ccat, start_tokens) < C:
-        next_token = think_about_next_token_at_(ccat, start_tokens, ccat.get_value_for_('苹果', ccat.get_query_for_('苹果')))
+        next_token = softmax_choice_next_token_at_(ccat, start_tokens, ccat.get_value_for_('苹果', ccat.get_query_for_('苹果')))
         start_tokens.append(next_token)
         print(f'No. {i + 4} token: {next_token}', f'complate: {get_complate_for_(ccat, start_tokens)}')
         i += 1

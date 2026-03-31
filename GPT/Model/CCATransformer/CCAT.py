@@ -50,18 +50,6 @@ class CCATransformer:
             raise KeyError(f"token '{token}' not found in database")
         return self.DeSoftQuery(token, self.get_key_for_(token), self.temperature)
 
-    def query_best_token_for_(self, TokenVec: Vector, big_Q: Vector) -> str:
-        voronoi = {}
-        for token in self.database:
-            voronoi[self.get_value_for_(token, big_Q)] = token
-        best_loss = -float('inf')
-        best_token = ''
-        for token in voronoi:
-            if dot(token, TokenVec) > best_loss:
-                best_loss = dot(token, TokenVec)
-                best_token = voronoi[token]
-        return best_token
-
     def SoftInjection_to_(self, token: str, Query: Vector, Value: Vector, T: float=1.5, const: float=Const.E):
         if token not in self.database:
             raise KeyError(f"token '{token}' not found in database")

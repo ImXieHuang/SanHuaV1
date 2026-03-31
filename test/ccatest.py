@@ -6,7 +6,7 @@ udir = str(Path(__file__).parent.parent)
 sys.path.append(udir)
 
 from GPT.Model.Remember_Turingpattern_NN import RTN, neurons_generator, weights_brush, tg_brush, sr_graph_brush, tg_graph_brush
-from GPT.Model.CCATransformer import CCATransformer, Const, get_meaning_of_tokens_at_, think_about_next_token_at_, NewCCATransformer
+from GPT.Model.CCATransformer import CCATransformer, Const, get_meaning_of_tokens_at_, softmax_choice_next_token_at_, NewCCATransformer
 from GPT.Model.mathexpand import add, sub, mul, div, iterate
 from GPT.Model.Vector import Vector
 from GPT.Data.splitToken import ChineseTokenizer
@@ -41,7 +41,7 @@ while True:
     n = rtn.forward([Vector([0.0]*4)])
     bigQ = iterate(add, n)
 
-    next_token = think_about_next_token_at_(ccat, tokens, bigQ, 5)
+    next_token = softmax_choice_next_token_at_(ccat, tokens, bigQ, 5)
 
     tokens.append(next_token)
     print(tokens)
