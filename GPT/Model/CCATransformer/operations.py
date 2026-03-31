@@ -236,13 +236,13 @@ def get_meaning_of_sentence_at_(ccat: CCAT.CCATransformer, AtQ: Vector, tokens: 
     sentence_meaning = Vector([r for r in result])
     return sentence_meaning
 
-def softmax_choice_next_token_for_(ccat: CCAT.CCATransformer, tokens: List[str], T: float=CCAT.Const.E) -> str:
+def softmax_choice_next_token_for_(ccat: CCAT.CCATransformer, tokens: List[str]) -> str:
     sentence_meaning = get_meaning_of_sentence_for_(ccat, tokens)
     token_P = {}
     cnt = 0.0
     for token in ccat.get_tokens():
         dot_val = vector.dot(get_meaning_of_tokens_for_(ccat, tokens + [token])[-1], sentence_meaning)
-        exponent = dot_val / T
+        exponent = dot_val / ccat.temperature
         weight = CCAT.Const.E ** exponent
         token_P[token] = weight
         cnt += weight
@@ -253,13 +253,13 @@ def softmax_choice_next_token_for_(ccat: CCAT.CCATransformer, tokens: List[str],
     next_token = random.choices(tokens_list, probabilities)[0]
     return next_token
 
-def softmax_choice_next_token_at_(ccat: CCAT.CCATransformer, tokens: List[str], AtQ: Vector, T: float=CCAT.Const.E) -> str:
+def softmax_choice_next_token_at_(ccat: CCAT.CCATransformer, tokens: List[str], AtQ: Vector) -> str:
     sentence_meaning = get_meaning_of_sentence_at_(ccat, AtQ, tokens)
     token_P = {}
     cnt = 0.0
     for token in ccat.get_tokens():
         dot_val = vector.dot(get_meaning_of_tokens_at_(ccat, AtQ, tokens + [token])[-1], sentence_meaning)
-        exponent = dot_val / T
+        exponent = dot_val / ccat.temperature
         weight = CCAT.Const.E ** exponent
         token_P[token] = weight
         cnt += weight

@@ -50,7 +50,7 @@ class CCATransformer:
             raise KeyError(f"token '{token}' not found in database")
         return self.DeSoftQuery(token, self.get_key_for_(token), self.temperature)
 
-    def SoftInjection_to_(self, token: str, Query: Vector, Value: Vector, T: float=1.5, const: float=Const.E):
+    def SoftInjection_to_(self, token: str, Query: Vector, Value: Vector, const: float=Const.E):
         if token not in self.database:
             raise KeyError(f"token '{token}' not found in database")
         injection = self.database[token]
@@ -60,22 +60,10 @@ class CCATransformer:
         query_list = list(injection.keys())
         value_list = list(injection.values())
         influence_graph = []
-        maxn = 100.0
-        minn = -100.0
         total_weight = 0.0
         for query_vec in query_list:
             dot_val = int(dot(query_vec, Query) * 1000) / 1000
-            exponent = div(dot_val, mul(T, self.dim))
-            exp_sub_max = sub(exponent, maxn)
-            e_pow = const ** exp_sub_max
-            denom1 = sub(1.0, e_pow)
-            first_term = div(exp_sub_max, denom1) if denom1 != 0 else exp_sub_max
-            exponent = add(first_term, maxn)
-            exp_add_min = add(exponent, minn)
-            e_pow2 = const ** (-exp_add_min)
-            denom2 = sub(1.0, e_pow2)
-            second_term = div(exp_add_min, denom2) if denom2 != 0 else exp_add_min
-            exponent = sub(second_term, minn)
+            exponent = div(dot_val, mul(self.temperature, self.dim))
             weight = const ** exponent
             influence_graph.append(weight)
             total_weight = add(total_weight, weight)
@@ -89,7 +77,7 @@ class CCATransformer:
         updated_dict[Query] = Value
         self.database[token] = updated_dict
 
-    def SoftQuery(self, token: str, Query: Vector, T: float=1.5, const: float=Const.E) -> Vector:
+    def SoftQuery(self, token: str, Query: Vector, const: float=Const.E) -> Vector:
         if token not in self.database:
             raise KeyError(f"token '{token}' not found in database")
         query_dict = self.database[token]
@@ -99,7 +87,7 @@ class CCATransformer:
         cnt_m = 0.0
         for i in query_dict:
             dot_val = int(dot(i, Query) * 1000) / 1000
-            exponent = div(dot_val, mul(T, self.dim))
+            exponent = div(dot_val, mul(self.temperature, self.dim))
             weight = const ** exponent
             weight_vec = [weight for _ in range(self.dim)]
             weighted_val = mul(weight_vec, query_dict[i].components)
@@ -110,7 +98,7 @@ class CCATransformer:
         result = div(cnt_n.components, cnt_m)
         return Vector([r for r in result])
 
-    def DeSoftQuery(self, token: str, Val: Vector, T: float=1.5, const: float=Const.E) -> Vector:
+    def DeSoftQuery(self, token: str, Val: Vector, const: float=Const.E) -> Vector:
         if token not in self.database:
             raise KeyError(f"token '{token}' not found in database")
         query_dict = self.database[token]
@@ -120,7 +108,7 @@ class CCATransformer:
         cnt_m = 0.0
         for i in query_dict:
             dot_val = dot(mul(sub(Val, query_dict[i]), sub(Val, query_dict[i])), Vector([1.0] * self.dim))
-            exponent = div(dot_val, mul(T, self.dim))
+            exponent = div(dot_val, mul(self.temperature, self.dim))
             weight = const ** exponent
             weight_vec = [weight for _ in range(self.dim)]
             weighted_val = mul(weight_vec, i.components)
