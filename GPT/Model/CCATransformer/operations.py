@@ -58,7 +58,7 @@ def get_meaning_of_tokens_for_(ccat: CCAT.CCATransformer, tokens: List[str]) -> 
     bigQ_graph = [[Vector([0.0] * ccat.dim) for _ in range(len(tokens))] for _ in range(len(tokens))]
     for i in range(len(tokens)):
         for j in range(i + 1):
-            if i == 0:
+            if j == 0:
                 bigQ_graph[i][j] = ccat.get_key_for_(tokens[i])
             else:
                 vector_list = []
@@ -129,7 +129,7 @@ def get_meaning_of_tokens_at_(ccat: CCAT.CCATransformer, AtQ: Vector, tokens: Li
     bigQ_graph = [[Vector([0.0] * ccat.dim) for _ in range(len(tokens))] for _ in range(len(tokens))]
     for i in range(len(tokens)):
         for j in range(i + 1):
-            if i == 0:
+            if j == 0:
                 bigQ_graph[i][j] = ccat.get_key_for_(tokens[i])
             else:
                 vector_list = []

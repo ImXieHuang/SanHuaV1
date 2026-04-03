@@ -51,6 +51,7 @@ class CCATransformer:
         return self.DeSoftQuery(token, self.get_key_for_(token), self.temperature)
 
     def SoftInjection_to_(self, token: str, Query: Vector, Value: Vector, const: float=Const.E):
+        self.SoftInjection_query_to_(token, Query)
         if token not in self.database:
             raise KeyError(f"token '{token}' not found in database")
         injection = self.database[token]
