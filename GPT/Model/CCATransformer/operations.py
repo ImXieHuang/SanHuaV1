@@ -58,7 +58,7 @@ def get_meaning_of_tokens_for_(ccat: CCAT.CCATransformer, tokens: List[str]) -> 
     bigQ_graph = [[Vector([0.0] * ccat.dim) for _ in range(len(tokens))] for _ in range(len(tokens))]
     for i in range(len(tokens)):
         for j in range(i + 1):
-            if j == 0:
+            if i == 0 and j == 0:
                 bigQ_graph[i][j] = ccat.get_key_for_(tokens[i])
             else:
                 vector_list = []
@@ -237,11 +237,11 @@ def get_meaning_of_sentence_at_(ccat: CCAT.CCATransformer, AtQ: Vector, tokens: 
     return sentence_meaning
 
 def softmax_choice_next_token_for_(ccat: CCAT.CCATransformer, tokens: List[str]) -> str:
-    tokens_list, probabilities = softmax_choice_next_vector_for_(ccat, tokens)
+    tokens_list, probabilities = softmax_choice_next_probability_for_(ccat, tokens)
     next_token = random.choices(tokens_list, probabilities)[0]
     return next_token
 
-def softmax_choice_next_vector_for_(ccat: CCAT.CCATransformer, tokens: List[str]) -> str:
+def softmax_choice_next_probability_for_(ccat: CCAT.CCATransformer, tokens: List[str]) -> str:
     sentence_meaning = get_meaning_of_sentence_for_(ccat, tokens)
     token_P = {}
     cnt = 0.0
@@ -258,11 +258,11 @@ def softmax_choice_next_vector_for_(ccat: CCAT.CCATransformer, tokens: List[str]
     return tokens_list, probabilities
 
 def softmax_choice_next_token_at_(ccat: CCAT.CCATransformer, tokens: List[str], AtQ: Vector) -> str:
-    tokens_list, probabilities = softmax_choice_next_vector_at_(ccat, tokens, AtQ)
+    tokens_list, probabilities = softmax_choice_next_probability_at_(ccat, tokens, AtQ)
     next_token = random.choices(tokens_list, probabilities)[0]
     return next_token
 
-def softmax_choice_next_vector_at_(ccat: CCAT.CCATransformer, tokens: List[str], AtQ: Vector) -> str:
+def softmax_choice_next_probability_at_(ccat: CCAT.CCATransformer, tokens: List[str], AtQ: Vector) -> str:
     sentence_meaning = get_meaning_of_sentence_at_(ccat, AtQ, tokens)
     token_P = {}
     cnt = 0.0

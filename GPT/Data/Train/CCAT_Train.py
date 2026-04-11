@@ -1,7 +1,7 @@
 import sys
 from pathlib import Path
 from typing import List, Callable
-from random import uniform
+import random as rand
 udir = str(Path(__file__).parent.parent.parent)
 sys.path.append(udir)
 from Model.CCATransformer import *
@@ -47,3 +47,15 @@ class CCAT_Trainer:
             gradient.components[i] = (add_loss - sub_loss) / (2 * self.dx)
         
         return gradient
+    
+    def trainer(self, tokens: List[str], lossfunction: callable, lambdafunction: callable, r: float, maxdw: float, dropout: float, ccat: CCATransformer):
+        pass
+
+if __name__ == "__main__":
+    data = ["a","b","c"]
+
+    ccat = NewCCATransformer(data)
+
+    p = softmax_choice_next_probability_for_(ccat, rand.choices(data, k=5))
+
+    print(-log2(p[1][p[0].index(rand.choice(data))]))

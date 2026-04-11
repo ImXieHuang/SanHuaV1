@@ -12,44 +12,48 @@ Project file tree:
     │   │   │   └── 训练文本3(GPT生成作文).txt
     │   │   ├── Train
     │   │   │   ├── models
+    │   │   │   │   ├── trained_model_dynamic.pkl
     │   │   │   │   ├── trained_model_dynamic.zip
     │   │   │   │   ├── trained_model_dynamic_info.json
+    │   │   │   │   ├── training_pair.pkl
     │   │   │   │   └── training_pair.zip
     │   │   │   ├── CCAT_Train.py
     │   │   │   └── RTN_Train.py
     │   │   └── splitToken
     │   │       ├── __pycache__
-    │   │       │   ├── __init__.cpython-313.pyc
-    │   │       │   └── splitToken.cpython-313.pyc
+    │   │       │   ├── __init__.pypy310.pyc
+    │   │       │   └── splitToken.pypy310.pyc
     │   │       ├── models
-    │   │       │   ├── model
-    │   │       │   ├── model.zip
-    │   │       │   └── model_info.json
+    │   │       │   ├── model.pkl
+    │   │       │   ├── model_info.json
+    │   │       │   └── model_vocab.txt
     │   │       ├── __init__.py
     │   │       └── splitToken.py
     │   └── Model
     │       ├── CCATransformer
     │       │   ├── __pycache__
-    │       │   │   ├── CCA.cpython-313.pyc
-    │       │   │   ├── CCAT.cpython-313.pyc
-    │       │   │   ├── __init__.cpython-313.pyc
-    │       │   │   └── operations.cpython-313.pyc
+    │       │   │   ├── CCAT.pypy310.pyc
+    │       │   │   ├── __init__.pypy310.pyc
+    │       │   │   └── operations.pypy310.pyc
     │       │   ├── CCAT.py
     │       │   ├── __init__.py
     │       │   └── operations.py
     │       ├── Remember_Turingpattern_NN
     │       │   ├── __pycache__
     │       │   │   ├── RTN.cpython-313.pyc
+    │       │   │   ├── RTN.pypy310.pyc
     │       │   │   ├── __init__.cpython-313.pyc
-    │       │   │   └── operations.cpython-313.pyc
+    │       │   │   ├── __init__.pypy310.pyc
+    │       │   │   ├── operations.cpython-313.pyc
+    │       │   │   └── operations.pypy310.pyc
     │       │   ├── RTN.py
     │       │   ├── __init__.py
     │       │   └── operations.py
     │       ├── Vector
     │       │   ├── __pycache__
-    │       │   │   ├── __init__.cpython-313.pyc
-    │       │   │   ├── operations.cpython-313.pyc
-    │       │   │   └── vector.cpython-313.pyc
+    │       │   │   ├── __init__.pypy310.pyc
+    │       │   │   ├── operations.pypy310.pyc
+    │       │   │   └── vector.pypy310.pyc
     │       │   ├── __init__.py
     │       │   ├── operations.py
     │       │   └── vector.py
@@ -62,13 +66,15 @@ Project file tree:
     │       ├── convolutional
     │       │   ├── __pycache__
     │       │   │   ├── __init__.cpython-313.pyc
-    │       │   │   └── conv.cpython-313.pyc
+    │       │   │   ├── __init__.pypy310.pyc
+    │       │   │   ├── conv.cpython-313.pyc
+    │       │   │   └── conv.pypy310.pyc
     │       │   ├── __init__.py
     │       │   └── conv.py
     │       └── mathexpand
     │           ├── __pycache__
-    │           │   ├── __init__.cpython-313.pyc
-    │           │   └── operations.cpython-313.pyc
+    │           │   ├── __init__.pypy310.pyc
+    │           │   └── operations.pypy310.pyc
     │           ├── __init__.py
     │           └── operations.py
     ├── Outputio
@@ -98,15 +104,14 @@ Project file tree:
     │   │   └── speak.py
     │   ├── tuidisplay
     │   │   ├── __pycache__
-    │   │   │   ├── __init__.cpython-313.pyc
-    │   │   │   ├── ttf_renderer.cpython-313.pyc
-    │   │   │   └── tuidisplay.cpython-313.pyc
+    │   │   │   ├── __init__.pypy310.pyc
+    │   │   │   ├── ttf_renderer.pypy310.pyc
+    │   │   │   └── tuidisplay.pypy310.pyc
     │   │   ├── __init__.py
     │   │   ├── ttf_renderer.py
     │   │   └── tuidisplay.py
     │   └── tuimodel
     │       └── model.py
-    ├── src
     ├── test
     │   ├── ccatest.py
     │   ├── loading_string.py
@@ -336,7 +341,6 @@ class ChineseTokenizer:
             
             score = cohesion * min_entropy * math.log(freq + 1)
             candidate_scores[ngram] = score
-            print(f"  - candidate_scores[{"\\n".join(ngram.split("\n"))}]={candidate_scores[ngram]}")
         
         print(f"Found {len(candidate_scores)} candidates")
         
@@ -362,7 +366,7 @@ class ChineseTokenizer:
         
         print(f"Selected {len(tokens)} tokens total")
         return tokens
-    
+
     def save_model(self, model_name=None):
         models_dir = self.get_models_dir()
         
@@ -374,7 +378,6 @@ class ChineseTokenizer:
         
         model_data = {
             'tokens': list(self.tokens),
-            'ngram_freq': self.ngram_freq,
             'max_token_len': self.max_token_len,
             'min_freq_factor': self.min_freq_factor,
             'model_info': self.model_info
@@ -382,6 +385,12 @@ class ChineseTokenizer:
         
         with open(model_path, 'wb') as f:
             pickle.dump(model_data, f)
+        
+        vocab_path = models_dir / f"{model_name}_vocab.txt"
+        with open(vocab_path, 'w', encoding='utf-8') as f:
+            for token in self.tokens:
+                escaped = token.replace('\\', '\\\\').replace('\n', '\\n').replace('\r', '\\r').replace('\t', '\\t')
+                f.write(f"{escaped}\n")
         
         json_path = models_dir / f"{model_name}_info.json"
         json_data = {
@@ -397,43 +406,72 @@ class ChineseTokenizer:
             json.dump(json_data, f, ensure_ascii=False, indent=2)
         
         print(f"Model saved to: {model_path}")
+        print(f"Vocab saved to: {vocab_path} ({len(self.tokens)} tokens)")
         return model_name
-    
+
     def load_model(self, model_name):
         models_dir = self.get_models_dir()
+        
+        txt_path = models_dir / f"{model_name}_vocab.txt"
+        if txt_path.exists():
+            print(f"Loading vocab from txt: {txt_path}")
+            with open(txt_path, 'r', encoding='utf-8') as f:
+                self.tokens = set()
+                for line in f:
+                    token = line.strip()
+                    if '\\n' in token or '\\r' in token or '\\t' in token or '\\\\' in token:
+                        token = token.replace('\\\\', '\\').replace('\\n', '\n').replace('\\r', '\r').replace('\\t', '\t')
+                    self.tokens.add(token)
+            
+            json_path = models_dir / f"{model_name}_info.json"
+            if json_path.exists():
+                with open(json_path, 'r', encoding='utf-8') as f:
+                    info = json.load(f)
+                    self.max_token_len = info.get('max_token_len', self.max_token_len)
+                    self.min_freq_factor = info.get('min_freq_factor', self.min_freq_factor)
+                    self.model_info = info.get('model_info', {})
+            
+            print(f"Loaded {len(self.tokens)} tokens from txt")
+            return True
+        
         model_path = models_dir / f"{model_name}.pkl"
-        
         if not model_path.exists():
-            available_models = [f.stem for f in models_dir.glob("*.pkl")]
-            raise FileNotFoundError(f"Model '{model_name}' not found. Available: {available_models}")
+            available = [f.stem.replace('_vocab', '') for f in models_dir.glob("*_vocab.txt")]
+            raise FileNotFoundError(f"Model '{model_name}' not found. Available: {available}")
         
+        print(f"Loading from pickle: {model_path}")
         with open(model_path, 'rb') as f:
             model_data = pickle.load(f)
         
         self.tokens = set(model_data['tokens'])
-        self.ngram_freq = model_data['ngram_freq']
         self.max_token_len = model_data['max_token_len']
         self.min_freq_factor = model_data['min_freq_factor']
         self.model_info = model_data.get('model_info', {})
+        self.ngram_freq = {}
         
-        print(f"Model '{model_name}' loaded")
-        print(f"Vocabulary: {len(self.tokens)} tokens")
+        print(f"Loaded {len(self.tokens)} tokens from pickle")
         return True
-    
-    def load_list_as_model(self, tokens:List[str]):
-        self.tokens = self.tokens | set(tokens)
-        return True
-    
+
     def list_models(self):
         models_dir = self.get_models_dir()
         models = []
         
-        for pkl_file in models_dir.glob("*.pkl"):
-            json_file = models_dir / f"{pkl_file.stem}_info.json"
-            if json_file.exists():
+        for json_file in models_dir.glob("*_info.json"):
+            try:
                 with open(json_file, 'r', encoding='utf-8') as f:
                     info = json.load(f)
                 models.append(info)
+            except:
+                pass
+        
+        for txt_file in models_dir.glob("*_vocab.txt"):
+            model_name = txt_file.stem.replace('_vocab', '')
+            if not any(m.get('model_name') == model_name for m in models):
+                models.append({
+                    'model_name': model_name,
+                    'num_tokens': sum(1 for _ in open(txt_file, 'r', encoding='utf-8')),
+                    'created_at': datetime.fromtimestamp(txt_file.stat().st_mtime).isoformat()
+                })
         
         return models
     
@@ -450,7 +488,7 @@ class ChineseTokenizer:
         self.ngram_freq, total_chars = self.count_ngrams(text)
         print(f"Unique n-grams: {len(self.ngram_freq)}")
         
-        self.tokens = self.tokens | self.extract_tokens(self.ngram_freq, total_chars, text)
+        self.tokens = self.extract_tokens(self.ngram_freq, total_chars, text)
         print(f"Final tokens: {len(self.tokens)}")
         
         self.model_info = {
@@ -464,11 +502,13 @@ class ChineseTokenizer:
             saved_name = self.save_model(model_name)
             self.model_info['saved_as'] = saved_name
         
+        self.ngram_freq = {}
+        
         return self.tokens
     
     def tokenize(self, text, method='max_match'):
         if not self.tokens:
-            raise ValueError("Please train or load model")
+            raise ValueError("Please train or load model first")
         
         if method == 'max_match':
             return self._max_match_tokenize(text)
@@ -538,7 +578,6 @@ class ChineseTokenizer:
                 i += 1
         
         return tokens
-
 
 if __name__ == "__main__":
     tokenizer = ChineseTokenizer(max_token_len=20, min_freq_factor=50)
@@ -613,13 +652,16 @@ __all__ = ['ChineseTokenizer']
 import sys
 from pathlib import Path
 from typing import List, Callable
-from random import uniform
+import random as rand
 udir = str(Path(__file__).parent.parent.parent)
 sys.path.append(udir)
 from Model.CCATransformer import *
 from Model.mathexpand import *
 from Model.Vector import Vector
-import math
+from math import log2
+
+def cross_entropy(p, q):
+    return sum([i*log2(j) for i,j in zip(p,q)])
 
 class CCAT_Trainer:
     def __init__(self, dx: float=None):
@@ -656,43 +698,18 @@ class CCAT_Trainer:
             gradient.components[i] = (add_loss - sub_loss) / (2 * self.dx)
         
         return gradient
+    
+    def trainer(self, tokens: List[str], lossfunction: callable, lambdafunction: callable, r: float, maxdw: float, dropout: float, ccat: CCATransformer):
+        pass
 
-if __name__ == '__main__':
-    text = ['你好', '。', '我', '是', '三花', '。', '你', '叫', '什么', '名字', '？']
-    c = NewCCATransformer(text)
-    for i in range(9): c = FusionCCATransformer(c , NewCCATransformer(text))
-    t = CCAT_Trainer(dx=1e-5)
+if __name__ == "__main__":
+    data = ["a","b","c"]
 
-    def l(x):
-        def softmax(p):
-            return math.exp(p)/(math.exp(i)+math.exp(j))
-        
-        hartley = []
+    ccat = NewCCATransformer(data)
 
-        for i,j in zip(x.components, y.components):
-            hartley.append(softmax(j) * math.log(softmax(i)) + (1-softmax(j)) * math.log(1-softmax(i)))
+    p = softmax_choice_next_probability_for_(ccat, rand.choices(data, k=5))
 
-        return sum(hartley)
-
-    cnt = 0
-    while cnt < 50:
-        cnt += 1
-        print(f"{cnt = }")
-
-        for i in [text[:j] for j in range(3, len(text))]:
-            y = get_meaning_of_tokens_for_(c, i)[-1]
-            if uniform(0.0, 1.0) >= 0.3:
-                garadient = t.loss_gradient(i[:-1], l, c)
-                print(f"token = {i[-1]}:\nbigQ = {y}, {garadient = }")
-                c.SoftInjection_to_(i[-1], y, add(c.SoftQuery(i[-1], y), mul(garadient, 0.03)))
-                c.SoftInjection_query_to_(i[-1], y)
-
-    tokens = text[:2]
-    print(tokens)
-    while True:
-        next_token = softmax_choice_next_token_for_(c, tokens)
-        print(next_token)
-        tokens.append(next_token)
+    print(-log2(p[1][p[0].index(rand.choice(data))]))
 """
 
 # GPT\Data\Train\RTN_Train.py:
@@ -731,7 +748,7 @@ class RTN_Trainer:
         self.pid_d = loss
         return ret 
 
-    def weight_loss_gradient(self, start: tuple, end: tuple, inputs: list, loss: callable, rtn: RTN):
+    def weight_loss_derivative(self, start: tuple, end: tuple, inputs: list, loss: callable, rtn: RTN):
         original_weights = rtn.weights[0][start][end]
     
         rtn.weights[0][start][end] = sub(rtn.weights[0][start][end], self.dx)
@@ -744,7 +761,7 @@ class RTN_Trainer:
 
         return div(div(sub(add_loss, sub_loss), 2), self.dx)
     
-    def parameter_loss_gradient(self, index: tuple, inputs: list, loss: callable, rtn: RTN):
+    def parameter_loss_derivative(self, index: tuple, inputs: list, loss: callable, rtn: RTN):
         original_weights = rtn.weights[1][index[0]][index[1]]
     
         rtn.weights[1][index[0]][index[1]] = sub(rtn.weights[1][index[0]][index[1]], self.dx)
@@ -770,36 +787,57 @@ class RTN_Trainer:
         original_weights = rtn.weights
         try:
             rtn.tg = [[[0.0 for _ in j] for j in i] for i in rtn.tg]
-            Lam = 0.0
-            Lambdacnt = 0
-            for i in list(rtn.weights[0].values()):
-                for j in list(i.values()):
-                    Lam = add(Lam, lambdafunction(j))
-                    Lambdacnt += 1
-            for i in rtn.weights[1]:
-                for j in i:
-                    Lam = add(Lam, lambdafunction(j))
-                    Lambdacnt += 1
-
-            Lam = div(Lam, Lambdacnt)
             
-            def Wgradfunction(start, end, weight):
-                return self.weight_loss_gradient(start, end, ip, lambda x: lossfunction(x, op) + Lam, rtn)
-            def Pgradfunction(index, _, weight):
-                return self.parameter_loss_gradient(index, ip, lambda x: lossfunction(x, op) + Lam, rtn)
-            def Witeration(start, end, weight):
-                if uniform(0.0,1.0) < dropout: return
-                rtn.weights[0][start][end] = sub(rtn.weights[0][start][end], min(max(-maxdw, mul(r, wg[start][end])), maxdw))
-            def Piteration(index, _, weight):
-                if uniform(0.0,1.0) < dropout: return
-                rtn.weights[1][index[0]][index[1]] = sub(rtn.weights[1][index[0]][index[1]], min(max(-maxdw, mul(r, pg[index][_])), maxdw))
-        
-            for ip,op in zip(inputs, outputs):
+            for ip, op in zip(inputs, outputs):
                 print(f"Training {ip} -> {op}")
-                wg = self.traverse_weight_for_(Wgradfunction, rtn)
-                pg = self.traverse_weight_for_(Pgradfunction, rtn)
-                self.traverse_weight_for_(Witeration, rtn)
-                self.traverse_weight_for_(Piteration, rtn)
+                
+                Lam = 0.0
+                Lambdacnt = 0
+                for i in list(rtn.weights[0].values()):
+                    for j in list(i.values()):
+                        Lam = add(Lam, lambdafunction(j))
+                        Lambdacnt += 1
+                for i in rtn.weights[1]:
+                    for j in i:
+                        Lam = add(Lam, lambdafunction(j))
+                        Lambdacnt += 1
+                Lam = div(Lam, Lambdacnt) if Lambdacnt > 0 else 0.0
+                
+                wg = {}
+                for start in list(rtn.weights[0].keys()):
+                    wg[start] = {}
+                    for end in list(rtn.weights[0][start].keys()):
+                        def loss_with_reg(x):
+                            return add(lossfunction(x, op), Lam)
+                        wg[start][end] = self.weight_loss_derivative(start, end, ip, loss_with_reg, rtn)
+                
+                pg = {}
+                for idx in range(len(rtn.weights[1])):
+                    pg[idx] = {}
+                    for jdx in range(len(rtn.weights[1][idx])):
+                        def loss_with_reg(x):
+                            return add(lossfunction(x, op), Lam)
+                        pg[idx][jdx] = self.parameter_loss_derivative((idx, jdx), ip, loss_with_reg, rtn)
+                
+                for start in list(wg.keys()):
+                    for end in list(wg[start].keys()):
+                        if uniform(0.0, 1.0) >= dropout:
+                            delta = mul(r, wg[start][end])
+                            if delta > maxdw:
+                                delta = maxdw
+                            if delta < -maxdw:
+                                delta = -maxdw
+                            rtn.weights[0][start][end] = sub(rtn.weights[0][start][end], delta)
+                
+                for idx in list(pg.keys()):
+                    for jdx in list(pg[idx].keys()):
+                        if uniform(0.0, 1.0) >= dropout:
+                            delta = mul(r, pg[idx][jdx])
+                            if delta > maxdw:
+                                delta = maxdw
+                            if delta < -maxdw:
+                                delta = -maxdw
+                            rtn.weights[1][idx][jdx] = sub(rtn.weights[1][idx][jdx], delta)
 
         except Exception as error:
             rtn.weights = original_weights
@@ -870,17 +908,17 @@ class RTN_Trainer:
                     
                     add_loss = sum([(rtn_val - pid_val)**2 for rtn_val, pid_val in zip(rtn_sampling[pipe], pid_sampling)])
                     
-                    gradient = (add_loss - sub_loss) / (2 * self.dx)
-                    gradient = max(min(gradient, 1.0), -1.0)
+                    derivative = (add_loss - sub_loss) / (2 * self.dx)
+                    derivative = max(min(derivative, 1.0), -1.0)
                     
                     if param_idx == 0:
-                        kp[pipe] -= gradient * r
+                        kp[pipe] -= derivative * r
                         kp[pipe] = max(min(kp[pipe], KP_MAX), KP_MIN)
                     elif param_idx == 1:
-                        ki[pipe] -= gradient * r
+                        ki[pipe] -= derivative * r
                         ki[pipe] = max(min(ki[pipe], KI_MAX), KI_MIN)
                     else:
-                        kd[pipe] -= gradient * r
+                        kd[pipe] -= derivative * r
                         kd[pipe] = max(min(kd[pipe], KD_MAX), KD_MIN)
                 
                 self.pid_i = 0.0
@@ -896,8 +934,7 @@ class RTN_Trainer:
                 total_loss += current_loss
         return [list(row) for row in zip(kp, ki, kd)]
 
-    def sr_graph_loss_gradient(self, index: tuple, input, target_output, target_pid: list, samplingloss: callable, staticloss: callable, rtn: RTN, maxt: int = 30, sample_rate: int = 5):     
-        print(f"  compute sr gradient {index = }")
+    def sr_graph_loss_derivative(self, index: tuple, input, target_output, target_pid: list, samplingloss: callable, staticloss: callable, rtn: RTN, maxt: int = 30, sample_rate: int = 5):     
         original_sr_graph = rtn.sr_graph[index[0]][index[1]][index[2]]
         
         rtn.sr_graph[index[0]][index[1]][index[2]] = add(rtn.sr_graph[index[0]][index[1]][index[2]], self.dx)
@@ -914,8 +951,7 @@ class RTN_Trainer:
 
         return div(div(sub(add_loss, sub_loss), 2), self.dx)
 
-    def tg_graph_loss_gradient(self, i: int, j: int, input, target_output, target_pid: list, samplingloss: callable, staticloss: callable, rtn: RTN, maxt: int = 30, sample_rate: int = 5):
-        print(f"  compute tg gradient tg.{i = } tg.{j = }")
+    def tg_graph_loss_derivative(self, i: int, j: int, input, target_output, target_pid: list, samplingloss: callable, staticloss: callable, rtn: RTN, maxt: int = 30, sample_rate: int = 5):
         original_tg_graph = rtn.tg_graph[i][j]
         
         rtn.tg_graph[i][j] = add(rtn.tg_graph[i][j], self.dx)
@@ -959,21 +995,37 @@ class RTN_Trainer:
             ip = inputs[0]
             op = outputs[0]
             target_pid = target_pids[0]
-            
-            print(f"Training single pair: {ip} -> {op} with target PID {target_pid}")
 
             for i in range(len(rtn.sr_graph)):
                 for j in range(len(rtn.sr_graph[i])):
                     for k in range(len(rtn.sr_graph[i][j])):
                         if uniform(0.0,1.0) >= dropout:
-                            gradient = self.sr_graph_loss_gradient((i, j, k), ip, op, target_pid, samplinglossfunction, lambda x, y: add(staticlossfunction(x, y), Lam), rtn, maxt, sample_rate)
-                            rtn.sr_graph[i][j][k] = sub(rtn.sr_graph[i][j][k], min(max(-maxdw, mul(r, gradient)), maxdw))
+                            def loss_with_reg_sampling(pid_params, target):
+                                return add(samplinglossfunction(pid_params, target), Lam)
+                            def loss_with_reg_static(x, y):
+                                return add(staticlossfunction(x, y), Lam)
+                            derivative = self.sr_graph_loss_derivative((i, j, k), ip, op, target_pid, loss_with_reg_sampling, loss_with_reg_static, rtn, maxt, sample_rate)
+                            delta = mul(r, derivative)
+                            if delta > maxdw:
+                                delta = maxdw
+                            if delta < -maxdw:
+                                delta = -maxdw
+                            rtn.sr_graph[i][j][k] = sub(rtn.sr_graph[i][j][k], delta)
             
             for i in range(len(rtn.tg_graph)):
                 for j in range(len(rtn.tg_graph[i])):
                     if uniform(0.0,1.0) >= dropout:
-                        gradient = self.tg_graph_loss_gradient(i, j, ip, op, target_pid, samplinglossfunction, lambda x, y: add(staticlossfunction(x, y), Lam), rtn, maxt, sample_rate)
-                        rtn.tg_graph[i][j] = sub(rtn.tg_graph[i][j], min(max(-maxdw, mul(r, gradient)), maxdw))
+                        def loss_with_reg_sampling(pid_params, target):
+                            return add(samplinglossfunction(pid_params, target), Lam)
+                        def loss_with_reg_static(x, y):
+                            return add(staticlossfunction(x, y), Lam)
+                        derivative = self.tg_graph_loss_derivative(i, j, ip, op, target_pid, loss_with_reg_sampling, loss_with_reg_static, rtn, maxt, sample_rate)
+                        delta = mul(r, derivative)
+                        if delta > maxdw:
+                            delta = maxdw
+                        if delta < -maxdw:
+                            delta = -maxdw
+                        rtn.tg_graph[i][j] = sub(rtn.tg_graph[i][j], delta)
 
         except Exception as error:
             rtn.tg = original_tg
@@ -1271,7 +1323,7 @@ if __name__ == "__main__":
 
         print(f"\n{r = }\n")
 
-        for epoch in range(10):
+        for epoch in range(50):
             print(f"## epoch {epoch+1}")
 
             print(t.static_trainer(ip, op, static_loss, lambda_loss, r, maxdw, dropout, rtn))
@@ -1723,6 +1775,7 @@ class CCATransformer:
         return self.DeSoftQuery(token, self.get_key_for_(token), self.temperature)
 
     def SoftInjection_to_(self, token: str, Query: Vector, Value: Vector, const: float=Const.E):
+        self.SoftInjection_query_to_(token, Query)
         if token not in self.database:
             raise KeyError(f"token '{token}' not found in database")
         injection = self.database[token]
@@ -1917,7 +1970,7 @@ def get_meaning_of_tokens_for_(ccat: CCAT.CCATransformer, tokens: List[str]) -> 
     bigQ_graph = [[Vector([0.0] * ccat.dim) for _ in range(len(tokens))] for _ in range(len(tokens))]
     for i in range(len(tokens)):
         for j in range(i + 1):
-            if i == 0:
+            if i == 0 and j == 0:
                 bigQ_graph[i][j] = ccat.get_key_for_(tokens[i])
             else:
                 vector_list = []
@@ -1988,7 +2041,7 @@ def get_meaning_of_tokens_at_(ccat: CCAT.CCATransformer, AtQ: Vector, tokens: Li
     bigQ_graph = [[Vector([0.0] * ccat.dim) for _ in range(len(tokens))] for _ in range(len(tokens))]
     for i in range(len(tokens)):
         for j in range(i + 1):
-            if i == 0:
+            if j == 0:
                 bigQ_graph[i][j] = ccat.get_key_for_(tokens[i])
             else:
                 vector_list = []
@@ -2096,11 +2149,11 @@ def get_meaning_of_sentence_at_(ccat: CCAT.CCATransformer, AtQ: Vector, tokens: 
     return sentence_meaning
 
 def softmax_choice_next_token_for_(ccat: CCAT.CCATransformer, tokens: List[str]) -> str:
-    tokens_list, probabilities = softmax_choice_next_vector_for_(ccat, tokens)
+    tokens_list, probabilities = softmax_choice_next_probability_for_(ccat, tokens)
     next_token = random.choices(tokens_list, probabilities)[0]
     return next_token
 
-def softmax_choice_next_vector_for_(ccat: CCAT.CCATransformer, tokens: List[str]) -> str:
+def softmax_choice_next_probability_for_(ccat: CCAT.CCATransformer, tokens: List[str]) -> str:
     sentence_meaning = get_meaning_of_sentence_for_(ccat, tokens)
     token_P = {}
     cnt = 0.0
@@ -2117,11 +2170,11 @@ def softmax_choice_next_vector_for_(ccat: CCAT.CCATransformer, tokens: List[str]
     return tokens_list, probabilities
 
 def softmax_choice_next_token_at_(ccat: CCAT.CCATransformer, tokens: List[str], AtQ: Vector) -> str:
-    tokens_list, probabilities = softmax_choice_next_vector_at_(ccat, tokens, AtQ)
+    tokens_list, probabilities = softmax_choice_next_probability_at_(ccat, tokens, AtQ)
     next_token = random.choices(tokens_list, probabilities)[0]
     return next_token
 
-def softmax_choice_next_vector_at_(ccat: CCAT.CCATransformer, tokens: List[str], AtQ: Vector) -> str:
+def softmax_choice_next_probability_at_(ccat: CCAT.CCATransformer, tokens: List[str], AtQ: Vector) -> str:
     sentence_meaning = get_meaning_of_sentence_at_(ccat, AtQ, tokens)
     token_P = {}
     cnt = 0.0
@@ -2144,12 +2197,13 @@ def get_complate_for_(ccat: CCAT.CCATransformer, tokens: List[str]):
 
 if __name__ == '__main__':
     import random
-    ccat = NewCCATransformer(['苹果', '好吃', '香蕉', '橘子', '甜', '酸', '水果'])
+    ccat = NewCCATransformer(['苹果', '好吃', '香蕉', '橘子', '甜', '酸', '水果', '<end>'])
     start_tokens = [random.choice(ccat.get_tokens())] + [random.choice(ccat.get_tokens())] + [random.choice(ccat.get_tokens())]
+    next_token = ''
     print(f'Start token: {start_tokens}')
     i = 0
     C = 1.0
-    while get_complate_for_(ccat, start_tokens) < C:
+    while next_token != "<end>":
         next_token = softmax_choice_next_token_for_(ccat, start_tokens)
         start_tokens.append(next_token)
         print(f'No. {i + 4} token: {next_token}', f'complate: {get_complate_for_(ccat, start_tokens)}')
@@ -2158,8 +2212,9 @@ if __name__ == '__main__':
     print(start_tokens)
     print('with AtQ')
     start_tokens = start_tokens[:3]
+    next_token = ''
     i = 0
-    while get_complate_for_(ccat, start_tokens) < C:
+    while next_token != "<end>":
         next_token = softmax_choice_next_token_at_(ccat, start_tokens, ccat.get_value_for_('苹果', ccat.get_query_for_('苹果')))
         start_tokens.append(next_token)
         print(f'No. {i + 4} token: {next_token}', f'complate: {get_complate_for_(ccat, start_tokens)}')
@@ -2179,9 +2234,9 @@ from .operations import (
     get_meaning_of_sentence_for_,
     get_meaning_of_sentence_at_,
     softmax_choice_next_token_for_,
-    softmax_choice_next_vector_for_,
+    softmax_choice_next_probability_for_,
     softmax_choice_next_token_at_,
-    softmax_choice_next_vector_at_
+    softmax_choice_next_probability_at_
 )
 
 __all__=[
@@ -2194,9 +2249,9 @@ __all__=[
     'get_meaning_of_sentence_for_',
     'get_meaning_of_sentence_at_',
     'softmax_choice_next_token_for_',
-    'softmax_choice_next_vector_for_',
+    'softmax_choice_next_probability_for_',
     'softmax_choice_next_token_at_',
-    'softmax_choice_next_vector_at_'
+    'softmax_choice_next_probability_at_'
 ]
 """
 
@@ -2585,10 +2640,10 @@ if __name__ == "__main__":
     print(f"Pool 4D result shape: {len(pool_4d)}x{len(pool_4d[0])}x{len(pool_4d[0][0])}x{len(pool_4d[0][0][0])}")
     
     test_data = [1, 5, 3, 8, 2, 7, 4, 6]
-    print(f"测试数据: {test_data}")
-    print(f"最大池化: {pool(test_data, pool_size=2, stride=2, pool_type='max')}")
-    print(f"平均池化: {pool(test_data, pool_size=2, stride=2, pool_type='avg')}")
-    print(f"最小池化: {pool(test_data, pool_size=2, stride=2, pool_type='min')}")
+    print(f"Test data: {test_data}")
+    print(f"Max pool: {pool(test_data, pool_size=2, stride=2, pool_type='max')}")
+    print(f"Avg pool: {pool(test_data, pool_size=2, stride=2, pool_type='avg')}")
+    print(f"Min pool: {pool(test_data, pool_size=2, stride=2, pool_type='min')}")
 """
 
 # GPT\Model\convolutional\__init__.py:
@@ -4889,7 +4944,7 @@ text = """
 ct = ChineseTokenizer()
 ct.load_model("model")
 
-Texts = ct.tokenize(text)
+Texts = ct.tokenize(text) + ['<end>']
 
 print(Texts)
 
@@ -4912,7 +4967,9 @@ while True:
     n = rtn.forward([Vector([0.0]*4)])
     bigQ = iterate(add, n)
 
-    next_token = softmax_choice_next_token_at_(ccat, tokens, bigQ, 5)
+    next_token = softmax_choice_next_token_at_(ccat, tokens, bigQ)
+
+    if next_token == '<end>': break
 
     tokens.append(next_token)
     print(tokens)
