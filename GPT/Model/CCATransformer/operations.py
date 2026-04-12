@@ -254,7 +254,7 @@ def softmax_choice_next_probability_for_(ccat: CCAT.CCATransformer, tokens: List
     for token, weight in token_P.items():
         token_P[token] = weight / cnt if cnt != 0 else 0.0
     tokens_list = list(token_P.keys())
-    probabilities = list(token_P.values())
+    probabilities = [i/sum(token_P.values()) for i in token_P.values()]
     return tokens_list, probabilities
 
 def softmax_choice_next_token_at_(ccat: CCAT.CCATransformer, tokens: List[str], AtQ: Vector) -> str:
@@ -275,7 +275,7 @@ def softmax_choice_next_probability_at_(ccat: CCAT.CCATransformer, tokens: List[
     for token, weight in token_P.items():
         token_P[token] = weight / cnt if cnt != 0 else 0.0
     tokens_list = list(token_P.keys())
-    probabilities = list(token_P.values())
+    probabilities = [i/sum(token_P.values()) for i in token_P.values()]
     return tokens_list, probabilities
 
 def get_complate_for_(ccat: CCAT.CCATransformer, tokens: List[str]):

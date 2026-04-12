@@ -9,9 +9,6 @@ from Model.mathexpand import *
 from Model.Vector import Vector
 from math import log2
 
-def cross_entropy(p, q):
-    return sum([i*log2(j) for i,j in zip(p,q)])
-
 class CCAT_Trainer:
     def __init__(self, dx: float=None):
         self.dx = dx or 0.001
@@ -37,11 +34,11 @@ class CCAT_Trainer:
             value = ccat.SoftQuery(tokens[-1], bigQ)
 
             ccat.SoftInjection_to_(tokens[-1], bigQ, sub(value, perturbation))
-            sub_loss = loss(get_meaning_of_tokens_for_(ccat, tokens)[-1])
+            sub_loss = loss(tokens, ccat)
             ccat.database = original_data
             
             ccat.SoftInjection_to_(tokens[-1], bigQ, add(value, perturbation))
-            add_loss = loss(get_meaning_of_tokens_for_(ccat, tokens)[-1])
+            add_loss = loss(tokens, ccat)
             ccat.database = original_data
             
             gradient.components[i] = (add_loss - sub_loss) / (2 * self.dx)
@@ -51,11 +48,20 @@ class CCAT_Trainer:
     def trainer(self, tokens: List[str], lossfunction: callable, lambdafunction: callable, r: float, maxdw: float, dropout: float, ccat: CCATransformer):
         pass
 
+    def cross_entropy(self, tokens: List[str], actuality: str):
+        p = softmax_choice_next_probability_for_(ccat, tokens)
+        return -log2(p[1][p[0].index(actuality)])
+
 if __name__ == "__main__":
+    t =  CCAT_Trainer()
+
     data = ["a","b","c"]
 
     ccat = NewCCATransformer(data)
 
-    p = softmax_choice_next_probability_for_(ccat, rand.choices(data, k=5))
+    tokens = rand.choices(data, k=5)
+    actuality = rand.choice(data)
 
-    print(-log2(p[1][p[0].index(rand.choice(data))]))
+    h = t.cross_entropy(tokens, actuality)
+
+    print(f"debug:\n{tokens = }, {actuality = }, {h = }")
