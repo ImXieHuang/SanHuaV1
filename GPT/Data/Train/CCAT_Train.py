@@ -61,18 +61,23 @@ class CCAT_Trainer:
                 def loss_with_reg(tokens, ccat):
                     return add(lossfunction(tokens, ccat), Lam)
                 gradient = self.loss_gradient(n_gram, loss_with_reg, ccat)
+                injection = []
                 for i in range(ccat.dim):
+                    delta = 0.0
                     if rand.uniform(0.0, 1.0) >= dropout:
-                        delta = r * gradient.components[i]
+                        delta = -r * gradient.components[i]
                         if delta > maxdw:
                             delta = maxdw
                         if delta < -maxdw:
                             delta = -maxdw
-                        ccat.SoftInjection_to_(n_gram[-1], get_meaning_of_sentence_for_(ccat, n_gram[:-1]), delta)
-                        ccat.SoftInjection_query_to_(n_gram[-1], get_meaning_of_sentence_for_(ccat, n_gram[:-1]))
+                    injection.append(delta)
+                injection = ccat.SoftQuery(n_gram[-1], get_meaning_of_sentence_for_(ccat, n_gram[:-1])) + Vector(injection)
+                ccat.SoftInjection_to_(n_gram[-1], get_meaning_of_sentence_for_(ccat, n_gram[:-1]), injection)
+                ccat.SoftInjection_query_to_(n_gram[-1], get_meaning_of_sentence_for_(ccat, n_gram[:-1]))
                 
         except Exception as error:
             ccat.database = original_data
+            raise error
             return error
 
         return True

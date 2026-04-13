@@ -21,8 +21,6 @@ Project file tree:
     │   │   │   └── RTN_Train.py
     │   │   └── splitToken
     │   │       ├── __pycache__
-    │   │       │   ├── __init__.pypy310.pyc
-    │   │       │   └── splitToken.pypy310.pyc
     │   │       ├── models
     │   │       │   ├── model.pkl
     │   │       │   ├── model_info.json
@@ -32,49 +30,26 @@ Project file tree:
     │   └── Model
     │       ├── CCATransformer
     │       │   ├── __pycache__
-    │       │   │   ├── CCAT.pypy310.pyc
-    │       │   │   ├── __init__.pypy310.pyc
-    │       │   │   └── operations.pypy310.pyc
     │       │   ├── CCAT.py
     │       │   ├── __init__.py
     │       │   └── operations.py
     │       ├── Remember_Turingpattern_NN
-    │       │   ├── __pycache__
-    │       │   │   ├── RTN.cpython-313.pyc
-    │       │   │   ├── RTN.pypy310.pyc
-    │       │   │   ├── __init__.cpython-313.pyc
-    │       │   │   ├── __init__.pypy310.pyc
-    │       │   │   ├── operations.cpython-313.pyc
-    │       │   │   └── operations.pypy310.pyc
     │       │   ├── RTN.py
     │       │   ├── __init__.py
     │       │   └── operations.py
     │       ├── Vector
     │       │   ├── __pycache__
-    │       │   │   ├── __init__.pypy310.pyc
-    │       │   │   ├── operations.pypy310.pyc
-    │       │   │   └── vector.pypy310.pyc
     │       │   ├── __init__.py
     │       │   ├── operations.py
     │       │   └── vector.py
     │       ├── compare
-    │       │   ├── __pycache__
-    │       │   │   ├── __init__.cpython-313.pyc
-    │       │   │   └── operations.cpython-313.pyc
     │       │   ├── __init__.py
     │       │   └── operations.py
     │       ├── convolutional
-    │       │   ├── __pycache__
-    │       │   │   ├── __init__.cpython-313.pyc
-    │       │   │   ├── __init__.pypy310.pyc
-    │       │   │   ├── conv.cpython-313.pyc
-    │       │   │   └── conv.pypy310.pyc
     │       │   ├── __init__.py
     │       │   └── conv.py
     │       └── mathexpand
     │           ├── __pycache__
-    │           │   ├── __init__.pypy310.pyc
-    │           │   └── operations.pypy310.pyc
     │           ├── __init__.py
     │           └── operations.py
     ├── Outputio
@@ -82,31 +57,18 @@ Project file tree:
     │   │   ├── JetBrainsMono-Bold.ttf
     │   │   └── OFL.md
     │   ├── parrot
-    │   │   ├── __pycache__
-    │   │   │   ├── __init__.cpython-313.pyc
-    │   │   │   └── parrot.cpython-313.pyc
     │   │   ├── __init__.py
     │   │   └── parrot.py
     │   ├── pinyin
-    │   │   ├── __pycache__
-    │   │   │   ├── PinyinManager.cpython-313.pyc
-    │   │   │   └── __init__.cpython-313.pyc
     │   │   ├── PinyinManager.py
     │   │   ├── __init__.py
     │   │   ├── pinyin.json
     │   │   ├── pinyin.txt
     │   │   └── pinyin_LICENSE
     │   ├── tts
-    │   │   ├── __pycache__
-    │   │   │   ├── __init__.cpython-313.pyc
-    │   │   │   └── speak.cpython-313.pyc
     │   │   ├── __init__.py
     │   │   └── speak.py
     │   ├── tuidisplay
-    │   │   ├── __pycache__
-    │   │   │   ├── __init__.pypy310.pyc
-    │   │   │   ├── ttf_renderer.pypy310.pyc
-    │   │   │   └── tuidisplay.pypy310.pyc
     │   │   ├── __init__.py
     │   │   ├── ttf_renderer.py
     │   │   └── tuidisplay.py
@@ -660,9 +622,6 @@ from Model.mathexpand import *
 from Model.Vector import Vector
 from math import log2
 
-def cross_entropy(p, q):
-    return sum([i*log2(j) for i,j in zip(p,q)])
-
 class CCAT_Trainer:
     def __init__(self, dx: float=None):
         self.dx = dx or 0.001
@@ -688,11 +647,11 @@ class CCAT_Trainer:
             value = ccat.SoftQuery(tokens[-1], bigQ)
 
             ccat.SoftInjection_to_(tokens[-1], bigQ, sub(value, perturbation))
-            sub_loss = loss(get_meaning_of_tokens_for_(ccat, tokens)[-1])
+            sub_loss = loss(tokens, ccat)
             ccat.database = original_data
             
             ccat.SoftInjection_to_(tokens[-1], bigQ, add(value, perturbation))
-            add_loss = loss(get_meaning_of_tokens_for_(ccat, tokens)[-1])
+            add_loss = loss(tokens, ccat)
             ccat.database = original_data
             
             gradient.components[i] = (add_loss - sub_loss) / (2 * self.dx)
@@ -700,16 +659,80 @@ class CCAT_Trainer:
         return gradient
     
     def trainer(self, tokens: List[str], lossfunction: callable, lambdafunction: callable, r: float, maxdw: float, dropout: float, ccat: CCATransformer):
-        pass
+        original_data = ccat.database
+        try:
+            Lam = 0.0
+            Lambdacnt = 0
+            for i in list(ccat.database.values()):
+                for j,k in list(i.items()):
+                    Lam = add(add(Lam, lambdafunction(j)), lambdafunction(k))
+                    Lambdacnt += 1
+            Lam = sum(Lam.components)/Lambdacnt if Lambdacnt > 0 else 0.0
+
+            for n_gram in [tokens[0:i] for i in range(2, len(tokens))]:
+                print(f"Training on {n_gram[0:-1]} -> {n_gram[-1]}")
+                def loss_with_reg(tokens, ccat):
+                    return add(lossfunction(tokens, ccat), Lam)
+                gradient = self.loss_gradient(n_gram, loss_with_reg, ccat)
+                injection = []
+                for i in range(ccat.dim):
+                    delta = 0.0
+                    if rand.uniform(0.0, 1.0) >= dropout:
+                        delta = -r * gradient.components[i]
+                        if delta > maxdw:
+                            delta = maxdw
+                        if delta < -maxdw:
+                            delta = -maxdw
+                    injection.append(delta)
+                injection = ccat.SoftQuery(n_gram[-1], get_meaning_of_sentence_for_(ccat, n_gram[:-1])) + Vector(injection)
+                ccat.SoftInjection_to_(n_gram[-1], get_meaning_of_sentence_for_(ccat, n_gram[:-1]), injection)
+                ccat.SoftInjection_query_to_(n_gram[-1], get_meaning_of_sentence_for_(ccat, n_gram[:-1]))
+                
+        except Exception as error:
+            ccat.database = original_data
+            raise error
+            return error
+
+        return True
+
+    def cross_entropy(self, tokens: List[str], actuality: str, ccat: CCATransformer) -> float:
+        p = softmax_choice_next_probability_for_(ccat, tokens)
+        return -log2(p[1][p[0].index(actuality)])
 
 if __name__ == "__main__":
-    data = ["a","b","c"]
+    from Data.splitToken import ChineseTokenizer
+    from Model.mathexpand import iterate
 
-    ccat = NewCCATransformer(data)
 
-    p = softmax_choice_next_probability_for_(ccat, rand.choices(data, k=5))
+    text = """大家好，我是三花V1"""
 
-    print(-log2(p[1][p[0].index(rand.choice(data))]))
+    ct = ChineseTokenizer()
+    ct.load_model("model")
+
+    Texts = ct.tokenize(text) + ['<end>']
+
+    ccat = iterate(FusionCCATransformer, [NewCCATransformer(Texts, 8) for _ in range(4)])
+
+    t = CCAT_Trainer()
+    for cnt in range(100):
+        print(f"Epoch {cnt + 1}")
+
+        print(t.trainer(Texts, lambda tokens, ccat: t.cross_entropy(tokens, Texts[Texts.index(tokens[-1]) + 1] if len(tokens) > 1 else None, ccat), lambda x: 0.05 * x**2, 0.1, 0.5, 0.2, ccat))
+        
+        print("Model data:")
+        for i in ccat.database:
+            print(f"{i}:")
+            for j in ccat.database[i]:
+                print(f"  {j} : {ccat.database[i][j]}")
+        
+        print("test:")
+
+        for i in range(len(Texts) - 1):
+            print(f"{Texts[i]} -> {Texts[i + 1]}:   {softmax_choice_next_token_for_(ccat, Texts[:i + 1])}")
+            print(f"loss: {t.cross_entropy(Texts[:i + 1], Texts[i + 1], ccat)}")
+            print()
+    
+    print("Training completed.")
 """
 
 # GPT\Data\Train\RTN_Train.py:
@@ -1918,6 +1941,7 @@ import random
 from typing import Union, List
 import sys
 from pathlib import Path
+from math import sin, cos
 udir = str(Path(__file__).parent.parent)
 sys.path.append(udir)
 import Vector as vector
@@ -2019,7 +2043,7 @@ def get_meaning_of_tokens_for_(ccat: CCAT.CCATransformer, tokens: List[str]) -> 
                     meaning_vector = Vector([float(meaning_vector)] * ccat.dim)
                 except:
                     meaning_vector = Vector([0.0] * ccat.dim)
-        meaning_vectors.append(meaning_vector)
+        meaning_vectors.append(meaning_vector + Vector([sin(i/10000**(i/ccat.dim)) if i % 2 == 0 else cos(i/10000**(i/ccat.dim)) for i in range(ccat.dim)]))
     meaning_vectors[0] = ccat.get_key_for_(tokens[0])
     return meaning_vectors
 
@@ -2090,7 +2114,7 @@ def get_meaning_of_tokens_at_(ccat: CCAT.CCATransformer, AtQ: Vector, tokens: Li
                     meaning_vector = Vector([float(meaning_vector)] * ccat.dim)
                 except:
                     meaning_vector = Vector([0.0] * ccat.dim)
-        meaning_vectors.append(meaning_vector)
+        meaning_vectors.append(meaning_vector + Vector([sin(i/10000**(i/ccat.dim)) if i % 2 == 0 else cos(i/10000**(i/ccat.dim)) for i in range(ccat.dim)]))
     meaning_vectors[0] = ccat.get_key_for_(tokens[0])
     return meaning_vectors
 
@@ -2166,7 +2190,7 @@ def softmax_choice_next_probability_for_(ccat: CCAT.CCATransformer, tokens: List
     for token, weight in token_P.items():
         token_P[token] = weight / cnt if cnt != 0 else 0.0
     tokens_list = list(token_P.keys())
-    probabilities = list(token_P.values())
+    probabilities = [i/sum(token_P.values()) for i in token_P.values()]
     return tokens_list, probabilities
 
 def softmax_choice_next_token_at_(ccat: CCAT.CCATransformer, tokens: List[str], AtQ: Vector) -> str:
@@ -2187,7 +2211,7 @@ def softmax_choice_next_probability_at_(ccat: CCAT.CCATransformer, tokens: List[
     for token, weight in token_P.items():
         token_P[token] = weight / cnt if cnt != 0 else 0.0
     tokens_list = list(token_P.keys())
-    probabilities = list(token_P.values())
+    probabilities = [i/sum(token_P.values()) for i in token_P.values()]
     return tokens_list, probabilities
 
 def get_complate_for_(ccat: CCAT.CCATransformer, tokens: List[str]):
