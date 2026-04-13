@@ -46,72 +46,6 @@ class CCAT_Trainer:
         return gradient
     
     def trainer(self, tokens: List[str], lossfunction: callable, lambdafunction: callable, r: float, maxdw: float, dropout: float, ccat: CCATransformer):
-        """仿照以下内容实现的一个训练器函数
-def static_trainer(self, inputs: List[List], outputs: List[List], lossfunction: callable, lambdafunction: callable, r: float, maxdw: float, dropout: float, rtn: RTN):
-    original_tg = rtn.tg
-    original_weights = rtn.weights
-    try:
-        rtn.tg = [[[0.0 for _ in j] for j in i] for i in rtn.tg]
-        
-        for ip, op in zip(inputs, outputs):
-            print(f"Training {ip} -> {op}")
-            
-            Lam = 0.0
-            Lambdacnt = 0
-            for i in list(rtn.weights[0].values()):
-                for j in list(i.values()):
-                    Lam = add(Lam, lambdafunction(j))
-                    Lambdacnt += 1
-            for i in rtn.weights[1]:
-                for j in i:
-                    Lam = add(Lam, lambdafunction(j))
-                    Lambdacnt += 1
-            Lam = div(Lam, Lambdacnt) if Lambdacnt > 0 else 0.0
-            
-            wg = {}
-            for start in list(rtn.weights[0].keys()):
-                wg[start] = {}
-                for end in list(rtn.weights[0][start].keys()):
-                    def loss_with_reg(x):
-                        return add(lossfunction(x, op), Lam)
-                    wg[start][end] = self.weight_loss_derivative(start, end, ip, loss_with_reg, rtn)
-            
-            pg = {}
-            for idx in range(len(rtn.weights[1])):
-                pg[idx] = {}
-                for jdx in range(len(rtn.weights[1][idx])):
-                    def loss_with_reg(x):
-                        return add(lossfunction(x, op), Lam)
-                    pg[idx][jdx] = self.parameter_loss_derivative((idx, jdx), ip, loss_with_reg, rtn)
-            
-            for start in list(wg.keys()):
-                for end in list(wg[start].keys()):
-                    if uniform(0.0, 1.0) >= dropout:
-                        delta = mul(r, wg[start][end])
-                        if delta > maxdw:
-                            delta = maxdw
-                        if delta < -maxdw:
-                            delta = -maxdw
-                        rtn.weights[0][start][end] = sub(rtn.weights[0][start][end], delta)
-            
-            for idx in list(pg.keys()):
-                for jdx in list(pg[idx].keys()):
-                    if uniform(0.0, 1.0) >= dropout:
-                        delta = mul(r, pg[idx][jdx])
-                        if delta > maxdw:
-                            delta = maxdw
-                        if delta < -maxdw:
-                            delta = -maxdw
-                        rtn.weights[1][idx][jdx] = sub(rtn.weights[1][idx][jdx], delta)
-
-    except Exception as error:
-        rtn.weights = original_weights
-        rtn.tg = original_tg
-        return error
-
-    rtn.tg = original_tg
-    return True
-        """
         original_data = ccat.database
         try:
             Lam = 0.0
@@ -124,6 +58,18 @@ def static_trainer(self, inputs: List[List], outputs: List[List], lossfunction: 
 
             for n_gram in [tokens[0:i] for i in range(1, len(tokens))]:
                 print(f"Training on {n_gram} -> {n_gram[-1]}")
+                def loss_with_reg(x):
+                    return add(lossfunction(tokens, ccat), Lam)
+                gradient = self.loss_gradient(n_gram, loss_with_reg, ccat)
+                for i in range(ccat.dim):
+                    if rand.uniform(0.0, 1.0) >= dropout:
+                        delta = r * gradient.components[i]
+                        if delta > maxdw:
+                            delta = maxdw
+                        if delta < -maxdw:
+                            delta = -maxdw
+                        ccat.SoftInjection_query_to_(n_gram[-1], get_meaning_of_sentence_for_(ccat, n_gram[:-1]))
+                        ccat.SoftInjection_to_(n_gram[-1], get_meaning_of_sentence_for_(ccat, n_gram[:-1]), delta)
                 
         except Exception as error:
             ccat.database = original_data
@@ -131,22 +77,31 @@ def static_trainer(self, inputs: List[List], outputs: List[List], lossfunction: 
 
         return True
 
-    def cross_entropy(self, tokens: List[str], actuality: str):
+    def cross_entropy(self, tokens: List[str], actuality: str, ccat: CCATransformer) -> float:
         p = softmax_choice_next_probability_for_(ccat, tokens)
         return -log2(p[1][p[0].index(actuality)])
 
 if __name__ == "__main__":
-    t =  CCAT_Trainer()
+    from Data.splitToken import ChineseTokenizer
+    from Model.mathexpand import iterate
 
-    data = ["a","b","c"]
 
-    ccat = NewCCATransformer(data)
+    text = """
+从去年起，仿佛听得有人说我是仇猫的。那根据自然是在我的那一篇《兔和猫》；这是自画招供，当然无话可说，——但倒也毫不介意。
+    """
 
-    tokens = rand.choices(data, k=5)
-    actuality = rand.choice(data)
+    ct = ChineseTokenizer()
+    ct.load_model("model")
 
-    h = t.cross_entropy(tokens, actuality)
+    Texts = ct.tokenize(text) + ['<end>']
 
-    print(f"debug:\n{tokens = }, {actuality = }, {h = }")
+    ccat = iterate(FusionCCATransformer, [NewCCATransformer(Texts, 8) for _ in range(4)])
 
-    t.trainer(tokens, t.cross_entropy, lambda x: x**2, 0.01, 0.1, 0.5, ccat)
+    t = CCAT_Trainer()
+    for cnt in range(100):
+        print(f"Epoch {cnt + 1}")
+        t.trainer(Texts, lambda tokens, ccat: t.cross_entropy(tokens, Texts[Texts.index(tokens[-1]) + 1] if len(tokens) > 1 else None, ccat), 0.01, 0.1, 0.5, 1.0, ccat)
+        for i in range(len(Texts) - 1):
+            print(f"{Texts[i]} -> {Texts[i + 1]}:   {softmax_choice_next_token_for_(ccat, Texts[:i + 1])}")
+    
+    print("Training completed.")

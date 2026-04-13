@@ -6,6 +6,7 @@ import random
 from typing import Union, List
 import sys
 from pathlib import Path
+from math import sin
 udir = str(Path(__file__).parent.parent)
 sys.path.append(udir)
 import Vector as vector
@@ -85,7 +86,7 @@ def get_meaning_of_tokens_for_(ccat: CCAT.CCATransformer, tokens: List[str]) -> 
                             big_Q = Vector([float(big_Q)] * ccat.dim)
                         except:
                             big_Q = Vector([0.0] * ccat.dim)
-                bigQ_graph[i][j] = ccat.get_value_for_(tokens[j], big_Q)
+                bigQ_graph[i][j] = ccat.get_value_for_(tokens[j], big_Q) + Vector([sin(i + j + l) for l in range(ccat.dim)])
     meaning_vectors = []
     for i in range(len(tokens)):
         vector_list = []
@@ -156,7 +157,7 @@ def get_meaning_of_tokens_at_(ccat: CCAT.CCATransformer, AtQ: Vector, tokens: Li
                             big_Q = Vector([float(big_Q)] * ccat.dim)
                         except:
                             big_Q = Vector([0.0] * ccat.dim)
-                bigQ_graph[i][j] = ccat.get_value_for_(tokens[j], big_Q)
+                bigQ_graph[i][j] = ccat.get_value_for_(tokens[j], big_Q) + Vector([sin(i + j + l) for l in range(ccat.dim)])
     meaning_vectors = []
     for i in range(len(tokens)):
         vector_list = []
