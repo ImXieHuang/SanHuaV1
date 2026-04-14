@@ -54,11 +54,11 @@ class CCAT_Trainer:
                 for j,k in list(i.items()):
                     Lam = add(add(Lam, lambdafunction(j)), lambdafunction(k))
                     Lambdacnt += 1
-            Lam = div(Lam, Lambdacnt) if Lambdacnt > 0 else 0.0
+            Lam = sum(Lam.components)/Lambdacnt if Lambdacnt > 0 else 0.0
 
-            for n_gram in [tokens[0:i] for i in range(1, len(tokens))]:
-                print(f"Training on {n_gram} -> {n_gram[-1]}")
-                def loss_with_reg(x):
+            for n_gram in [tokens[0:i] for i in range(2, len(tokens))]:
+                print(f"Training on {n_gram[0:-1]} -> {n_gram[-1]}")
+                def loss_with_reg(tokens, ccat):
                     return add(lossfunction(tokens, ccat), Lam)
                 gradient = self.loss_gradient(n_gram, loss_with_reg, ccat)
                 for i in range(ccat.dim):
@@ -68,8 +68,8 @@ class CCAT_Trainer:
                             delta = maxdw
                         if delta < -maxdw:
                             delta = -maxdw
-                        ccat.SoftInjection_query_to_(n_gram[-1], get_meaning_of_sentence_for_(ccat, n_gram[:-1]))
                         ccat.SoftInjection_to_(n_gram[-1], get_meaning_of_sentence_for_(ccat, n_gram[:-1]), delta)
+                        ccat.SoftInjection_query_to_(n_gram[-1], get_meaning_of_sentence_for_(ccat, n_gram[:-1]))
                 
         except Exception as error:
             ccat.database = original_data
@@ -86,9 +86,7 @@ if __name__ == "__main__":
     from Model.mathexpand import iterate
 
 
-    text = """
-从去年起，仿佛听得有人说我是仇猫的。那根据自然是在我的那一篇《兔和猫》；这是自画招供，当然无话可说，——但倒也毫不介意。
-    """
+    text = """大家好，我是三花V1"""
 
     ct = ChineseTokenizer()
     ct.load_model("model")
@@ -100,8 +98,20 @@ if __name__ == "__main__":
     t = CCAT_Trainer()
     for cnt in range(100):
         print(f"Epoch {cnt + 1}")
-        t.trainer(Texts, lambda tokens, ccat: t.cross_entropy(tokens, Texts[Texts.index(tokens[-1]) + 1] if len(tokens) > 1 else None, ccat), 0.01, 0.1, 0.5, 1.0, ccat)
+
+        print(t.trainer(Texts, lambda tokens, ccat: t.cross_entropy(tokens, Texts[Texts.index(tokens[-1]) + 1] if len(tokens) > 1 else None, ccat), lambda x: 0.05 * x**2, 0.1, 0.5, 0.2, ccat))
+        
+        print("Model data:")
+        for i in ccat.database:
+            print(f"{i}:")
+            for j in ccat.database[i]:
+                print(f"  {j} : {ccat.database[i][j]}")
+        
+        print("test:")
+
         for i in range(len(Texts) - 1):
             print(f"{Texts[i]} -> {Texts[i + 1]}:   {softmax_choice_next_token_for_(ccat, Texts[:i + 1])}")
+            print(f"loss: {t.cross_entropy(Texts[:i + 1], Texts[i + 1], ccat)}")
+            print()
     
     print("Training completed.")

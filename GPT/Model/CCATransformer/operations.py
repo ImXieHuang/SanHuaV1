@@ -6,7 +6,7 @@ import random
 from typing import Union, List
 import sys
 from pathlib import Path
-from math import sin
+from math import sin, cos
 udir = str(Path(__file__).parent.parent)
 sys.path.append(udir)
 import Vector as vector
@@ -86,7 +86,7 @@ def get_meaning_of_tokens_for_(ccat: CCAT.CCATransformer, tokens: List[str]) -> 
                             big_Q = Vector([float(big_Q)] * ccat.dim)
                         except:
                             big_Q = Vector([0.0] * ccat.dim)
-                bigQ_graph[i][j] = ccat.get_value_for_(tokens[j], big_Q) + Vector([sin(i + j + l) for l in range(ccat.dim)])
+                bigQ_graph[i][j] = ccat.get_value_for_(tokens[j], big_Q)
     meaning_vectors = []
     for i in range(len(tokens)):
         vector_list = []
@@ -108,7 +108,7 @@ def get_meaning_of_tokens_for_(ccat: CCAT.CCATransformer, tokens: List[str]) -> 
                     meaning_vector = Vector([float(meaning_vector)] * ccat.dim)
                 except:
                     meaning_vector = Vector([0.0] * ccat.dim)
-        meaning_vectors.append(meaning_vector)
+        meaning_vectors.append(meaning_vector + Vector([sin(i/10000**(i/ccat.dim)) if i % 2 == 0 else cos(i/10000**(i/ccat.dim)) for i in range(ccat.dim)]))
     meaning_vectors[0] = ccat.get_key_for_(tokens[0])
     return meaning_vectors
 
@@ -157,7 +157,7 @@ def get_meaning_of_tokens_at_(ccat: CCAT.CCATransformer, AtQ: Vector, tokens: Li
                             big_Q = Vector([float(big_Q)] * ccat.dim)
                         except:
                             big_Q = Vector([0.0] * ccat.dim)
-                bigQ_graph[i][j] = ccat.get_value_for_(tokens[j], big_Q) + Vector([sin(i + j + l) for l in range(ccat.dim)])
+                bigQ_graph[i][j] = ccat.get_value_for_(tokens[j], big_Q)
     meaning_vectors = []
     for i in range(len(tokens)):
         vector_list = []
@@ -179,7 +179,7 @@ def get_meaning_of_tokens_at_(ccat: CCAT.CCATransformer, AtQ: Vector, tokens: Li
                     meaning_vector = Vector([float(meaning_vector)] * ccat.dim)
                 except:
                     meaning_vector = Vector([0.0] * ccat.dim)
-        meaning_vectors.append(meaning_vector)
+        meaning_vectors.append(meaning_vector + Vector([sin(i/10000**(i/ccat.dim)) if i % 2 == 0 else cos(i/10000**(i/ccat.dim)) for i in range(ccat.dim)]))
     meaning_vectors[0] = ccat.get_key_for_(tokens[0])
     return meaning_vectors
 
