@@ -53,7 +53,7 @@ def get_meaning_of_tokens_for_(ccat: CCAT.CCATransformer, tokens: List[str]) -> 
     for i in range(len(tokens)):
         row = influence_graph[i]
         max_val = max(row)
-        exp_row = [CCAT.Const.E ** (val - max_val) for val in row]
+        exp_row = [CCAT.Const.E ** ((val - max_val)/ccat.temperature) for val in row]
         sum_exp = sum(exp_row)
         influence_graph[i] = [val / sum_exp for val in exp_row]
     bigQ_graph = [[Vector([0.0] * ccat.dim) for _ in range(len(tokens))] for _ in range(len(tokens))]
@@ -124,7 +124,7 @@ def get_meaning_of_tokens_at_(ccat: CCAT.CCATransformer, AtQ: Vector, tokens: Li
     for i in range(len(tokens)):
         row = influence_graph[i]
         max_val = max(row)
-        exp_row = [CCAT.Const.E ** (val - max_val) for val in row]
+        exp_row = [CCAT.Const.E ** ((val - max_val) / ccat.temperature) for val in row]
         sum_exp = sum(exp_row)
         influence_graph[i] = [val / sum_exp for val in exp_row]
     bigQ_graph = [[Vector([0.0] * ccat.dim) for _ in range(len(tokens))] for _ in range(len(tokens))]
@@ -191,7 +191,7 @@ def get_meaning_of_sentence_for_(ccat: CCAT.CCATransformer, tokens: List[str]) -
     for i in range(len(tokens)):
         row = influence_graph[i]
         max_val = max(row)
-        exp_row = [CCAT.Const.E ** (val - max_val) for val in row]
+        exp_row = [CCAT.Const.E ** ((val - max_val) / ccat.temperature) for val in row]
         sum_exp = sum(exp_row)
         influence_graph[i] = [val / sum_exp for val in exp_row]
     tokens_influence = [0.0 for _ in range(len(tokens))]
@@ -218,7 +218,7 @@ def get_meaning_of_sentence_at_(ccat: CCAT.CCATransformer, AtQ: Vector, tokens: 
     for i in range(len(tokens)):
         row = influence_graph[i]
         max_val = max(row)
-        exp_row = [CCAT.Const.E ** (val - max_val) for val in row]
+        exp_row = [CCAT.Const.E ** ((val - max_val) / ccat.temperature) for val in row]
         sum_exp = sum(exp_row)
         influence_graph[i] = [val / sum_exp for val in exp_row]
     tokens_influence = [0.0 for _ in range(len(tokens))]
