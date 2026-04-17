@@ -112,7 +112,7 @@ class ChineseTokenizer:
     def extract_tokens(self, ngram_freq, total_chars, text):
         tokens = set()
         
-        min_freq = max(3, total_chars // (self.min_freq_factor * 100))
+        min_freq = max(3, total_chars // (self.min_freq_factor * 1000))
         print(f"Minimum frequency threshold: {min_freq}")
         
         candidate_scores = {}
@@ -133,13 +133,13 @@ class ChineseTokenizer:
                 print(f"  Evaluated {evaluated} n-grams...")
             
             cohesion = self.calculate_cohesion(ngram, ngram_freq, total_chars)
-            if cohesion < 1.5:
+            if cohesion < 0.5:
                 continue
             
             left_entropy, right_entropy = self.calculate_boundary_entropy(ngram, text)
             min_entropy = min(left_entropy, right_entropy)
             
-            if min_entropy < 0.02:
+            if min_entropy < 0.001:
                 continue
             
             score = cohesion * min_entropy * math.log(freq + 1)
