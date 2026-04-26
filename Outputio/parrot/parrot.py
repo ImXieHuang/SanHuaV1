@@ -1,11 +1,15 @@
 import random
-import winsound
+import ctypes
 import tempfile
 import wave
 import struct
 import math
 import os
 from time import time
+
+winmm = ctypes.windll.winmm
+SND_FILENAME = 0x00020000
+SND_SYNC = 0x0000
 
 class synthesizer:
     def __init__(self):
@@ -16,21 +20,31 @@ class synthesizer:
             filename = tmp.name
         
         try:
-            sample_rate = 8000
+            sample_rate = 6500
+            total_samples = int(duration * sample_rate)
+            
+            samples = [0.0] * total_samples
+            
+            for i in range(total_samples):
+                print(f"\rLoading {['.   ', '..  ', '... ', '....'][int(time()*4)%4]} {int(i / total_samples * 100)+1}%", end="      ")
+                t = i / sample_rate
+                samples[i] = func(t)
+            
+            for i in range(total_samples):
+                samples[i] = math.tanh(samples[i])
+            
             with wave.open(filename, 'w') as wav:
                 wav.setnchannels(1)
                 wav.setsampwidth(2)
                 wav.setframerate(sample_rate)
                 
-                for i in range(int(duration * sample_rate)):
-                    print(f"\rLoading {[".   ", "..  ", "... ", "...."][int(time()*4)%4]} {int(i / duration / sample_rate * 100)+1}%", end="      ")
-                    t = i / sample_rate
-                    value = func(t)
-                    value = math.tanh(value)
-                    sample = int(value * 32767)
-                    wav.writeframes(struct.pack('<h', sample))
+                frames = bytearray()
+                for sample in samples:
+                    frames.extend(struct.pack('<h', int(sample * 32767)))
+                
+                wav.writeframes(frames)
             
-            winsound.PlaySound(filename, winsound.SND_FILENAME)
+            winmm.PlaySoundW(filename, None, SND_FILENAME | SND_SYNC)
             
         finally:
             if os.path.exists(filename):

@@ -1,4 +1,5 @@
 import sys
+from copy import deepcopy
 import math
 from pathlib import Path
 from typing import Dict
@@ -50,10 +51,10 @@ class CCATransformer:
             raise KeyError(f"token '{token}' not found in database")
         return self.DeSoftQuery(token, self.get_key_for_(token), self.temperature)
 
-    def SoftInjection_to_(self, token: str, Query: Vector, Value: Vector, const: float=Const.E):
+    def SoftInjection_to_(self, token: str, Query: Vector, Value: Vector, const: float=Const.E, learning_rate: float=0.1):
         if token not in self.database:
             raise KeyError(f"token '{token}' not found in database")
-        injection = self.database[token]
+        injection = deepcopy(self.database[token])
         if not injection:
             self.database[token] = {Query: Value}
             return
@@ -71,13 +72,13 @@ class CCATransformer:
             influence_graph = [div(weight, total_weight) for weight in influence_graph]
         updated_dict = {}
         for i, (query_vec, value_vec) in enumerate(zip(query_list, value_list)):
-            delta = mul(sub(Value, value_vec).components, influence_graph[i])
+            delta = mul(sub(Value, value_vec).components, influence_graph[i] * learning_rate)
             new_value = add(value_vec, Vector(delta))
             updated_dict[query_vec] = new_value
-        self.database[token] = updated_dict
+        self.database[token] = deepcopy(updated_dict)
         if Query in self.database[token]:
             updated_dict[Query] = Value
-        return self.database[token]
+        return updated_dict
     
     def SoftInjection_query_to_(self, token: str, Query):
         if token not in self.database:
@@ -104,7 +105,7 @@ class CCATransformer:
             
             new_dict[new_key] = value
         
-        self.database[token] = new_dict
+        self.database[token] = deepcopy(new_dict)
 
     def SoftQuery(self, token: str, Query: Vector, const: float=Const.E) -> Vector:
         if token not in self.database:
@@ -169,6 +170,7 @@ class CCATransformer:
         for token in self.database:
             summary.append(f'{token}: {len(self.database[token])} queries')
         return '\n'.join(summary)
+    
 if __name__ == '__main__':
     print(f'const e: {Const.E}')
     print(f'const pi: {Const.Pi}\n')

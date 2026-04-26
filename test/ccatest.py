@@ -22,7 +22,7 @@ Texts = ct.tokenize(text) + ['<end>']
 
 print(Texts)
 
-ccat = NewCCATransformer(Texts, 4)
+ccat = NewCCATransformer(Texts, dim = 4)
 
 height, width, tg_types = 5, 7, 9
 neurons = [i*height for i in [[lambda x, parameter, nn, index: get_meaning_of_tokens_at_(ccat, add(add(x, nn.tg[index[0]][index[1]][0]), parameter), tokens)[-1]]]] * width

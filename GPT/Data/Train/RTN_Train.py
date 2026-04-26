@@ -1,6 +1,7 @@
 import sys
 from pathlib import Path
 from random import uniform
+from copy import deepcopy
 import json
 import pickle
 from datetime import datetime
@@ -67,40 +68,38 @@ class RTN_Trainer:
         return ret
     
     def static_trainer(self, inputs: List[List], outputs: List[List], lossfunction: callable, lambdafunction: callable, r: float, maxdw: float, dropout: float, rtn: RTN):
-        original_tg = rtn.tg
-        original_weights = rtn.weights
+        original_tg = deepcopy(rtn.tg)
+        original_weights = deepcopy(rtn.weights)
         try:
             rtn.tg = [[[0.0 for _ in j] for j in i] for i in rtn.tg]
             
             for ip, op in zip(inputs, outputs):
                 print(f"Training {ip} -> {op}")
                 
-                Lam = 0.0
-                Lambdacnt = 0
-                for i in list(rtn.weights[0].values()):
-                    for j in list(i.values()):
-                        Lam = add(Lam, lambdafunction(j))
-                        Lambdacnt += 1
-                for i in rtn.weights[1]:
-                    for j in i:
-                        Lam = add(Lam, lambdafunction(j))
-                        Lambdacnt += 1
-                Lam = div(Lam, Lambdacnt) if Lambdacnt > 0 else 0.0
+                def loss_with_reg(x):
+                    Lam = 0.0
+                    Lambdacnt = 0
+                    for i in list(rtn.weights[0].values()):
+                        for j in list(i.values()):
+                            Lam = add(Lam, lambdafunction(j))
+                            Lambdacnt += 1
+                    for i in rtn.weights[1]:
+                        for j in i:
+                            Lam = add(Lam, lambdafunction(j))
+                            Lambdacnt += 1
+                    Lam = div(Lam, Lambdacnt) if Lambdacnt > 0 else 0.0
+                    return add(lossfunction(rtn.nn_dynamics(ip)[-1], op), Lam)
                 
                 wg = {}
                 for start in list(rtn.weights[0].keys()):
                     wg[start] = {}
                     for end in list(rtn.weights[0][start].keys()):
-                        def loss_with_reg(x):
-                            return add(lossfunction(x, op), Lam)
                         wg[start][end] = self.weight_loss_derivative(start, end, ip, loss_with_reg, rtn)
                 
                 pg = {}
                 for idx in range(len(rtn.weights[1])):
                     pg[idx] = {}
                     for jdx in range(len(rtn.weights[1][idx])):
-                        def loss_with_reg(x):
-                            return add(lossfunction(x, op), Lam)
                         pg[idx][jdx] = self.parameter_loss_derivative((idx, jdx), ip, loss_with_reg, rtn)
                 
                 for start in list(wg.keys()):
@@ -124,16 +123,16 @@ class RTN_Trainer:
                             rtn.weights[1][idx][jdx] = sub(rtn.weights[1][idx][jdx], delta)
 
         except Exception as error:
-            rtn.weights = original_weights
-            rtn.tg = original_tg
+            rtn.weights = deepcopy(original_weights)
+            rtn.tg = deepcopy(original_tg)
             return error
 
-        rtn.tg = original_tg
+        rtn.tg = deepcopy(original_tg)
         return True
 
     def rtn_sample(self, rtn:RTN, inputs, maxt: int = 30, sample_rate: int = 5):
         rtn_sampling = []
-        sample_step = int(maxt / sample_rate)
+        sample_step = int(maxt / sample_rate) if sample_rate > 0 else 1
         
         for i in range(maxt):
             ans = rtn.forward(inputs)
@@ -145,7 +144,10 @@ class RTN_Trainer:
     def fitting_pid_for_(self, rtn_sampling, maxt: int = 30, sample_rate: int = 5, r: float = 0.03):
         if not rtn_sampling:
             return [[0.0, 0.0, 0.0]]
-            
+        
+        if isinstance(rtn_sampling[0], (int, float)):
+            rtn_sampling = [[v] for v in rtn_sampling]
+        
         rtn_sampling = [list(row) for row in zip(*rtn_sampling)]
 
         kp = [0.01 for _ in rtn_sampling]
@@ -156,11 +158,13 @@ class RTN_Trainer:
         KI_MIN, KI_MAX = -0.1, 0.1
         KD_MIN, KD_MAX = -0.1, 0.1
         
-        sample_indices = list(range(0, maxt, int(maxt/sample_rate)))
+        sample_indices = list(range(0, maxt, int(maxt/sample_rate))) if sample_rate > 0 else [0]
         
         for _ in range(200):
             total_loss = 0.0
             for pipe in range(len(rtn_sampling)):
+                if len(rtn_sampling[pipe]) == 0:
+                    continue
                 target = rtn_sampling[pipe][-1]
                 
                 for param_idx in range(3):
@@ -176,7 +180,10 @@ class RTN_Trainer:
                         if i in sample_indices:
                             pid_sampling.append(ans)
                     
-                    sub_loss = sum([(rtn_val - pid_val)**2 for rtn_val, pid_val in zip(rtn_sampling[pipe], pid_sampling)])
+                    sub_loss = 0.0
+                    for idx, (rtn_val, pid_val) in enumerate(zip(rtn_sampling[pipe], pid_sampling)):
+                        diff = rtn_val - pid_val
+                        sub_loss += diff * diff
                     
                     self.pid_i = 0.0
                     self.pid_d = 0.0
@@ -190,20 +197,35 @@ class RTN_Trainer:
                         if i in sample_indices:
                             pid_sampling.append(ans)
                     
-                    add_loss = sum([(rtn_val - pid_val)**2 for rtn_val, pid_val in zip(rtn_sampling[pipe], pid_sampling)])
+                    add_loss = 0.0
+                    for idx, (rtn_val, pid_val) in enumerate(zip(rtn_sampling[pipe], pid_sampling)):
+                        diff = rtn_val - pid_val
+                        add_loss += diff * diff
                     
                     derivative = (add_loss - sub_loss) / (2 * self.dx)
-                    derivative = max(min(derivative, 1.0), -1.0)
+                    if derivative > 1.0:
+                        derivative = 1.0
+                    if derivative < -1.0:
+                        derivative = -1.0
                     
                     if param_idx == 0:
                         kp[pipe] -= derivative * r
-                        kp[pipe] = max(min(kp[pipe], KP_MAX), KP_MIN)
+                        if kp[pipe] > KP_MAX:
+                            kp[pipe] = KP_MAX
+                        if kp[pipe] < KP_MIN:
+                            kp[pipe] = KP_MIN
                     elif param_idx == 1:
                         ki[pipe] -= derivative * r
-                        ki[pipe] = max(min(ki[pipe], KI_MAX), KI_MIN)
+                        if ki[pipe] > KI_MAX:
+                            ki[pipe] = KI_MAX
+                        if ki[pipe] < KI_MIN:
+                            ki[pipe] = KI_MIN
                     else:
                         kd[pipe] -= derivative * r
-                        kd[pipe] = max(min(kd[pipe], KD_MAX), KD_MIN)
+                        if kd[pipe] > KD_MAX:
+                            kd[pipe] = KD_MAX
+                        if kd[pipe] < KD_MIN:
+                            kd[pipe] = KD_MIN
                 
                 self.pid_i = 0.0
                 self.pid_d = 0.0
@@ -214,7 +236,10 @@ class RTN_Trainer:
                     if t in sample_indices:
                         final_sampling.append(control)
                 
-                current_loss = sum([(rtn_val - pid_val)**2 for rtn_val, pid_val in zip(rtn_sampling[pipe], final_sampling)])
+                current_loss = 0.0
+                for rtn_val, pid_val in zip(rtn_sampling[pipe], final_sampling):
+                    diff = rtn_val - pid_val
+                    current_loss += diff * diff
                 total_loss += current_loss
         return [list(row) for row in zip(kp, ki, kd)]
 
@@ -253,25 +278,46 @@ class RTN_Trainer:
         return div(div(sub(add_loss, sub_loss), 2), self.dx)
 
     def rtn_sampling_trainer(self, inputs: List[List], outputs: List[List], target_pids: List[List], samplinglossfunction: callable, staticlossfunction: callable, lambdafunction: callable, r: float, maxdw: float, dropout: float, rtn: RTN, maxt: int = 30, sample_rate: int = 5):
-        original_tg = rtn.tg
-        original_sr_graph = rtn.sr_graph
-        original_tg_graph = rtn.tg_graph
+        original_tg = deepcopy(rtn.tg)
+        original_sr_graph = deepcopy(rtn.sr_graph)
+        original_tg_graph = deepcopy(rtn.tg_graph)
         
         try:
-            Lam = 0.0
-            Lambdacnt = 0
-            
-            for i in rtn.tg_graph:
-                for j in i:
-                    Lam = add(Lam, lambdafunction(j))
-                    Lambdacnt += 1
-            for i in rtn.sr_graph:
-                for j in i:
-                    for k in j:
-                        Lam = add(Lam, lambdafunction(k))
+            def loss_with_reg_static(x, y):
+                Lam = 0.0
+                Lambdacnt = 0
+                
+                for i in rtn.tg_graph:
+                    for j in i:
+                        Lam = add(Lam, lambdafunction(j))
                         Lambdacnt += 1
+                for i in rtn.sr_graph:
+                    for j in i:
+                        for k in j:
+                            Lam = add(Lam, lambdafunction(k))
+                            Lambdacnt += 1
 
-            Lam = div(Lam, Lambdacnt) if Lambdacnt > 0 else 0.0
+                Lam = div(Lam, Lambdacnt) if Lambdacnt > 0 else 0.0
+                
+                return add(staticlossfunction(x, y), Lam)
+            
+            def loss_with_reg_sampling(pid_params, target):
+                Lam = 0.0
+                Lambdacnt = 0
+                
+                for i in rtn.tg_graph:
+                    for j in i:
+                        Lam = add(Lam, lambdafunction(j))
+                        Lambdacnt += 1
+                for i in rtn.sr_graph:
+                    for j in i:
+                        for k in j:
+                            Lam = add(Lam, lambdafunction(k))
+                            Lambdacnt += 1
+
+                Lam = div(Lam, Lambdacnt) if Lambdacnt > 0 else 0.0
+
+                return add(samplinglossfunction(pid_params, target), Lam)
             
             if len(inputs) != 1 or len(outputs) != 1 or len(target_pids) != 1:
                 raise ValueError("This trainer only accepts one pair of input-output data")
@@ -284,10 +330,6 @@ class RTN_Trainer:
                 for j in range(len(rtn.sr_graph[i])):
                     for k in range(len(rtn.sr_graph[i][j])):
                         if uniform(0.0,1.0) >= dropout:
-                            def loss_with_reg_sampling(pid_params, target):
-                                return add(samplinglossfunction(pid_params, target), Lam)
-                            def loss_with_reg_static(x, y):
-                                return add(staticlossfunction(x, y), Lam)
                             derivative = self.sr_graph_loss_derivative((i, j, k), ip, op, target_pid, loss_with_reg_sampling, loss_with_reg_static, rtn, maxt, sample_rate)
                             delta = mul(r, derivative)
                             if delta > maxdw:
@@ -299,10 +341,6 @@ class RTN_Trainer:
             for i in range(len(rtn.tg_graph)):
                 for j in range(len(rtn.tg_graph[i])):
                     if uniform(0.0,1.0) >= dropout:
-                        def loss_with_reg_sampling(pid_params, target):
-                            return add(samplinglossfunction(pid_params, target), Lam)
-                        def loss_with_reg_static(x, y):
-                            return add(staticlossfunction(x, y), Lam)
                         derivative = self.tg_graph_loss_derivative(i, j, ip, op, target_pid, loss_with_reg_sampling, loss_with_reg_static, rtn, maxt, sample_rate)
                         delta = mul(r, derivative)
                         if delta > maxdw:
@@ -312,11 +350,12 @@ class RTN_Trainer:
                         rtn.tg_graph[i][j] = sub(rtn.tg_graph[i][j], delta)
 
         except Exception as error:
-            rtn.tg = original_tg
-            rtn.sr_graph = original_sr_graph
-            rtn.tg_graph = original_tg_graph
+            rtn.tg = deepcopy(original_tg)
+            rtn.sr_graph = deepcopy(original_sr_graph)
+            rtn.tg_graph = deepcopy(original_tg_graph)
             return error
 
+        rtn.tg = deepcopy(original_tg)
         return True
     
     def save_training_data(self, data: dict, data_name: str = None, save_format: str = 'pkl') -> str:
@@ -568,7 +607,7 @@ if __name__ == "__main__":
 >> """
 )
     print("\n"+"="*20+"\n")
-    if  ipt == "1":
+    if ipt == "1":
         print("# static trainer start\n")
 
         t = RTN_Trainer()
@@ -750,7 +789,7 @@ if __name__ == "__main__":
         
         print("\nfitted PID parameters:")
         sampling = t.rtn_sample(rtn, ip[0], maxt, sample_rate)
-        pid_params = t.fitting_pid_for_(sampling)
+        pid_params = t.fitting_pid_for_(sampling, maxt, sample_rate)
         print(f"input {ip[0]} -> PID: {pid_params[0] if pid_params else 'N/A'}")
         
         print("\ntest on new input (should not be trained):")

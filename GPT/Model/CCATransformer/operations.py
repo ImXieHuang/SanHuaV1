@@ -13,12 +13,12 @@ import Vector as vector
 from Vector.vector import Vector
 import mathexpand as mexp
 
-def NewCCATransformer(Texts: Union[List[str], str], dim: int=8) -> CCAT.CCATransformer:
+def NewCCATransformer(Texts: Union[List[str], str], k:float = 1.0, dim: int=8) -> CCAT.CCATransformer:
     if not isinstance(Texts, list):
-        return {Texts: {Vector([random.uniform(-1, 1) for _ in range(dim)]): Vector([random.uniform(-1, 1) for _ in range(dim)])}}
+        return {Texts: {Vector([random.uniform(-k, k) for _ in range(dim)]): Vector([random.uniform(-k, k) for _ in range(dim)])}}
     database = {}
     for i in Texts:
-        database[i] = {Vector([random.uniform(-1, 1) for _ in range(dim)]): Vector([random.uniform(-1, 1) for _ in range(dim)])}
+        database[i] = {Vector([random.uniform(-k, k) for _ in range(dim)]): Vector([random.uniform(-k, k) for _ in range(dim)])}
     return CCAT.CCATransformer(database, CCAT.Const.E, dim)
 
 def FusionCCATransformer(CAT1: CCAT.CCATransformer, CAT2: CCAT.CCATransformer) -> CCAT.CCATransformer:
@@ -39,7 +39,7 @@ def FusionCCATransformer(CAT1: CCAT.CCATransformer, CAT2: CCAT.CCATransformer) -
             FusionDatabsase[i] = CAT1.database[i]
         else:
             FusionDatabsase[i] = CAT2.database[i]
-    return CCAT.CCATransformer(FusionDatabsase, CAT1.temperature / 2 + CAT2.temperature / 2)
+    return CCAT.CCATransformer(FusionDatabsase, CAT1.temperature / 2 + CAT2.temperature / 2, CAT1.dim)
 
 def get_meaning_of_tokens_for_(ccat: CCAT.CCATransformer, tokens: List[str]) -> List[Vector]:
     influence_graph = [[0.0 for _ in range(len(tokens))] for _ in range(len(tokens))]
@@ -48,7 +48,7 @@ def get_meaning_of_tokens_for_(ccat: CCAT.CCATransformer, tokens: List[str]) -> 
             influence_graph[i][j] = vector.dot(ccat.get_query_for_(tokens[i]), ccat.get_key_for_(tokens[j]))
     for i in range(len(tokens)):
         for j in range(len(tokens)):
-            if j >= i:
+            if j > i:
                 influence_graph[i][j] = -float('inf')
     for i in range(len(tokens)):
         row = influence_graph[i]
@@ -61,6 +61,8 @@ def get_meaning_of_tokens_for_(ccat: CCAT.CCATransformer, tokens: List[str]) -> 
         for j in range(i + 1):
             if i == 0 and j == 0:
                 bigQ_graph[i][j] = ccat.get_key_for_(tokens[i])
+            elif j < i:
+                bigQ_graph[i][j] = bigQ_graph[i - 1][j]
             else:
                 vector_list = []
                 for k in range(j):
@@ -86,7 +88,7 @@ def get_meaning_of_tokens_for_(ccat: CCAT.CCATransformer, tokens: List[str]) -> 
                             big_Q = Vector([float(big_Q)] * ccat.dim)
                         except:
                             big_Q = Vector([0.0] * ccat.dim)
-                bigQ_graph[i][j] = ccat.get_value_for_(tokens[j], big_Q)
+                bigQ_graph[i][j] = ccat.get_value_for_(tokens[j], big_Q) + big_Q * ccat.temperature
     meaning_vectors = []
     for i in range(len(tokens)):
         vector_list = []
@@ -109,7 +111,6 @@ def get_meaning_of_tokens_for_(ccat: CCAT.CCATransformer, tokens: List[str]) -> 
                 except:
                     meaning_vector = Vector([0.0] * ccat.dim)
         meaning_vectors.append(meaning_vector + Vector([sin(i/10000**(i/ccat.dim)) if i % 2 == 0 else cos(i/10000**(i/ccat.dim)) for i in range(ccat.dim)]))
-    meaning_vectors[0] = ccat.get_key_for_(tokens[0])
     return meaning_vectors
 
 def get_meaning_of_tokens_at_(ccat: CCAT.CCATransformer, AtQ: Vector, tokens: List[str]) -> List[Vector]:
@@ -119,7 +120,7 @@ def get_meaning_of_tokens_at_(ccat: CCAT.CCATransformer, AtQ: Vector, tokens: Li
             influence_graph[i][j] = mexp.mul(vector.dot(ccat.get_query_for_(tokens[i]), ccat.get_key_for_(tokens[j])), vector.dot(ccat.get_query_for_(tokens[i]), AtQ))
     for i in range(len(tokens)):
         for j in range(len(tokens)):
-            if j >= i:
+            if j > i:
                 influence_graph[i][j] = -float('inf')
     for i in range(len(tokens)):
         row = influence_graph[i]
@@ -132,6 +133,8 @@ def get_meaning_of_tokens_at_(ccat: CCAT.CCATransformer, AtQ: Vector, tokens: Li
         for j in range(i + 1):
             if j == 0:
                 bigQ_graph[i][j] = ccat.get_key_for_(tokens[i])
+            elif j < i:
+                bigQ_graph[i][j] = bigQ_graph[i - 1][j]
             else:
                 vector_list = []
                 for k in range(j):
@@ -157,7 +160,7 @@ def get_meaning_of_tokens_at_(ccat: CCAT.CCATransformer, AtQ: Vector, tokens: Li
                             big_Q = Vector([float(big_Q)] * ccat.dim)
                         except:
                             big_Q = Vector([0.0] * ccat.dim)
-                bigQ_graph[i][j] = ccat.get_value_for_(tokens[j], big_Q)
+                bigQ_graph[i][j] = ccat.get_value_for_(tokens[j], big_Q) + big_Q * ccat.temperature
     meaning_vectors = []
     for i in range(len(tokens)):
         vector_list = []
@@ -180,7 +183,6 @@ def get_meaning_of_tokens_at_(ccat: CCAT.CCATransformer, AtQ: Vector, tokens: Li
                 except:
                     meaning_vector = Vector([0.0] * ccat.dim)
         meaning_vectors.append(meaning_vector + Vector([sin(i/10000**(i/ccat.dim)) if i % 2 == 0 else cos(i/10000**(i/ccat.dim)) for i in range(ccat.dim)]))
-    meaning_vectors[0] = ccat.get_key_for_(tokens[0])
     return meaning_vectors
 
 def get_meaning_of_sentence_for_(ccat: CCAT.CCATransformer, tokens: List[str]) -> Vector:
