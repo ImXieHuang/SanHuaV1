@@ -2,6 +2,9 @@ import sys
 import copy
 from pathlib import Path
 from typing import List, Callable
+from datetime import datetime
+import json
+import pickle
 import random as rand
 udir = str(Path(__file__).parent.parent.parent)
 sys.path.append(udir)
@@ -98,6 +101,126 @@ class CCAT_Trainer:
             return float('inf')
         return -log2(p[1][p[0].index(actuality)])
 
+    def save_model(self, data: dict, data_name: str = None, save_format: str = 'pkl') -> str:
+        models_dir = self.get_models_dir()
+        
+        if data_name is None:
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            data_name = f"training_data_{timestamp}"
+        
+        data_with_info = {
+            'data': data,
+            'metadata': {
+                'created_at': datetime.now().isoformat(),
+                'data_name': data_name,
+                'format': save_format
+            }
+        }
+        
+        if save_format == 'pkl':
+            file_path = models_dir / f"{data_name}.pkl"
+            with open(file_path, 'wb') as f:
+                pickle.dump(data_with_info, f)
+        else:
+            file_path = models_dir / f"{data_name}.json"
+            with open(file_path, 'w', encoding='utf-8') as f:
+                json.dump(data_with_info, f, ensure_ascii=False, indent=2)
+        
+        return data_name
+    
+    def save_training_result(self, data: dict, data_name: str = None, save_format: str = 'pkl') -> str:
+        data_name = self.save_model(data, data_name, save_format)
+        info = {
+            'model_name': data_name,
+            'format': save_format,
+            'created_at': datetime.now().isoformat()
+        }
+        info_path = self.get_models_dir() / f"{data_name}_info.json"
+        with open(info_path, 'w', encoding='utf-8') as f:
+            json.dump(info, f, ensure_ascii=False, indent=2)
+        return data_name
+        
+    def load_model(self, data_name: str, load_format: str = None):
+        models_dir = self.get_models_dir()
+        
+        if load_format is None:
+            if (models_dir / f"{data_name}.pkl").exists():
+                load_format = 'pkl'
+            elif (models_dir / f"{data_name}.json").exists():
+                load_format = 'json'
+            else:
+                return None
+        
+        if load_format == 'pkl':
+            file_path = models_dir / f"{data_name}.pkl"
+            with open(file_path, 'rb') as f:
+                data_with_info = pickle.load(f)
+        else:
+            file_path = models_dir / f"{data_name}.json"
+            with open(file_path, 'r', encoding='utf-8') as f:
+                data_with_info = json.load(f)
+        
+        return data_with_info.get('data', data_with_info)
+    
+    def load_training_result(self, data_name: str, load_format: str = None):
+        models_dir = self.get_models_dir()
+        
+        if load_format is None:
+            if (models_dir / f"{data_name}.pkl").exists():
+                load_format = 'pkl'
+            elif (models_dir / f"{data_name}.json").exists():
+                load_format = 'json'
+            else:
+                return None
+        
+        if load_format == 'pkl':
+            file_path = models_dir / f"{data_name}.pkl"
+            with open(file_path, 'rb') as f:
+                data_with_info = pickle.load(f)
+        else:
+            file_path = models_dir / f"{data_name}.json"
+            with open(file_path, 'r', encoding='utf-8') as f:
+                data_with_info = json.load(f)
+        
+        return data_with_info.get('data', data_with_info)
+    
+    def list_saved_models(self):
+        models_dir = self.get_models_dir()
+        models = []
+        
+        for info_file in models_dir.glob("*_info.json"):
+            try:
+                with open(info_file, 'r', encoding='utf-8') as f:
+                    info = json.load(f)
+                    model_file = models_dir / f"{info['model_name']}.{info.get('format', 'pkl')}"
+                    if model_file.exists():
+                        info['size'] = model_file.stat().st_size
+                        info['file_exists'] = True
+                    else:
+                        info['file_exists'] = False
+                    models.append(info)
+            except Exception as e:
+                print(f"Error reading {info_file}: {e}")
+        
+        return sorted(models, key=lambda x: x.get('created_at', ''), reverse=True)
+
+    def delete_saved_data(self, data_name: str) -> bool:
+        models_dir = self.get_models_dir()
+        deleted = False
+        
+        for ext in ['.pkl', '.json']:
+            file_path = models_dir / f"{data_name}{ext}"
+            if file_path.exists():
+                file_path.unlink()
+                deleted = True
+            
+            info_path = models_dir / f"{data_name}_info.json"
+            if info_path.exists():
+                info_path.unlink()
+                deleted = True
+        
+        return deleted
+
 if __name__ == "__main__":
     from Data.splitToken import ChineseTokenizer
     from Model.mathexpand import iterate
@@ -107,6 +230,8 @@ if __name__ == "__main__":
     log_file = Path(__file__).parent / "training_log.txt"
     sys.stdout = open(log_file, "w")
 
+    t = CCAT_Trainer()
+    
     start_time = time()
 
     print("Loading and preparing data...")
@@ -127,22 +252,43 @@ if __name__ == "__main__":
 
     print()
 
-    start_time = time()
-    
-    print("Preparing CCAT model...")
+    available_models = t.list_saved_models()
+    if available_models:
+        print("Available saved models:")
+        for model in available_models:
+            print(f"  - {model['model_name']} (created at {model['created_at']}, size: {model.get('size', 'unknown')} bytes, file exists: {model.get('file_exists', False)})")
 
-    ccat: CCATransformer = iterate(FusionCCATransformer, [NewCCATransformer(list({i for j in Texts for i in j}), dim = 2) for _ in range(4)])
+        choice = input("Load existing model? (enter number or 'n' for new): ")
+
+        if choice.isdigit() and 1 <= int(choice) <= len(available_models):
+            selected_model = available_models[int(choice) - 1]
+            print(f"Loading model: {selected_model['model_name']}...")
+            ccat_data = t.load_training_result(selected_model['model_name'], selected_model.get('format', 'pkl'))
+            if ccat_data is not None:
+                ccat: CCATransformer = iterate(FusionCCATransformer, [NewCCATransformer(list({i for j in Texts for i in j}), dim = 2) for _ in range(4)])
+                ccat.database = ccat_data
+                print("Model loaded successfully.")
+            else:
+                print("Failed to load model data. Starting with a new model.")
+                ccat: CCATransformer = iterate(FusionCCATransformer, [NewCCATransformer(list({i for j in Texts for i in j}), dim = 2) for _ in range(4)])
+        else:
+            print("Starting with a new model.")
+            ccat: CCATransformer = iterate(FusionCCATransformer, [NewCCATransformer(list({i for j in Texts for i in j}), dim = 2) for _ in range(4)])
+    else:
+        print("No saved models found. Starting with a new model.")
+        ccat: CCATransformer = iterate(FusionCCATransformer, [NewCCATransformer(list({i for j in Texts for i in j}), dim = 2) for _ in range(4)])
 
     ccat.temperature = 1.0
 
-    print(f"CCAT model preparation completed in {time() - start_time:.2f} seconds.\n")
+    training_start_time = time()
+
+    start_time = time()
 
     print("Starting training...")
 
-    t = CCAT_Trainer()
     r = 0.75
 
-    for cnt in range(500):
+    for cnt in range(10):
         start_time = time()
 
         print(f"Epoch {cnt + 1}")
@@ -166,6 +312,16 @@ if __name__ == "__main__":
         sys.stdout.flush()
 
     print("Training completed.")
+
+    print()
+
+    print(f"Total training time: {time() - training_start_time:.2f} seconds.\n")
+
+    print("Save model...")
+
+    model_name = t.save_training_result(ccat.database, "ccat_model", "pkl")
+
+    print(f"Model saved as {model_name}.")
 
     print()
 
