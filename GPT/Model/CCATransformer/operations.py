@@ -42,6 +42,11 @@ def FusionCCATransformer(CAT1: CCAT.CCATransformer, CAT2: CCAT.CCATransformer) -
     return CCAT.CCATransformer(FusionDatabsase, CAT1.temperature / 2 + CAT2.temperature / 2, CAT1.dim)
 
 def get_meaning_of_tokens_for_(ccat: CCAT.CCATransformer, tokens: List[str]) -> List[Vector]:
+    def intlog2(x):
+        cnt = 0
+        while x := x>>1: cnt += 1
+        return cnt
+    
     influence_graph = [[0.0 for _ in range(len(tokens))] for _ in range(len(tokens))]
     for i in range(len(tokens)):
         for j in range(len(tokens)):
@@ -88,7 +93,8 @@ def get_meaning_of_tokens_for_(ccat: CCAT.CCATransformer, tokens: List[str]) -> 
                             big_Q = Vector([float(big_Q)] * ccat.dim)
                         except:
                             big_Q = Vector([0.0] * ccat.dim)
-                bigQ_graph[i][j] = ccat.get_value_for_(tokens[j], big_Q) + big_Q * ccat.temperature
+                bigQ_graph[i][j] = ccat.get_value_for_(tokens[j], big_Q) + big_Q * ccat.temperature * (1 - intlog2(i+1) / intlog2(len(tokens)+1))
+    
     meaning_vectors = []
     for i in range(len(tokens)):
         vector_list = []
@@ -114,6 +120,10 @@ def get_meaning_of_tokens_for_(ccat: CCAT.CCATransformer, tokens: List[str]) -> 
     return meaning_vectors
 
 def get_meaning_of_tokens_at_(ccat: CCAT.CCATransformer, AtQ: Vector, tokens: List[str]) -> List[Vector]:
+    def intlog2(x):
+        cnt = 0
+        while x := x>>1: cnt += 1
+        return cnt
     influence_graph = [[0.0 for _ in range(len(tokens))] for _ in range(len(tokens))]
     for i in range(len(tokens)):
         for j in range(len(tokens)):
@@ -160,7 +170,8 @@ def get_meaning_of_tokens_at_(ccat: CCAT.CCATransformer, AtQ: Vector, tokens: Li
                             big_Q = Vector([float(big_Q)] * ccat.dim)
                         except:
                             big_Q = Vector([0.0] * ccat.dim)
-                bigQ_graph[i][j] = ccat.get_value_for_(tokens[j], big_Q) + big_Q * ccat.temperature
+                bigQ_graph[i][j] = ccat.get_value_for_(tokens[j], big_Q) + big_Q * ccat.temperature * (1 - intlog2(i+1) / intlog2(len(tokens)+1))
+    
     meaning_vectors = []
     for i in range(len(tokens)):
         vector_list = []

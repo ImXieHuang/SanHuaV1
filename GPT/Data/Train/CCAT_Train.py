@@ -236,8 +236,24 @@ if __name__ == "__main__":
 
     print("Loading and preparing data...")
 
-    text = ["""这是一个测试序列""",
-            """是一个测试序列"""]
+    text = [
+        "我常想在纷扰中寻出一点闲静来，",
+        "然而委实不容易。",
+        "目前是这么离奇，",
+        "心里是这么芜杂。",
+        "一个人做到只剩了回忆的时候，",
+        "生涯大概总要算是无聊了罢，",
+        "但有时竟会连回忆也没有。",
+        "中国的做文章有轨范，",
+        "世事也仍然是螺旋。",
+        "不容易。目前",
+        "离奇，心里是",
+        "芜杂。一个人",
+        "的时候，生涯",
+        "了罢，但",
+        "也没有。中国",
+        "轨范，世事"
+    ]
 
     ct = ChineseTokenizer()
     ct.load_model("model")
@@ -249,8 +265,6 @@ if __name__ == "__main__":
     print(f"Data preparation completed in {time() - start_time:.2f} seconds.\n")
 
     sys.stdout.flush()
-
-    print()
 
     available_models = t.list_saved_models()
     if available_models:
@@ -278,6 +292,8 @@ if __name__ == "__main__":
         print("No saved models found. Starting with a new model.")
         ccat: CCATransformer = iterate(FusionCCATransformer, [NewCCATransformer(list({i for j in Texts for i in j}), dim = 2) for _ in range(4)])
 
+    print()
+
     ccat.temperature = 1.0
 
     training_start_time = time()
@@ -294,7 +310,7 @@ if __name__ == "__main__":
         print(f"Epoch {cnt + 1}")
 
         for Text in Texts:  
-            print(f"Training on {Text} are {t.trainer(Text, lambda tokens, ccat: t.cross_entropy(tokens, Text[Text.index(tokens[-1]) + 1] if len(tokens) > 1 else 0.0 + sum([i[1]**4 if i[0] in ['<START>'] else 0.0 for i in softmax_choice_next_probability_for_(ccat, tokens)]), ccat), lambda x: 0.01 * x**2, r, 2.5, 0.1, ccat)}")
+            print(f"Training on {Text} are {t.trainer(Text, lambda tokens, ccat: t.cross_entropy(tokens, Text[Text.index(tokens[-1]) + 1] if len(tokens) > 1 else 0.0, ccat)  + sum([i[0]**4 if i[1] in ['<START>'] else 0.0 for i in softmax_choice_next_probability_for_(ccat, tokens)]), lambda x: 0.01 * x**2, r, 2.5, 0.1, ccat)}")
             print()
 
         print(f"Epoch {cnt + 1} completed in {time() - start_time:.2f} seconds.\n")
