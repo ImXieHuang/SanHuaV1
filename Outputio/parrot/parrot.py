@@ -5,6 +5,7 @@ import wave
 import struct
 import math
 import os
+import sys
 from time import time
 
 winmm = ctypes.windll.winmm
@@ -13,145 +14,144 @@ SND_SYNC = 0x0000
 
 class synthesizer:
     def __init__(self):
-        pass
+        self._wave_table_cache = {}
+        self._sample_rate = 6500
+        
+    def _next_power_of_2(self, n):
+        p = 1
+        while p < n:
+            p <<= 1
+        return p
     
-    def play_func(self, func, duration):
-        with tempfile.NamedTemporaryFile(suffix='.wav', delete=False) as tmp:
-            filename = tmp.name
+    def _fft(self, a, invert):
+        n = len(a)
+        if n == 1:
+            return a
         
-        try:
-            sample_rate = 6500
-            total_samples = int(duration * sample_rate)
-            
-            samples = [0.0] * total_samples
-            
-            for i in range(total_samples):
-                print(f"\rLoading {['.   ', '..  ', '... ', '....'][int(time()*4)%4]} {int(i / total_samples * 100)+1}%", end="      ")
-                t = i / sample_rate
-                samples[i] = func(t)
-            
-            for i in range(total_samples):
-                samples[i] = math.tanh(samples[i])
-            
-            with wave.open(filename, 'w') as wav:
-                wav.setnchannels(1)
-                wav.setsampwidth(2)
-                wav.setframerate(sample_rate)
-                
-                frames = bytearray()
-                for sample in samples:
-                    frames.extend(struct.pack('<h', int(sample * 32767)))
-                
-                wav.writeframes(frames)
-            
-            winmm.PlaySoundW(filename, None, SND_FILENAME | SND_SYNC)
-            
-        finally:
-            if os.path.exists(filename):
-                os.unlink(filename)
-
+        j = 0
+        for i in range(1, n):
+            bit = n >> 1
+            while j & bit:
+                j ^= bit
+                bit >>= 1
+            j ^= bit
+            if i < j:
+                a[i], a[j] = a[j], a[i]
+        
+        length = 2
+        while length <= n:
+            ang = 2 * math.pi / length * (-1 if invert else 1)
+            wlen = complex(math.cos(ang), math.sin(ang))
+            for i in range(0, n, length):
+                w = 1+0j
+                for j in range(i, i + length // 2):
+                    u = a[j]
+                    v = a[j + length // 2] * w
+                    a[j] = u + v
+                    a[j + length // 2] = u - v
+                    w *= wlen
+            length <<= 1
+        
+        if invert:
+            for i in range(n):
+                a[i] /= n
+        return a
+    
+    def _build_wave_table(self, fft_dict, duration, wave_type):
+        n_samples = int(duration * self._sample_rate)
+        df = self._sample_rate / n_samples
+        n_fft = self._next_power_of_2(n_samples)
+        spec_len = n_fft // 2 + 1
+        
+        spec = [0j] * spec_len
+        for freq, amp in fft_dict.items():
+            if amp == 0:
+                continue
+            bin_idx = int(round(freq / df))
+            if 0 <= bin_idx < spec_len:
+                spec[bin_idx] = complex(amp, 0)
+        
+        full_spec = [0j] * n_fft
+        for i in range(spec_len):
+            full_spec[i] = spec[i]
+        for i in range(1, spec_len - 1):
+            full_spec[n_fft - i] = spec[i].conjugate()
+        
+        time_domain = self._fft(full_spec, invert=True)
+        base_wave = [time_domain[i].real for i in range(n_samples)]
+        
+        if wave_type == 'sin':
+            wave_table = base_wave
+        elif wave_type == 'bool':
+            wave_table = [1.0 if v >= 0 else -1.0 for v in base_wave]
+        elif wave_type == 'triangle':
+            phase = [0.0] * n_samples
+            for i in range(1, n_samples):
+                phase[i] = phase[i-1] + base_wave[i] * 0.01
+            wave_table = [(2 / math.pi) * math.asin(math.sin(p)) for p in phase]
+        elif wave_type == 'random':
+            wave_table = base_wave
+            random.seed(0)
+            for i in range(n_samples):
+                wave_table[i] = wave_table[i] * random.uniform(0.5, 1.5)
+        else:
+            wave_table = base_wave
+        
+        if wave_table:
+            max_val = max(abs(max(wave_table)), abs(min(wave_table)))
+            if max_val > 1e-6:
+                gain = 0.9 / max_val
+                wave_table = [v * gain for v in wave_table]
+        
+        return wave_table
+    
     def sin_fft(self, fft: dict[float, float], x, index: int = 0, reg = []):
-        if x == 0 or (index * 2 + 1 < len(reg) and reg[index * 2] != list(fft.keys())):
-            frequencies = list(fft.keys())
-            amplitudes = list(fft.values())
-            angular_freqs = [2 * math.pi * f for f in frequencies]
-            
-            while len(reg) <= index * 2 + 1:
-                reg.append(0.0)
-            
-            reg[index * 2] = angular_freqs
-            reg[index * 2 + 1] = amplitudes
+        cache_key = (id(fft), index, 'sin')
         
-        if index * 2 + 1 < len(reg) and reg[index * 2] != 0.0:
-            freqs = reg[index * 2]
-            amps = reg[index * 2 + 1]
-            
-            result = 0.0
-            for i in range(len(freqs)):
-                result += math.sin(freqs[i] * x) * amps[i]
-            return result
+        if cache_key not in self._wave_table_cache:
+            duration = 1.0
+            wave_table = self._build_wave_table(fft, duration, 'sin')
+            self._wave_table_cache[cache_key] = wave_table
         
-        return 0.0
+        wave_table = self._wave_table_cache[cache_key]
+        idx = int(x * self._sample_rate) % len(wave_table)
+        return wave_table[idx]
     
     def bool_fft(self, fft: dict[float, float], x, index: int = 0, reg = []):
-        if x == 0 or (index * 2 + 1 < len(reg) and reg[index * 2] != list(fft.keys())):
-            frequencies = list(fft.keys())
-            amplitudes = list(fft.values())
-            angular_freqs = [2 * math.pi * f for f in frequencies]
-            
-            while len(reg) <= index * 2 + 1:
-                reg.append(0.0)
-            
-            reg[index * 2] = angular_freqs
-            reg[index * 2 + 1] = amplitudes
+        cache_key = (id(fft), index, 'bool')
         
-        if index * 2 + 1 < len(reg) and reg[index * 2] != 0.0:
-            freqs = reg[index * 2]
-            amps = reg[index * 2 + 1]
-            
-            result = 0.0
-            for i in range(len(freqs)):
-                sign = 1.0 if math.sin(freqs[i] * x) >= 0 else -1.0
-                result += sign * amps[i]
-            return result
+        if cache_key not in self._wave_table_cache:
+            duration = 1.0
+            wave_table = self._build_wave_table(fft, duration, 'bool')
+            self._wave_table_cache[cache_key] = wave_table
         
-        return 0.0
+        wave_table = self._wave_table_cache[cache_key]
+        idx = int(x * self._sample_rate) % len(wave_table)
+        return wave_table[idx]
     
     def triangle_fft(self, fft: dict[float, float], x, index: int = 0, reg = []):
-        if x == 0 or (index * 2 + 1 < len(reg) and reg[index * 2] != list(fft.keys())):
-            frequencies = list(fft.keys())
-            amplitudes = list(fft.values())
-            angular_freqs = [2 * math.pi * f for f in frequencies]
-            
-            while len(reg) <= index * 2 + 1:
-                reg.append(0.0)
-            
-            reg[index * 2] = angular_freqs
-            reg[index * 2 + 1] = amplitudes
+        cache_key = (id(fft), index, 'triangle')
         
-        if index * 2 + 1 < len(reg) and reg[index * 2] != 0.0:
-            freqs = reg[index * 2]
-            amps = reg[index * 2 + 1]
-            
-            result = 0.0
-            for i in range(len(freqs)):
-                result += (2 / math.pi) * math.asin(math.sin(freqs[i] * x)) * amps[i]
-            return result
+        if cache_key not in self._wave_table_cache:
+            duration = 1.0
+            wave_table = self._build_wave_table(fft, duration, 'triangle')
+            self._wave_table_cache[cache_key] = wave_table
         
-        return 0.0
-    
+        wave_table = self._wave_table_cache[cache_key]
+        idx = int(x * self._sample_rate) % len(wave_table)
+        return wave_table[idx]
+
     def random_fft(self, fft: dict[float, float], x, index: int = 0, reg = []):
-        if x == 0 or (index * 2 + 1 < len(reg) and reg[index * 2] != list(fft.keys())):
-            frequencies = list(fft.keys())
-            amplitudes = list(fft.values())
-            angular_freqs = [2 * math.pi * f for f in frequencies]
-            
-            while len(reg) <= index * 2 + 1:
-                reg.append(0.0)
-            
-            reg[index * 2] = angular_freqs
-            reg[index * 2 + 1] = amplitudes
+        cache_key = (id(fft), index, 'random')
         
-        if index * 2 + 1 < len(reg) and reg[index * 2] != 0.0:
-            def f(t, a):
-                ret = 0.0
-                deep = 5
-                for i in range(1, deep+1):
-                    random.seed(int(t * 1000) + i * int(a * 100))
-                    amp = 1.0 / (i ** 1.5)
-                    phase = random.uniform(0, 2 * math.pi)
-                    ret += random.uniform(0, amp) * math.sin(a*t+phase)
-                return ret / deep
-            
-            freqs = reg[index * 2]
-            amps = reg[index * 2 + 1]
-            
-            result = 0.0
-            for i in range(len(freqs)):
-                result += f(x, freqs[i]) * amps[i]
-            return result
+        if cache_key not in self._wave_table_cache:
+            duration = 1.0
+            wave_table = self._build_wave_table(fft, duration, 'random')
+            self._wave_table_cache[cache_key] = wave_table
         
-        return 0.0
+        wave_table = self._wave_table_cache[cache_key]
+        idx = int(x * self._sample_rate) % len(wave_table)
+        return wave_table[idx]
 
     def mixed(self, ffts: list, weights: list, x):
         total_n = 0.0
@@ -166,7 +166,6 @@ class synthesizer:
             return 0.0
         return total_n / total_weight
 
-    
     def envelope_adsr(self, t, duration, attack=0.1, decay=0.1, sustain=0.7, release=0.2):
         if t < attack:
             return t / attack
@@ -207,7 +206,6 @@ class synthesizer:
         
         return points[-1][1]
 
-    
     def with_envelope(self, sound_func, envelope_func, *envelope_args):
         def wrapped(t):
             sound = sound_func(t)
@@ -231,6 +229,43 @@ class synthesizer:
     def sin_weight(self, nowtime, totaltime):
         return abs(math.sin(math.pi * nowtime / totaltime))
     
+    def play_func(self, func, duration):
+        with tempfile.NamedTemporaryFile(suffix='.wav', delete=False) as tmp:
+            filename = tmp.name
+        
+        try:
+            sample_rate = 12000
+            total_samples = int(duration * sample_rate)
+            
+            samples = [0.0] * total_samples
+            
+            for i in range(total_samples):
+                print(f"\rLoading {['.   ', '..  ', '... ', '....'][int(time()*4)%4]} {int(i / total_samples * 100)+1}%", end="      ")
+                sys.stdout.flush()
+                t = i / sample_rate
+                samples[i] = func(t)
+            
+            for i in range(total_samples):
+                samples[i] = math.tanh(samples[i])
+            
+            with wave.open(filename, 'w') as wav:
+                wav.setnchannels(1)
+                wav.setsampwidth(2)
+                wav.setframerate(sample_rate)
+                
+                frames = bytearray()
+                for sample in samples:
+                    frames.extend(struct.pack('<h', int(sample * 32767)))
+                
+                wav.writeframes(frames)
+            
+            winmm.PlaySoundW(filename, None, SND_FILENAME | SND_SYNC)
+            
+        finally:
+            if os.path.exists(filename):
+                os.unlink(filename)
+
+
 class parrot:
     def __init__(self, length: float = 20, n_segments: int = 20, nasal_length_ratio: float = 0.5):
         self.n = n_segments
@@ -247,6 +282,9 @@ class parrot:
         self.key = {}
         self.obstruction_threshold = 0.0
         self.noise_threshold = 0.25
+        self.sample_rate = 6500
+        self.segment_delay = max(1, int((self.total_length / self.n / self.c) * self.sample_rate))
+        self.source_buffer = []
         
     def check_obstructions(self):
         min_area = min(self.areas)
@@ -271,71 +309,106 @@ class parrot:
             resonances[freq] = amplitude
         return resonances
     
-    def speak(self, pitch: float = 0.0):
-        fft_dict = {}
-        obstruction_pos = self.check_obstructions()
-        avg_area = sum(self.areas) / len(self.areas)
+    def kl_synthesis(self, source, duration):
+        n_segments = self.n
+        segment_length = self.total_length / n_segments
+        delay_samples = max(1, int(segment_length / self.c * self.sample_rate))
         
-        noise_intensity = 0.0
-        for area in self.areas:
-            if area < self.noise_threshold:
-                noise_intensity += (self.noise_threshold - area) / self.noise_threshold
-        noise_intensity = min(1.0, noise_intensity / len(self.areas) * 2)
-        
-        if obstruction_pos is not None:
-            if self.nasal_area >= 0.0 and self.is_obstruction_before_velum(obstruction_pos):
-                nasal_resonances = self.tube(self.nasal_length)
-                for freq, amp in nasal_resonances.items():
-                    fft_dict[freq * 2**(pitch/2)] = amp * self.nasal_coupling * obstruction_pos / 4
-                if noise_intensity > 0:
-                    for _ in range(3):
-                        noise_freq = random.uniform(2000, 5000)
-                        fft_dict[noise_freq] = noise_intensity * 0.2 * obstruction_pos / 4
+        k = []
+        for i in range(n_segments - 1):
+            a1 = self.areas[i]
+            a2 = self.areas[i + 1]
+            if a1 + a2 == 0:
+                k.append(0.0)
             else:
-                if noise_intensity > 0.5:
-                    for _ in range(2):
-                        noise_freq = random.uniform(1000, 3000)
-                        fft_dict[noise_freq] = noise_intensity * 0.1
-        else:
-            base_freq = 340 / (2 * self.total_length) * random.uniform(0.5, 1.5)
-            tube_resonances = self.tube(self.total_length)
+                k.append((a1 - a2) / (a1 + a2))
+        
+        forward = [0.0] * (n_segments + 1)
+        backward = [0.0] * (n_segments + 1)
+        delay_line_f = []
+        delay_line_b = []
+        for i in range(n_segments):
+            delay_line_f.append([0.0] * delay_samples)
+            delay_line_b.append([0.0] * delay_samples)
+            for j in range(delay_samples):
+                delay_line_f[i][j] = 0.0
+                delay_line_b[i][j] = 0.0
+        delay_idx = 0
+        
+        total_samples = int(duration * self.sample_rate)
+        output = [0.0] * total_samples
+        
+        for n in range(total_samples):
+            src = source[n] if n < len(source) else 0.0
             
-            for freq, amp in tube_resonances.items():
-                adjusted_amp = amp * (avg_area / 2.0)
-                fft_dict[freq * 2**(pitch/2)] = adjusted_amp
+            u_plus = [0.0] * (n_segments + 1)
+            u_minus = [0.0] * (n_segments + 1)
             
-            if self.nasal_area >= 0.0:
-                nasal_resonances = self.tube(self.nasal_length)
-                for freq, amp in nasal_resonances.items():
-                    if freq in fft_dict:
-                        fft_dict[freq * 2**(pitch/2)] += amp * self.nasal_coupling * 0.5
-                    else:
-                        fft_dict[freq * 2**(pitch/2)] = amp * self.nasal_coupling * 0.5
+            u_plus[0] = src + backward[0]
             
-            for harmonic in range(1, 6):
-                freq = base_freq * harmonic
-                if freq > 8000:
-                    break
-                amplitude = 1.0 / (harmonic ** 1.5)
-                segment_variation = 1.0
-                for i, area in enumerate(self.areas):
-                    if 100 * (i + 1) < freq < 200 * (i + 2):
-                        segment_variation *= (area / 2.0)
-                amplitude *= segment_variation
-                for existing_freq in fft_dict:
-                    if abs(freq - existing_freq) < 50:
-                        amplitude += fft_dict[existing_freq] * 0.3
-                        break
-                if freq in fft_dict:
-                    fft_dict[freq * 2**(pitch/2)] = max(fft_dict[freq * 2**(pitch/2)], amplitude)
+            for i in range(n_segments - 1):
+                u_plus[i + 1] = u_plus[i] * (1 + k[i]) - backward[i + 1] * k[i]
+            
+            u_minus[n_segments] = 0.0
+            
+            for i in range(n_segments - 1, 0, -1):
+                u_minus[i] = u_minus[i + 1] * (1 - k[i - 1]) + u_plus[i - 1] * k[i - 1]
+            
+            for i in range(n_segments):
+                delay_line_f[i][delay_idx] = u_plus[i]
+                delay_line_b[i][delay_idx] = u_minus[i + 1]
+            
+            for i in range(n_segments):
+                forward[i] = delay_line_f[i][(delay_idx - 1) % delay_samples]
+                backward[i] = delay_line_b[i][(delay_idx - 1) % delay_samples]
+            
+            output[n] = forward[n_segments - 1]
+            delay_idx = (delay_idx + 1) % delay_samples
+        
+        return output
+    
+    def generate_source(self, duration, f0=120):
+        total_samples = int(duration * self.sample_rate)
+        source = [0.0] * total_samples
+        period = int(self.sample_rate / f0) if f0 > 0 else 100
+        if period < 1:
+            period = 1
+        
+        voiced = self.voiced > 0.5
+        if voiced:
+            for n in range(total_samples):
+                if n % period == 0:
+                    source[n] = 1.0
                 else:
-                    fft_dict[freq * 2**(pitch/2)] = amplitude
-            
-            if noise_intensity > 0:
-                for _ in range(int(5 * noise_intensity)):
-                    noise_freq = random.uniform(2000, 6000)
-                    noise_amp = random.uniform(0.05, 0.15) * (avg_area / 3.0) * noise_intensity
-                    fft_dict[noise_freq] = noise_amp
+                    source[n] = 0.0
+        else:
+            for n in range(total_samples):
+                source[n] = random.uniform(-0.3, 0.3)
+        
+        return source
+    
+    def speak(self, pitch: float = 0.0):
+        f0 = 120 * (2 ** (pitch / 12))
+        duration = 1.0
+        source = self.generate_source(duration, f0)
+        output = self.kl_synthesis(source, duration)
+        
+        fft_dict = {}
+        n_samples = len(output)
+        if n_samples > 0:
+            window_size = min(512, n_samples)
+            for i in range(min(20, window_size // 2)):
+                freq = i * self.sample_rate / window_size
+                if freq > 50 and freq < 5000:
+                    magnitude = 0.0
+                    for j in range(window_size):
+                        if j < n_samples:
+                            magnitude += abs(output[j]) * math.sin(2 * math.pi * freq * j / self.sample_rate)
+                    if magnitude > 0.01:
+                        fft_dict[freq] = magnitude * 10
+        
+        if len(fft_dict) == 0:
+            fft_dict[440] = 0.5
         
         return (self.voiced, fft_dict)
     
@@ -378,7 +451,6 @@ if __name__ == "__main__":
 
     T = 4
 
-    
     p.add_key("b", morph_key([0.1,0.1,0.5,0.0], 0.0, 1.0))
     p.add_key("a", morph_key([1.0,1.0,1.5,0.75], 0.0, 1.0))
 

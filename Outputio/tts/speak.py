@@ -106,7 +106,7 @@ class speak:
         
         ms = self.callmorph(text)
         
-        duration_per_phoneme = 0.25
+        duration_per_phoneme = 0.15
         total_duration = len(ms) * duration_per_phoneme
         
         def speak_text(t):
@@ -126,7 +126,7 @@ class speak:
                 areas1, nasal1, voiced1 = key1
                 areas2, nasal2, voiced2 = key2
                 
-                areas = [areas1[i] * (1 - ratio) + areas2[i] * ratio for i in range(4)]
+                areas = [areas1[i] * (1 - ratio) + areas2[i] * ratio for i in range(8)]
                 nasal = nasal1 * (1 - ratio) + nasal2 * ratio
                 voiced = voiced1 * (1 - ratio) + voiced2 * ratio
                 
@@ -141,6 +141,6 @@ class speak:
 
 if __name__ == "__main__":
     s = speak()
-    text = "我爱北京天安门，天安门上太阳升。伟大领袖毛主席，指引我们向前进。"
+    text = "我是三花"
 
     s.tts(text)

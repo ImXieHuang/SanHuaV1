@@ -3,9 +3,11 @@
 - One of the authors from Sùzhou,Anhui,China
 - Copyright (c) 2026 github/ImXieHuang(E-mail: 13470825702@163.com)
 
+> The authors used DeepSeek to improve the English expression and grammar of several sentences related to the motivation and model description. All scientific claims, model designs, and conclusions remain solely the authors’ own.
+
 ## 1. Introduction
 
-**Standard Transformer** architectures, such as those used in GPT models, achieve strong performance through extensive matrix operations. However, this comes at a high computational cost. We introduce the **Co-Context Attention Transformer (CCAT)**, a simplified attention mechanism designed to reduce this overhead while retaining core contextual reasoning capabilities.
+**Standard Transformer**[^1] [^2] architectures, such as those used in GPT models, achieve strong performance through extensive matrix operations. However, this comes at a high computational cost. We introduce the **Co-Context Attention Transformer (CCAT)**, a simplified attention mechanism designed to reduce this overhead while retaining core contextual reasoning capabilities.
 
 ## 2. Model Architecture
 
@@ -221,7 +223,7 @@ To implement causal attention, we propose **QTC Semantic Analysis**, which aims 
 
 ### A.1 Semantic Growth Complexity
 
-According to Heaps' Law in computational linguistics, the number of distinct semantic units grows sublinearly with text length. For a text with $x$ tokens, assuming uniform distribution across $n$ token types:
+According to Heaps' Law[^3] in computational linguistics, the number of distinct semantic units grows sublinearly with text length. For a text with $x$ tokens, assuming uniform distribution across $n$ token types:
 
 Without semantic saturation:
 
@@ -599,7 +601,7 @@ The dimensionality reduction proved in Appendix A, combined with this duality, s
 
 | Term | Translation | Reference |
 |:-------|:-------|-------:|
-| Co-context Attention Transformer/CCAT | 上下文联合注意力机制 | - |
+| Co-context Attention Transformer/CCAT | 上下文联合注意力变换器 | - |
 | AtQ | 注意力焦点 | 2. |
 | Attention Shift Mechanism | 注意力转移机制 | 2. |
 | Que / big Q | 大语境 | 3.1 |
@@ -609,10 +611,8 @@ The dimensionality reduction proved in Appendix A, combined with this duality, s
 | QKV Overload / QKV Deconstruction | KQV重载 | 3.2.1 |
 | QTC Semantic Analysis | QTC语义辨析 | 3.3.1 |
 
-## Reference and Acknowledgements:
-### about Attention:
-> Vaswani, A., Shazeer, N., Parmar, N., Uszkoreit, J., Jones, L., Gomez, A. N., Kaiser, Ł., & Polosukhin, I. (2017). Attention Is All You Need. arXiv:1706.03762. Retrieved from [Attention Is All You Need](https://arxiv.org/abs/1706.03762)
-### about Architecture Lecture:
-> 3Blue1Brown. (n.d.). Home [YouTube channel]. YouTube. Retrieved March 15, 2026, from [Home](https://www.youtube.com/@3blue1brown)
-### about Information theory:
-> Heaps, H. S. (1978). Information Retrieval: Computational and Theoretical Aspects. Academic Press. [Heaps' law, statistics of shared components and temporal patterns from a sample-space-reducing process ](http://arxiv.org/abs/2311.06377)
+[^1]: Vaswani, A., Shazeer, N., Parmar, N., Uszkoreit, J., Jones, L., Gomez, A. N., Kaiser, Ł., & Polosukhin, I. (2017). Attention Is All You Need. arXiv:1706.03762. Retrieved from [Attention Is All You Need](https://arxiv.org/abs/1706.03762)
+
+[^2]: 3Blue1Brown. (n.d.). Home [YouTube channel]. YouTube. Retrieved March 15, 2026, from [Home](https://www.youtube.com/@3blue1brown)
+
+[^3]: Heaps, H. S. (1978). Information Retrieval: Computational and Theoretical Aspects. Academic Press. [Heaps' law, statistics of shared components and temporal patterns from a sample-space-reducing process](http://arxiv.org/abs/2311.06377)
