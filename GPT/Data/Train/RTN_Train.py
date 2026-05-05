@@ -161,7 +161,6 @@ class RTN_Trainer:
         sample_indices = list(range(0, maxt, int(maxt/sample_rate))) if sample_rate > 0 else [0]
         
         for _ in range(200):
-            total_loss = 0.0
             for pipe in range(len(rtn_sampling)):
                 if len(rtn_sampling[pipe]) == 0:
                     continue
@@ -170,39 +169,47 @@ class RTN_Trainer:
                 for param_idx in range(3):
                     self.pid_i = 0.0
                     self.pid_d = 0.0
-                    pid_sampling = []
-                    for i in range(maxt):
-                        error = target - (pid_sampling[-1] if pid_sampling else 0)
-                        kp_tmp = kp[pipe] + (self.dx if param_idx==0 else 0)
-                        ki_tmp = ki[pipe] + (self.dx if param_idx==1 else 0)
-                        kd_tmp = kd[pipe] + (self.dx if param_idx==2 else 0)
-                        ans = self.pid(kp_tmp, ki_tmp, kd_tmp, error)
-                        if i in sample_indices:
-                            pid_sampling.append(ans)
+                    self.last_error = 0.0
+                    pid_sampling_pos = []
+                    prev_output = 0.0
                     
-                    sub_loss = 0.0
-                    for idx, (rtn_val, pid_val) in enumerate(zip(rtn_sampling[pipe], pid_sampling)):
+                    for i in range(maxt):
+                        error = target - prev_output
+                        kp_tmp = kp[pipe] + (self.dx if param_idx == 0 else 0)
+                        ki_tmp = ki[pipe] + (self.dx if param_idx == 1 else 0)
+                        kd_tmp = kd[pipe] + (self.dx if param_idx == 2 else 0)
+                        output = self.pid(kp_tmp, ki_tmp, kd_tmp, error)
+                        prev_output = output
+                        if i in sample_indices and len(pid_sampling_pos) < len(rtn_sampling[pipe]):
+                            pid_sampling_pos.append(output)
+                    
+                    loss_pos = 0.0
+                    for idx, (rtn_val, pid_val) in enumerate(zip(rtn_sampling[pipe], pid_sampling_pos)):
                         diff = rtn_val - pid_val
-                        sub_loss += diff * diff
+                        loss_pos += diff * diff
                     
                     self.pid_i = 0.0
                     self.pid_d = 0.0
-                    pid_sampling = []
+                    self.last_error = 0.0
+                    pid_sampling_neg = []
+                    prev_output = 0.0
+                    
                     for i in range(maxt):
-                        error = target - (pid_sampling[-1] if pid_sampling else 0)
-                        kp_tmp = kp[pipe] - (self.dx if param_idx==0 else 0)
-                        ki_tmp = ki[pipe] - (self.dx if param_idx==1 else 0)
-                        kd_tmp = kd[pipe] - (self.dx if param_idx==2 else 0)
-                        ans = self.pid(kp_tmp, ki_tmp, kd_tmp, error)
-                        if i in sample_indices:
-                            pid_sampling.append(ans)
+                        error = target - prev_output
+                        kp_tmp = kp[pipe] - (self.dx if param_idx == 0 else 0)
+                        ki_tmp = ki[pipe] - (self.dx if param_idx == 1 else 0)
+                        kd_tmp = kd[pipe] - (self.dx if param_idx == 2 else 0)
+                        output = self.pid(kp_tmp, ki_tmp, kd_tmp, error)
+                        prev_output = output
+                        if i in sample_indices and len(pid_sampling_neg) < len(rtn_sampling[pipe]):
+                            pid_sampling_neg.append(output)
                     
-                    add_loss = 0.0
-                    for idx, (rtn_val, pid_val) in enumerate(zip(rtn_sampling[pipe], pid_sampling)):
+                    loss_neg = 0.0
+                    for idx, (rtn_val, pid_val) in enumerate(zip(rtn_sampling[pipe], pid_sampling_neg)):
                         diff = rtn_val - pid_val
-                        add_loss += diff * diff
+                        loss_neg += diff * diff
                     
-                    derivative = (add_loss - sub_loss) / (2 * self.dx)
+                    derivative = (loss_pos - loss_neg) / (2 * self.dx)
                     if derivative > 1.0:
                         derivative = 1.0
                     if derivative < -1.0:
@@ -226,21 +233,7 @@ class RTN_Trainer:
                             kd[pipe] = KD_MAX
                         if kd[pipe] < KD_MIN:
                             kd[pipe] = KD_MIN
-                
-                self.pid_i = 0.0
-                self.pid_d = 0.0
-                final_sampling = []
-                for t in range(maxt):
-                    error = target - (final_sampling[-1] if final_sampling else 0)
-                    control = self.pid(kp[pipe], ki[pipe], kd[pipe], error)
-                    if t in sample_indices:
-                        final_sampling.append(control)
-                
-                current_loss = 0.0
-                for rtn_val, pid_val in zip(rtn_sampling[pipe], final_sampling):
-                    diff = rtn_val - pid_val
-                    current_loss += diff * diff
-                total_loss += current_loss
+        
         return [list(row) for row in zip(kp, ki, kd)]
 
     def sr_graph_loss_derivative(self, index: tuple, input, target_output, target_pid: list, samplingloss: callable, staticloss: callable, rtn: RTN, maxt: int = 30, sample_rate: int = 5):     
@@ -611,7 +604,7 @@ if __name__ == "__main__":
         print("# static trainer start\n")
 
         t = RTN_Trainer()
-        rtn = RTN(neurons_generator('any'),
+        rtn = RTN(neurons_generator('line'),
                 weights_brush(0.0, 0.1, 2), 
                 tg_brush(), 
                 sr_graph_brush(), 
@@ -693,7 +686,7 @@ if __name__ == "__main__":
         print("# sampling trainer (single pair) start\n")
 
         t = RTN_Trainer()
-        rtn = RTN(neurons_generator('any'),
+        rtn = RTN(neurons_generator('line'),
                 weights_brush(0.0, 0.1, 2), 
                 tg_brush(), 
                 sr_graph_brush(), 

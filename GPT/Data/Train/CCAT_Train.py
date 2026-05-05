@@ -49,7 +49,7 @@ class CCAT_Trainer:
         
         return gradient
     
-    def trainer(self, tokens: List[str], lossfunction: callable, lambdafunction: callable, r: float, maxdw: float, dropout: float, ccat: CCATransformer):
+    def trainer(self, tokens: List[str], token_range: int, lossfunction: callable, lambdafunction: callable, r: float, maxdw: float, dropout: float, ccat: CCATransformer):
         original_data = copy.deepcopy(ccat.database)
         try:
             def loss(token, ccat) -> float:
@@ -65,7 +65,7 @@ class CCAT_Trainer:
 
             injection = {}
 
-            for n_gram in [tokens[:i] for i in range(2, len(tokens))]:
+            for n_gram in [tokens[:i] for i in range(token_range, len(tokens))]:
                 if rand.random() < dropout:
                     continue
                 print(f"Training on {n_gram[:-1]} -> {n_gram[-1]}")
@@ -237,22 +237,7 @@ if __name__ == "__main__":
     print("Loading and preparing data...")
 
     text = [
-        "我常想在纷扰中寻出一点闲静来，",
-        "然而委实不容易。",
-        "目前是这么离奇，",
-        "心里是这么芜杂。",
-        "一个人做到只剩了回忆的时候，",
-        "生涯大概总要算是无聊了罢，",
-        "但有时竟会连回忆也没有。",
-        "中国的做文章有轨范，",
-        "世事也仍然是螺旋。",
-        "不容易。目前",
-        "离奇，心里是",
-        "芜杂。一个人",
-        "的时候，生涯",
-        "了罢，但",
-        "也没有。中国",
-        "轨范，世事"
+        "你好世界！"
     ]
 
     ct = ChineseTokenizer()
@@ -302,15 +287,15 @@ if __name__ == "__main__":
 
     print("Starting training...")
 
-    r = 0.75
+    r = 0.05
 
-    for cnt in range(10):
+    for cnt in range(2500):
         start_time = time()
 
         print(f"Epoch {cnt + 1}")
 
         for Text in Texts:  
-            print(f"Training on {Text} are {t.trainer(Text, lambda tokens, ccat: t.cross_entropy(tokens, Text[Text.index(tokens[-1]) + 1] if len(tokens) > 1 else 0.0, ccat)  + sum([i[0]**4 if i[1] in ['<START>'] else 0.0 for i in softmax_choice_next_probability_for_(ccat, tokens)]), lambda x: 0.01 * x**2, r, 2.5, 0.1, ccat)}")
+            print(f"Training on {Text} are {t.trainer(Text, 3, lambda tokens, ccat: t.cross_entropy(tokens[:-1], tokens[-1], ccat)  + sum([i[0]**4 if i[1] in ['<START>'] else 0.0 for i in softmax_choice_next_probability_for_(ccat, tokens)]), lambda x: 0.01 * x**2, r, 2.5, 0.2, ccat)}")
             print()
 
         print(f"Epoch {cnt + 1} completed in {time() - start_time:.2f} seconds.\n")
@@ -344,8 +329,9 @@ if __name__ == "__main__":
     print("Testing the model 10 times...")
 
     for i in range(10):
-        tokens = ["这"]
+        tokens = ["你好"]
         while tokens[-1] != "<END>" and len(tokens) < 20:
             next_token = softmax_choice_next_token_for_(ccat, tokens)
-            tokens.append(next_token)
+            if next_token != "<START>":
+                tokens.append(next_token)
         print(f"Generated sequence {i + 1}: {''.join(tokens)}")

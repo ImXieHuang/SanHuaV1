@@ -17,6 +17,7 @@ from random import uniform
 def neurons_generator(model:str, width:int = 3, height: int = 3):
     preset = {
         "any": [[lambda x, parameter, nn, index: sigmoid(x + parameter) * (x + parameter)]],
+        "line": [[lambda x, parameter, nn, index: x + parameter]],
         "cnn": [[lambda x, parameter, nn, index: conv(x, parameter)],[lambda x, parameter, nn, index: pool(x)]],
         "vector": [[lambda x, parameter, nn, index: Vector([sigmoid(i) for i in x.components])]]
     }
